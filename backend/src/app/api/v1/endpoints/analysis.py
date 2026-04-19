@@ -2,13 +2,15 @@ from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from celery.result import AsyncResult
+# from celery.result import AsyncResult
 
 from app.core.database import get_db
 from app.models.hotspot import Hotspot, HotspotAnalysis
 from app.models.user import User
-from app.tasks.analysis_tasks import analyze_hotspot_for_user_task
+from app.tasks.analysis_tasks import analyze_hotspot_for_user_async, batch_analyze_hotspots_async
 from app.schemas.hotspot import HotspotAnalysisResponse
+from app.services.hotspot_service import HotspotService
+from app.core.cache_utils import cached
 
 router = APIRouter()
 
@@ -61,24 +63,46 @@ async def trigger_hotspot_analysis(
             "message": "该热点已有分析记录"
         }
 
-    # 启动Celery任务
-    task = analyze_hotspot_for_user_task.delay(hotspot_id, user_id)
+    # 直接进行分析（开发模式，简化处理）
+    try:
+        analysis_result = await analyze_hotspot_for_user_async(hotspot_id, user_id)
+        if analysis_result.get("success"):
+            # 分析成功，使热点缓存失效
+            await HotspotService.invalidate_hotspots_cache()
 
-    return {
-        "status": "started",
-        "task_id": task.id,
-        "message": "分析任务已启动",
-        "task_status_url": f"/api/v1/tasks/{task.id}/status"
-    }
+            return {
+                "status": "completed",
+                "analysis_id": analysis_result.get("analysis_id"),
+                "relevance_score": analysis_result.get("relevance_score"),
+                "importance_level": analysis_result.get("importance_level"),
+                "message": "分析完成"
+            }
+        else:
+            return {
+                "status": "failed",
+                "error": analysis_result.get("error"),
+                "message": "分析失败"
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "message": "分析过程中发生异常"
+        }
 
 @router.get("/hotspots/{hotspot_id}/analysis/{user_id}")
+@cached(
+    prefix="analysis",
+    expire=600,  # 10分钟缓存
+    key_func=lambda hotspot_id, user_id, db: f"analysis:{hotspot_id}:{user_id}"
+)
 async def get_hotspot_analysis(
     hotspot_id: str,
     user_id: str,
     db: AsyncSession = Depends(get_db)
 ):
     """
-    获取热点分析结果
+    获取热点分析结果（带缓存）
     """
     stmt = select(HotspotAnalysis).where(
         HotspotAnalysis.hotspot_id == hotspot_id,
@@ -93,7 +117,8 @@ async def get_hotspot_analysis(
             detail="分析记录不存在"
         )
 
-    return HotspotAnalysisResponse.model_validate(analysis)
+    # 转换为字典以便缓存
+    return HotspotAnalysisResponse.model_validate(analysis).model_dump()
 
 @router.post("/users/{user_id}/analyze-latest")
 async def analyze_latest_hotspots(
@@ -116,32 +141,43 @@ async def analyze_latest_hotspots(
             detail="用户不存在"
         )
 
-    # 这里可以启动批量分析任务
-    # 实际实现应使用Celery任务
-    return {
-        "status": "not_implemented",
-        "message": "批量分析功能待实现",
-        "suggestion": "请使用单个热点分析接口"
-    }
+    # 调用批量分析异步函数
+    try:
+        result = await batch_analyze_hotspots_async(user_id, limit)
+
+        if result.get("success"):
+            # 批量分析成功，使热点缓存失效
+            await HotspotService.invalidate_hotspots_cache()
+
+            return {
+                "status": "completed",
+                "analyzed_count": result.get("analyzed_count", 0),
+                "total_hotspots": result.get("total_hotspots", 0),
+                "message": result.get("message", "批量分析完成")
+            }
+        else:
+            return {
+                "status": "failed",
+                "error": result.get("error", "未知错误"),
+                "message": "批量分析失败"
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "message": "批量分析过程中发生异常"
+        }
 
 @router.get("/tasks/{task_id}/status")
 async def get_task_status(task_id: str):
     """
-    获取Celery任务状态
+    获取任务状态（模拟实现，Celery已禁用）
     """
-    task_result = AsyncResult(task_id)
-
+    # 模拟实现，因为Celery在开发模式下被禁用
     response = {
         "task_id": task_id,
-        "status": task_result.status,
-        "ready": task_result.ready()
+        "status": "SUCCESS",
+        "ready": True,
+        "result": {"message": "任务已完成（模拟）", "success": True}
     }
-
-    if task_result.ready():
-        if task_result.successful():
-            response["result"] = task_result.result
-        else:
-            response["error"] = str(task_result.result)
-            response["traceback"] = task_result.traceback
-
     return response

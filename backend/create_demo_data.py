@@ -157,7 +157,7 @@ async def create_demo_data():
                 id=str(uuid.uuid4()),
                 hotspot_id=hotspot1.id,
                 user_id=test_user.id,
-                relevance_score="85",
+                relevance_score=85,
                 importance_level=ImportanceLevel.HIGH,
                 business_impact="GPT-4.5的发布可能影响我们现有的产品竞争力，需要评估是否需要集成或对标。",
                 importance_reason="OpenAI是行业领导者，其技术突破会推动整个行业标准提升。",
@@ -165,7 +165,7 @@ async def create_demo_data():
                 technical_details="多模态能力增强可能改变人机交互方式，代码生成效率提升影响开发工具市场。",
                 analyzed_at=datetime.utcnow() - timedelta(hours=2),
                 model_used="gpt-4",
-                tokens_used="1250",
+                tokens_used=1250,
                 analysis_metadata={"analysis_time": "15分钟", "confidence": "0.85"}
             )
             analyses.append(analysis1)
@@ -175,7 +175,7 @@ async def create_demo_data():
                 id=str(uuid.uuid4()),
                 hotspot_id=hotspot2.id,
                 user_id=test_user.id,
-                relevance_score="90",
+                relevance_score=90,
                 importance_level=ImportanceLevel.EMERGENCY,
                 business_impact="新规可能影响我们的数据收集和处理流程，需要合规审查。",
                 importance_reason="法规变化直接影响业务运营，不及时应对可能面临处罚。",
@@ -183,7 +183,7 @@ async def create_demo_data():
                 technical_details="数据安全要求可能涉及加密标准、存储位置、访问控制等技术调整。",
                 analyzed_at=datetime.utcnow() - timedelta(hours=5),
                 model_used="gpt-4",
-                tokens_used="980",
+                tokens_used=980,
                 analysis_metadata={"analysis_time": "12分钟", "confidence": "0.92"}
             )
             analyses.append(analysis2)
@@ -193,7 +193,7 @@ async def create_demo_data():
                 id=str(uuid.uuid4()),
                 hotspot_id=hotspot3.id,
                 user_id=test_user.id,
-                relevance_score="70",
+                relevance_score=70,
                 importance_level=ImportanceLevel.MEDIUM,
                 business_impact="新一代芯片可能降低我们的AI训练成本，提升产品性能。",
                 importance_reason="硬件进步直接影响研发效率和成本结构。",
@@ -201,7 +201,7 @@ async def create_demo_data():
                 technical_details="H200在FP8精度下的性能提升显著，可能改变模型训练策略。",
                 analyzed_at=datetime.utcnow() - timedelta(hours=8),
                 model_used="gpt-4",
-                tokens_used="1100",
+                tokens_used=1100,
                 analysis_metadata={"analysis_time": "10分钟", "confidence": "0.78"}
             )
             analyses.append(analysis3)

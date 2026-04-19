@@ -7,12 +7,14 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI超级热点解析助手"
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    PORT: int = 8001
 
     # CORS
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
+        "http://localhost:3001",
         "http://localhost:8000",
+        "http://localhost:8001",
     ]
 
     # Database
@@ -25,6 +27,7 @@ class Settings(BaseSettings):
     LLM_API_KEY: str = "sk-a81a8ee7f98241eb99950607caed45b7"
     LLM_API_BASE: str = "https://api.openai.com/v1"
     LLM_MODEL: str = "gpt-3.5-turbo"
+    LLM_MOCK_MODE: bool = True
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
@@ -33,6 +36,7 @@ class Settings(BaseSettings):
     # Data Collection
     UPDATE_SCHEDULE: str = "0 2 * * *"  # Daily at 2 AM
     MAX_HOTSPOTS_PER_UPDATE: int = 100
+    USE_MOCK_COLLECTOR: bool = True  # 使用模拟数据收集器（开发模式）
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"

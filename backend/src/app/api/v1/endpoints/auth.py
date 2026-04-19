@@ -1,4 +1,5 @@
 from typing import List
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -7,7 +8,7 @@ from app.core.database import get_db
 from app.models.user import User, UserSettings
 from app.schemas.user import LoginRequest, LoginResponse, UserCreate, UserResponse, UserSettingsResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/auth")
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
@@ -51,9 +52,14 @@ async def login(
     user_response = UserResponse.model_validate(user)
     settings_response = UserSettingsResponse.model_validate(settings) if settings else None
 
+    # 生成访问令牌
+    token = str(uuid.uuid4())
+    print(f"DEBUG: Generated token: {token}")
+
     return LoginResponse(
         user=user_response,
-        settings=settings_response
+        settings=settings_response,
+        access_token=token
     )
 
 @router.get("/users/{user_id}", response_model=UserResponse)

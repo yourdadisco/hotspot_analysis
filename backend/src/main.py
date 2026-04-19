@@ -6,6 +6,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import engine, Base
+from app.core.cache import cache
 from app.api.v1.api import api_router
 
 # Configure logging
@@ -29,10 +30,15 @@ async def lifespan(app: FastAPI):
 
     logger.info("Database tables created/verified")
 
+    # Initialize cache
+    await cache.init()
+    logger.info("Cache service initialized")
+
     yield
 
     # Shutdown
     logger.info("Shutting down Hotspot Analysis API...")
+    await cache.close()
     await engine.dispose()
 
 # Create FastAPI app

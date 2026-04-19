@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, String, Text, DateTime, ForeignKey, JSON, Integer, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import uuid
@@ -17,6 +17,11 @@ class SourceType(str, Enum):
 class Hotspot(Base, TimestampMixin):
     """热点模型"""
     __tablename__ = "hotspots"
+    __table_args__ = (
+        Index('idx_source_collected', 'source_type', 'collected_at'),
+        Index('idx_publish_date', 'publish_date'),
+        Index('idx_collected_at', 'collected_at'),
+    )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
@@ -69,6 +74,11 @@ class ImportanceLevel(str, Enum):
 class HotspotAnalysis(Base, TimestampMixin):
     """热点分析模型"""
     __tablename__ = "hotspot_analyses"
+    __table_args__ = (
+        Index('idx_hotspot_user', 'hotspot_id', 'user_id'),
+        Index('idx_user_importance', 'user_id', 'importance_level'),
+        Index('idx_analyzed_at', 'analyzed_at'),
+    )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
@@ -77,7 +87,7 @@ class HotspotAnalysis(Base, TimestampMixin):
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # 分析结果
-    relevance_score = Column(String(3), nullable=False)  # 0-100相关度分数
+    relevance_score = Column(Integer, nullable=False)  # 0-100相关度分数
     importance_level = Column(String(20), nullable=False, default=ImportanceLevel.MEDIUM)
 
     # 详细分析内容
@@ -89,7 +99,7 @@ class HotspotAnalysis(Base, TimestampMixin):
     # 分析元数据
     analyzed_at = Column(DateTime(timezone=True), default=func.now())
     model_used = Column(String(100))  # 使用的大模型
-    tokens_used = Column(String(10))  # 使用的token数量
+    tokens_used = Column(Integer)  # 使用的token数量
     analysis_metadata = Column(JSON, default=dict)  # 分析过程元数据
 
     # 关系

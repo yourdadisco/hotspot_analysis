@@ -39,6 +39,19 @@ class LLMClient:
             "technical_details": "技术细节..."
         }
         """
+        # Mock模式：返回模拟数据用于开发和测试
+        if settings.LLM_MOCK_MODE:
+            import random
+            mock_result = {
+                "relevance_score": random.randint(60, 95),
+                "importance_level": random.choice(["emergency", "high", "medium", "low", "watch"]),
+                "business_impact": f"该热点'{hotspot_title}'对业务'{business_description}'有显著影响，可能带来技术升级机会和市场竞争力提升。",
+                "importance_reason": f"因为{hotspot_title}代表了当前AI领域的重要趋势，可能改变行业格局。",
+                "action_suggestions": "建议技术团队评估该技术，产品团队研究应用场景，业务团队关注市场动态。",
+                "technical_details": "技术实现涉及大模型架构优化和计算资源管理。"
+            }
+            return self._validate_analysis_result(mock_result)
+
         prompt = self._build_analysis_prompt(
             hotspot_title=hotspot_title,
             hotspot_content=hotspot_content,

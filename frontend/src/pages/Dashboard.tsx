@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, Filter, Clock, TrendingUp, AlertTriangle,
-  BarChart3, ExternalLink, ChevronRight, RefreshCw
+  BarChart3, ExternalLink, ChevronRight, RefreshCw, Target
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { hotspotsApi } from '../services/api'
@@ -16,6 +16,7 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
+  const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false)
 
   // 获取用户ID
   const userId = localStorage.getItem('user_id') || ''
@@ -52,6 +53,35 @@ const Dashboard: React.FC = () => {
       alert('热点已开始更新，请稍后查看最新内容')
     } catch (error) {
       alert('更新失败，请稍后重试')
+    }
+  }
+
+  // 批量分析热点
+  const handleBatchAnalyze = async () => {
+    if (!userId) {
+      alert('请先登录')
+      return
+    }
+    if (confirm('确定要分析所有未分析的热点吗？这可能需要一些时间。')) {
+      setIsBatchAnalyzing(true)
+      try {
+        const response = await fetch(`http://localhost:8001/api/v1/users/${userId}/analyze-latest?limit=10`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        const result = await response.json()
+        if (result.status === 'completed') {
+          alert(`批量分析完成！成功分析 ${result.analyzed_count} 个热点`)
+          refetchHotspots()
+        } else {
+          alert(`批量分析失败：${result.error || '未知错误'}`)
+        }
+      } catch (error) {
+        alert('批量分析请求失败')
+        console.error(error)
+      } finally {
+        setIsBatchAnalyzing(false)
+      }
     }
   }
 
@@ -147,6 +177,14 @@ const Dashboard: React.FC = () => {
             <RefreshCw size={16} />
             <span>手动更新</span>
           </button>
+          <button
+            onClick={handleBatchAnalyze}
+            disabled={isBatchAnalyzing}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
+          >
+            <Target size={16} />
+            <span>{isBatchAnalyzing ? '分析中...' : '批量分析'}</span>
+          </button>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
             <Filter size={16} />
             <span>高级筛选</span>
@@ -236,7 +274,13 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <ImportanceBadge level={hotspot.analysis?.importance_level || 'medium'} />
+                      {hotspot.analysis ? (
+                        <ImportanceBadge level={hotspot.analysis.importance_level || 'medium'} />
+                      ) : (
+                        <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-gray-200 text-gray-800">
+                          未分析
+                        </span>
+                      )}
                       <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-gray-100 text-gray-800">
                         {hotspot.source_name || hotspot.source_type}
                       </span>
@@ -299,10 +343,18 @@ const Dashboard: React.FC = () => {
             显示 {hotspotsData?.items?.length || 0} 个热点，共 {hotspotsData?.total || 0} 个
           </p>
           <div className="flex space-x-2">
-            <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            <button
+              onClick={handlePrevPage}
+              disabled={page <= 1}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               上一页
             </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button
+              onClick={handleNextPage}
+              disabled={page >= totalPages}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               下一页
             </button>
           </div>

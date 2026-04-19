@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 import uuid
 from enum import Enum
 
@@ -54,6 +54,7 @@ class HotspotUpdate(BaseModel):
 
 class HotspotInDB(UUIDSchema, TimestampSchema, HotspotBase):
     """数据库中的热点信息"""
+    model_config = ConfigDict(exclude=["metadata"])
     raw_content: Optional[str] = None
     processed_content: Optional[Dict[str, Any]] = None
     raw_metadata: Dict[str, Any] = Field(default_factory=dict)
@@ -70,6 +71,7 @@ class HotspotResponse(HotspotInDB):
 
 class HotspotAnalysisBase(BaseModel):
     """热点分析基础信息"""
+    model_config = ConfigDict(protected_namespaces=())
     relevance_score: int = Field(..., ge=0, le=100)
     importance_level: ImportanceLevel = ImportanceLevel.MEDIUM
     business_impact: str
@@ -96,6 +98,7 @@ class HotspotAnalysisUpdate(BaseModel):
 
 class HotspotAnalysisInDB(UUIDSchema, TimestampSchema, HotspotAnalysisBase):
     """数据库中的热点分析信息"""
+    model_config = ConfigDict(exclude=["metadata"])
     hotspot_id: uuid.UUID
     user_id: uuid.UUID
     model_used: Optional[str] = None

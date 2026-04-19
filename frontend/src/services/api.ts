@@ -142,11 +142,11 @@ export const hotspotsApi = {
     date_to?: string
     sort_by?: string
     sort_order?: string
-  }) => api.get<PaginatedResponse<Hotspot>>('/hotspots/hotspots', { params }),
+  }) => api.get<PaginatedResponse<Hotspot>>('/hotspots', { params }),
 
   getHotspotDetail: (hotspotId: string, userId?: string) =>
     api.get<Hotspot & { analysis: HotspotAnalysis | null }>(
-      `/hotspots/hotspots/${hotspotId}`,
+      `/hotspots/${hotspotId}`,
       { params: { user_id: userId } }
     ),
 
@@ -155,10 +155,10 @@ export const hotspotsApi = {
   getStats: () => api.get('/hotspots/stats'),
 
   analyzeHotspot: (hotspotId: string, userId: string) =>
-    api.post(`/analysis/hotspots/${hotspotId}/analyze`, { user_id: userId }),
+    api.post(`/hotspots/${hotspotId}/analyze`, null, { params: { user_id: userId } }),
 
   getAnalysis: (hotspotId: string, userId: string) =>
-    api.get<HotspotAnalysis>(`/analysis/hotspots/${hotspotId}/analysis/${userId}`),
+    api.get<HotspotAnalysis>(`/hotspots/${hotspotId}/analysis/${userId}`),
 }
 
 // 用户设置API
@@ -171,12 +171,12 @@ export const userSettingsApi = {
 // 分析API
 export const analysisApi = {
   triggerAnalysis: (hotspotId: string, userId: string) =>
-    api.post(`/analysis/hotspots/${hotspotId}/analyze`, { user_id: userId }),
+    api.post(`/hotspots/${hotspotId}/analyze`, null, { params: { user_id: userId } }),
 
   getTaskStatus: (taskId: string) => api.get(`/analysis/tasks/${taskId}/status`),
 
   analyzeLatest: (userId: string, limit: number = 10) =>
-    api.post(`/analysis/users/${userId}/analyze-latest`, { limit }),
+    api.post(`/users/${userId}/analyze-latest`, null, { params: { limit } }),
 }
 
 // API使用统计

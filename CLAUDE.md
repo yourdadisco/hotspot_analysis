@@ -4,44 +4,112 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This repository contains the **AI Super Hotspot Analysis Assistant** (AI超级热点解析助手) - a full-stack application for analyzing trending topics and providing AI-powered insights. The project is currently in initial setup phase with no source code committed yet.
+This repository contains the **AI Super Hotspot Analysis Assistant** (AI超级热点解析助手) - a full-stack application for analyzing trending topics and providing AI-powered insights. The system collects AI-related news and updates from various sources, analyzes their relevance to user's business, and provides importance classification with detailed explanations.
 
 ## Development Environment
 
-*Note: This section will be updated once technology stack is determined and project setup is complete.*
-
 ### Prerequisites
-- Node.js (version TBD) for frontend development
-- Python (version TBD) for backend/AI services  
-- Database (PostgreSQL/MongoDB TBD)
-- Docker (for containerization)
+- Node.js 18+ for frontend development
+- Python 3.11+ for backend/AI services  
+- PostgreSQL 15+ (or SQLite for development)
+- Redis (for Celery task queue)
+- Docker & Docker Compose (for containerization)
 
 ### Initial Setup
 ```bash
-# Commands will be added once package.json/requirements.txt are created
+# Backend setup
+cd backend
+pip install -r requirements.txt
+
+# Frontend setup
+cd frontend
+npm install
+
+# Environment configuration
+# Copy .env.example files and adjust as needed
 ```
 
 ## Project Structure
 
-*The repository is currently empty. Expected structure:*
-
 ```
-├── frontend/           # React/TypeScript frontend application
-├── backend/            # Node.js/Python backend API
-├── ai-services/        # AI model integration and processing
-├── database/           # Database schemas and migrations
-├── docker/             # Docker configuration files
-├── docs/               # Project documentation
-└── tests/              # Test suites
+├── frontend/           # React + TypeScript + Tailwind CSS frontend
+│   ├── src/           # Source code
+│   ├── public/        # Static assets
+│   └── package.json   # Dependencies
+├── backend/           # FastAPI + SQLAlchemy + Celery backend
+│   ├── src/app/       # Application code
+│   ├── src/app/models/       # Database models
+│   ├── src/app/schemas/      # Pydantic schemas
+│   ├── src/app/api/v1/       # API endpoints
+│   ├── src/app/services/     # Business logic
+│   ├── src/app/tasks/        # Celery tasks
+│   └── requirements.txt      # Python dependencies
+└── CLAUDE.md          # This file
 ```
 
 ## Building and Running
 
-*Build, development server, and production deployment commands will be added here.*
+### Backend Development Server
+```bash
+cd backend
+python src/main.py
+```
+Server runs on http://localhost:8001
+API documentation: http://localhost:8001/docs
+
+### Frontend Development Server
+```bash
+cd frontend
+npm run dev
+```
+Frontend runs on http://localhost:3001 (or 3000 if available)
+
+### Database Setup
+```bash
+# Using SQLite for development (automatically created)
+# For PostgreSQL, update DATABASE_URL in backend/.env
+```
+
+### Running with Docker Compose
+```bash
+docker-compose up -d
+```
 
 ## Testing
 
-*Testing frameworks and commands will be added here.*
+### Backend Tests
+```bash
+cd backend
+pytest
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test
+```
+
+### API Testing
+```bash
+# Test collection endpoints
+python test_collection_api.py
+
+# Test collection service
+python test_collection_service.py
+```
+
+## Key Environment Variables
+
+### Backend (.env)
+- `DATABASE_URL`: PostgreSQL/SQLite connection string
+- `REDIS_URL`: Redis connection URL
+- `LLM_API_KEY`: OpenAI-compatible API key
+- `LLM_MOCK_MODE`: Set to True for development without real API calls
+- `USE_MOCK_COLLECTOR`: Set to True for mock data collection
+
+### Frontend (.env)
+- `VITE_API_BASE_URL`: Backend API base URL (default: http://localhost:8001/api/v1)
+```
 
 ## Project Development Workflow
 
@@ -213,4 +281,4 @@ As the project develops, update this CLAUDE.md with:
 4. **Environment variables** and configuration requirements
 5. **Deployment instructions** for staging and production
 
-*Last updated: 2026-04-19*
+*Last updated: 2026-04-20*

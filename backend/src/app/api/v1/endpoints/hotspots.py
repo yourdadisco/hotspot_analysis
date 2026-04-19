@@ -11,6 +11,7 @@ from app.schemas.hotspot import (
     HotspotFilterParams, HotspotCreate, HotspotUpdate
 )
 from app.schemas.base import PaginatedResponse
+from app.services.hotspot_service import HotspotService
 
 router = APIRouter()
 
@@ -27,59 +28,26 @@ async def get_hotspots(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    获取热点列表（支持分页和筛选）
+    获取热点列表（支持分页和筛选，带缓存）
     """
-    # 构建查询
-    stmt = select(Hotspot)
-
-    # 筛选条件
-    if importance_levels:
-        # 解析重要性级别
-        levels = importance_levels.split(",")
-        # 这里需要关联HotspotAnalysis表，简化处理先不实现
-
-    if source_types:
-        types = source_types.split(",")
-        stmt = stmt.where(Hotspot.source_type.in_(types))
-
-    if date_from:
-        # 简化处理，实际应转换日期
-        pass
-
-    if date_to:
-        # 简化处理，实际应转换日期
-        pass
-
-    # 排序
-    order_column = getattr(Hotspot, sort_by, Hotspot.collected_at)
-    if sort_order == "desc":
-        stmt = stmt.order_by(desc(order_column))
-    else:
-        stmt = stmt.order_by(asc(order_column))
-
-    # 分页
-    total_stmt = select(func.count()).select_from(stmt.subquery())
-    total_result = await db.execute(total_stmt)
-    total = total_result.scalar()
-
-    stmt = stmt.offset((page - 1) * limit).limit(limit)
-
-    # 执行查询
-    result = await db.execute(stmt)
-    hotspots = result.scalars().all()
-
-    # 计算总页数
-    total_pages = (total + limit - 1) // limit
-
-    # 转换为响应模型
-    items = [HotspotResponse.model_validate(hotspot) for hotspot in hotspots]
-
-    return PaginatedResponse(
-        items=items,
-        total=total,
+    result = await HotspotService.get_hotspots(
+        db=db,
         page=page,
         limit=limit,
-        total_pages=total_pages
+        importance_levels=importance_levels,
+        source_types=source_types,
+        date_from=date_from,
+        date_to=date_to,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+
+    return PaginatedResponse(
+        items=result["items"],
+        total=result["total"],
+        page=result["page"],
+        limit=result["limit"],
+        total_pages=result["total_pages"]
     )
 
 @router.get("/hotspots/{hotspot_id}", response_model=HotspotWithAnalysisResponse)
@@ -89,38 +57,19 @@ async def get_hotspot_detail(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    获取热点详情
+    获取热点详情（带缓存）
 
     如果提供user_id，则返回该用户的分析结果
     """
-    # 查询热点
-    stmt = select(Hotspot).where(Hotspot.id == hotspot_id)
-    result = await db.execute(stmt)
-    hotspot = result.scalar_one_or_none()
+    result = await HotspotService.get_hotspot_detail(db, hotspot_id, user_id)
 
-    if not hotspot:
+    if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="热点不存在"
         )
 
-    # 查询分析结果（如果提供了user_id）
-    analysis = None
-    if user_id:
-        stmt = select(HotspotAnalysis).where(
-            HotspotAnalysis.hotspot_id == hotspot_id,
-            HotspotAnalysis.user_id == user_id
-        )
-        result = await db.execute(stmt)
-        analysis = result.scalar_one_or_none()
-
-    # 转换为响应模型
-    hotspot_response = HotspotResponse.model_validate(hotspot)
-
-    return HotspotWithAnalysisResponse(
-        **hotspot_response.model_dump(),
-        analysis=analysis
-    )
+    return HotspotWithAnalysisResponse(**result)
 
 @router.post("/hotspots/refresh")
 async def refresh_hotspots(
@@ -130,10 +79,14 @@ async def refresh_hotspots(
     手动触发热点更新
 
     实际应调用Celery任务，这里返回模拟响应
+    更新后使热点缓存失效
     """
+    # 使热点缓存失效
+    await HotspotService.invalidate_hotspots_cache()
+
     # 这里应该触发异步任务
     return {
-        "message": "热点更新任务已触发",
+        "message": "热点更新任务已触发，缓存已清除",
         "task_id": "simulated_task_id",
         "status": "processing"
     }
@@ -143,31 +96,6 @@ async def get_hotspot_stats(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    获取热点统计信息
+    获取热点统计信息（带缓存）
     """
-    # 热点总数
-    total_stmt = select(func.count()).select_from(Hotspot)
-    total_result = await db.execute(total_stmt)
-    total_hotspots = total_result.scalar()
-
-    # 按来源统计
-    source_stmt = select(
-        Hotspot.source_type,
-        func.count().label("count")
-    ).group_by(Hotspot.source_type)
-    source_result = await db.execute(source_stmt)
-    by_source = {row.source_type: row.count for row in source_result.all()}
-
-    # 按日期统计（最近7天）
-    # 简化处理，实际应计算日期范围
-
-    # 最后更新时间
-    last_update_stmt = select(func.max(Hotspot.collected_at))
-    last_update_result = await db.execute(last_update_stmt)
-    last_update = last_update_result.scalar()
-
-    return {
-        "total_hotspots": total_hotspots,
-        "by_source": by_source,
-        "last_update": last_update.isoformat() if last_update else None
-    }
+    return await HotspotService.get_hotspot_stats(db)

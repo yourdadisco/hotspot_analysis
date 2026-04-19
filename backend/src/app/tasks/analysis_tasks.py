@@ -14,18 +14,6 @@ from app.models.user import User
 
 logger = logging.getLogger(__name__)
 
-@shared_task(bind=True, name="analyze_hotspot_for_user")
-def analyze_hotspot_for_user_task(self, hotspot_id: str, user_id: str):
-    """
-    Celery任务：为用户分析热点
-
-    注意：这是一个同步的Celery任务，内部使用异步函数
-    """
-    # 在同步任务中运行异步函数
-    loop = asyncio.get_event_loop()
-    return loop.run_until_complete(
-        analyze_hotspot_for_user_async(hotspot_id, user_id)
-    )
 
 async def analyze_hotspot_for_user_async(hotspot_id: str, user_id: str) -> Dict[str, Any]:
     """
