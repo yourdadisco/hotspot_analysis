@@ -1,0 +1,206 @@
+import axios from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+// 请求拦截器
+api.interceptors.request.use(
+  (config) => {
+    // 可以在这里添加token等
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// 响应拦截器
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // 处理未授权
+      localStorage.removeItem('access_token')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
+export interface PaginatedResponse<T> {
+  items: T[]
+  total: number
+  page: number
+  limit: number
+  total_pages: number
+}
+
+export interface Hotspot {
+  id: string
+  title: string
+  summary: string
+  content_url: string | null
+  source_type: string
+  source_name: string | null
+  source_url: string | null
+  publish_date: string
+  language: string
+  author: string | null
+  tags: string[]
+  category: string | null
+  raw_content: string | null
+  processed_content: Record<string, any> | null
+  metadata: Record<string, any>
+  view_count: string
+  like_count: string
+  share_count: string
+  collected_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface HotspotAnalysis {
+  id: string
+  hotspot_id: string
+  user_id: string
+  relevance_score: number
+  importance_level: 'emergency' | 'high' | 'medium' | 'low' | 'watch'
+  business_impact: string
+  importance_reason: string
+  action_suggestions: string | null
+  technical_details: string | null
+  model_used: string | null
+  tokens_used: number | null
+  analysis_metadata: Record<string, any>
+  analyzed_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface User {
+  id: string
+  email: string
+  company_name: string | null
+  industry: string | null
+  business_description: string | null
+  last_login_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface UserSettings {
+  id: string
+  user_id: string
+  update_schedule: string
+  notify_on_emergency: string
+  notify_on_high: string
+  notify_on_medium: string
+  items_per_page: string
+  default_sort: string
+  default_importance_levels: string
+  default_source_types: string
+  created_at: string
+  updated_at: string
+}
+
+export interface LoginRequest {
+  email: string
+}
+
+export interface LoginResponse {
+  user: User
+  settings: UserSettings | null
+  access_token?: string
+}
+
+// 认证API
+export const authApi = {
+  login: (data: LoginRequest) => api.post<LoginResponse>('/auth/login', data),
+  getUser: (userId: string) => api.get<User>(`/auth/users/${userId}`),
+  updateUserBusiness: (userId: string, data: any) =>
+    api.put<User>(`/auth/users/${userId}/business`, data),
+}
+
+// 热点API
+export const hotspotsApi = {
+  getHotspots: (params?: {
+    page?: number
+    limit?: number
+    importance_levels?: string
+    source_types?: string
+    date_from?: string
+    date_to?: string
+    sort_by?: string
+    sort_order?: string
+  }) => api.get<PaginatedResponse<Hotspot>>('/hotspots/hotspots', { params }),
+
+  getHotspotDetail: (hotspotId: string, userId?: string) =>
+    api.get<Hotspot & { analysis: HotspotAnalysis | null }>(
+      `/hotspots/hotspots/${hotspotId}`,
+      { params: { user_id: userId } }
+    ),
+
+  refreshHotspots: () => api.post('/hotspots/refresh'),
+
+  getStats: () => api.get('/hotspots/stats'),
+
+  analyzeHotspot: (hotspotId: string, userId: string) =>
+    api.post(`/analysis/hotspots/${hotspotId}/analyze`, { user_id: userId }),
+
+  getAnalysis: (hotspotId: string, userId: string) =>
+    api.get<HotspotAnalysis>(`/analysis/hotspots/${hotspotId}/analysis/${userId}`),
+}
+
+// 用户设置API
+export const userSettingsApi = {
+  getSettings: (userId: string) => api.get<UserSettings>(`/user-settings/users/${userId}/settings`),
+  updateSettings: (userId: string, data: Partial<UserSettings>) =>
+    api.put<UserSettings>(`/user-settings/users/${userId}/settings`, data),
+}
+
+// 分析API
+export const analysisApi = {
+  triggerAnalysis: (hotspotId: string, userId: string) =>
+    api.post(`/analysis/hotspots/${hotspotId}/analyze`, { user_id: userId }),
+
+  getTaskStatus: (taskId: string) => api.get(`/analysis/tasks/${taskId}/status`),
+
+  analyzeLatest: (userId: string, limit: number = 10) =>
+    api.post(`/analysis/users/${userId}/analyze-latest`, { limit }),
+}
+
+// API使用统计
+export const apiUsageApi = {
+  getSummary: (days?: number) =>
+    api.get('/api-usage/api-usage', { params: { days } }),
+
+  getStats: (days?: number) =>
+    api.get('/api-usage/api-usage/stats', { params: { days } }),
+
+  getRecords: (params?: {
+    page?: number
+    limit?: number
+    user_id?: string
+    endpoint?: string
+    success?: boolean
+    date_from?: string
+    date_to?: string
+  }) => api.get('/api-usage/api-usage/records', { params }),
+}
+
+// 健康检查
+export const healthApi = {
+  check: () => api.get('/health'),
+}
+
+export default api
