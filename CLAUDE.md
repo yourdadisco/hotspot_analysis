@@ -1,3 +1,52 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+This repository contains the **AI Super Hotspot Analysis Assistant** (AI超级热点解析助手) - a full-stack application for analyzing trending topics and providing AI-powered insights. The project is currently in initial setup phase with no source code committed yet.
+
+## Development Environment
+
+*Note: This section will be updated once technology stack is determined and project setup is complete.*
+
+### Prerequisites
+- Node.js (version TBD) for frontend development
+- Python (version TBD) for backend/AI services  
+- Database (PostgreSQL/MongoDB TBD)
+- Docker (for containerization)
+
+### Initial Setup
+```bash
+# Commands will be added once package.json/requirements.txt are created
+```
+
+## Project Structure
+
+*The repository is currently empty. Expected structure:*
+
+```
+├── frontend/           # React/TypeScript frontend application
+├── backend/            # Node.js/Python backend API
+├── ai-services/        # AI model integration and processing
+├── database/           # Database schemas and migrations
+├── docker/             # Docker configuration files
+├── docs/               # Project documentation
+└── tests/              # Test suites
+```
+
+## Building and Running
+
+*Build, development server, and production deployment commands will be added here.*
+
+## Testing
+
+*Testing frameworks and commands will be added here.*
+
+## Project Development Workflow
+
+*The following section defines the coordination system for AI-assisted development of this project:*
+
 # 🚀 智能项目开发协调系统
 
 ## 🎯 系统角色
@@ -153,6 +202,15 @@
 **只需描述你的项目需求，我会启动完整的开发流程。**
 
 ---
-*系统设计理念：一站式项目开发，从想法到实现*
-*核心优势：专业团队协作，避免技术断层*
-*交付标准：生产可用的代码和文档*
+
+## Updating This File
+
+As the project develops, update this CLAUDE.md with:
+
+1. **Actual build commands** (`npm run dev`, `python app.py`, etc.)
+2. **Test commands** (`npm test`, `pytest`, etc.)
+3. **Project-specific architecture** diagrams and explanations
+4. **Environment variables** and configuration requirements
+5. **Deployment instructions** for staging and production
+
+*Last updated: 2026-04-19*
