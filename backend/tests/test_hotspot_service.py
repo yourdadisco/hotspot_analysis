@@ -36,91 +36,94 @@ class TestHotspotService:
         """模拟热点对象"""
         from datetime import datetime
 
-        hotspot = MagicMock(spec=Hotspot)
-        # 主键和基本信息
-        hotspot.id = "550e8400-e29b-41d4-a716-446655440000"  # 有效的UUID格式
-        hotspot.title = "测试热点标题"
-        hotspot.summary = "测试热点摘要"
-        hotspot.content_url = "https://example.com/news/1"
+        # 创建一个简单的对象来模拟Hotspot，避免Pydantic验证MagicMock的问题
+        class MockHotspot:
+            def __init__(self):
+                # 主键和基本信息
+                self.id = "550e8400-e29b-41d4-a716-446655440000"  # 有效的UUID格式
+                self.title = "测试热点标题"
+                self.summary = "测试热点摘要"
+                self.content_url = "https://example.com/news/1"
 
-        # 来源信息
-        hotspot.source_type = SourceType.NEWS
-        hotspot.source_name = "测试新闻源"
-        hotspot.source_url = "https://example.com/news/1"
+                # 来源信息
+                self.source_type = SourceType.NEWS
+                self.source_name = "测试新闻源"
+                self.source_url = "https://example.com/news/1"
 
-        # 时间信息
-        hotspot.publish_date = datetime(2024, 1, 1, 0, 0, 0)
-        hotspot.collected_at = datetime(2024, 1, 1, 0, 0, 0)
+                # 时间信息
+                self.publish_date = datetime(2024, 1, 1, 0, 0, 0)
+                self.collected_at = datetime(2024, 1, 1, 0, 0, 0)
 
-        # 内容
-        hotspot.raw_content = "原始内容"
-        hotspot.processed_content = {"key": "value"}
+                # 内容
+                self.raw_content = "原始内容"
+                self.processed_content = {"key": "value"}
 
-        # 标签和分类
-        hotspot.tags = ["AI", "技术"]
-        hotspot.category = "科技"
+                # 标签和分类
+                self.tags = ["AI", "技术"]
+                self.category = "科技"
 
-        # 元数据
-        hotspot.language = "zh"
-        hotspot.author = "测试作者"
-        hotspot.raw_metadata = {"extra": "data"}
+                # 元数据
+                self.language = "zh"
+                self.author = "测试作者"
+                self.raw_metadata = {"extra": "data"}
 
-        # 统计信息（数据库中是String类型）
-        hotspot.view_count = "100"
-        hotspot.like_count = "50"
-        hotspot.share_count = "20"
+                # 统计信息（数据库中是String类型）
+                self.view_count = "100"
+                self.like_count = "50"
+                self.share_count = "20"
 
-        # 时间戳（来自TimestampMixin）
-        hotspot.created_at = datetime(2024, 1, 1, 0, 0, 0)
-        hotspot.updated_at = datetime(2024, 1, 1, 0, 0, 0)
+                # 时间戳（来自TimestampMixin）
+                self.created_at = datetime(2024, 1, 1, 0, 0, 0)
+                self.updated_at = datetime(2024, 1, 1, 0, 0, 0)
 
-        return hotspot
+        return MockHotspot()
 
     @pytest.fixture
     def mock_hotspots(self, mock_hotspot):
         """模拟热点列表"""
         from datetime import datetime
 
-        # 复制第一个热点的mock
-        hotspot2 = MagicMock(spec=Hotspot)
-        # 主键和基本信息
-        hotspot2.id = "550e8400-e29b-41d4-a716-446655440001"  # 另一个有效的UUID
-        hotspot2.title = "测试热点标题2"
-        hotspot2.summary = "测试热点摘要2"
-        hotspot2.content_url = "https://example.com/blog/1"
+        # 创建第二个热点对象
+        class MockHotspot2:
+            def __init__(self):
+                # 主键和基本信息
+                self.id = "550e8400-e29b-41d4-a716-446655440001"  # 另一个有效的UUID
+                self.title = "测试热点标题2"
+                self.summary = "测试热点摘要2"
+                self.content_url = "https://example.com/blog/1"
 
-        # 来源信息
-        hotspot2.source_type = SourceType.TECH_BLOG
-        hotspot2.source_name = "测试技术博客"
-        hotspot2.source_url = "https://example.com/blog/1"
+                # 来源信息
+                self.source_type = SourceType.TECH_BLOG
+                self.source_name = "测试技术博客"
+                self.source_url = "https://example.com/blog/1"
 
-        # 时间信息
-        hotspot2.publish_date = datetime(2024, 1, 2, 0, 0, 0)
-        hotspot2.collected_at = datetime(2024, 1, 2, 0, 0, 0)
+                # 时间信息
+                self.publish_date = datetime(2024, 1, 2, 0, 0, 0)
+                self.collected_at = datetime(2024, 1, 2, 0, 0, 0)
 
-        # 内容
-        hotspot2.raw_content = "原始内容2"
-        hotspot2.processed_content = {"key2": "value2"}
+                # 内容
+                self.raw_content = "原始内容2"
+                self.processed_content = {"key2": "value2"}
 
-        # 标签和分类
-        hotspot2.tags = ["AI", "博客"]
-        hotspot2.category = "科技"
+                # 标签和分类
+                self.tags = ["AI", "博客"]
+                self.category = "科技"
 
-        # 元数据
-        hotspot2.language = "zh"
-        hotspot2.author = "测试作者2"
-        hotspot2.raw_metadata = {"extra2": "data2"}
+                # 元数据
+                self.language = "zh"
+                self.author = "测试作者2"
+                self.raw_metadata = {"extra2": "data2"}
 
-        # 统计信息
-        hotspot2.view_count = "200"
-        hotspot2.like_count = "80"
-        hotspot2.share_count = "30"
+                # 统计信息
+                self.view_count = "200"
+                self.like_count = "80"
+                self.share_count = "30"
 
-        # 时间戳
-        hotspot2.created_at = datetime(2024, 1, 2, 0, 0, 0)
-        hotspot2.updated_at = datetime(2024, 1, 2, 0, 0, 0)
+                # 时间戳
+                self.created_at = datetime(2024, 1, 2, 0, 0, 0)
+                self.updated_at = datetime(2024, 1, 2, 0, 0, 0)
 
-        return [mock_hotspot, hotspot2]
+        return [mock_hotspot, MockHotspot2()]
 
     @pytest.mark.asyncio
     @patch('app.services.hotspot_service.cache')
@@ -160,7 +163,10 @@ class TestHotspotService:
         assert result["limit"] == 20
         assert result["total_pages"] == 1
         assert len(result["items"]) == 2
-        assert all(isinstance(item, HotspotResponse) for item in result["items"])
+        # items应该是字典列表（经过model_dump转换）
+        assert all(isinstance(item, dict) for item in result["items"])
+        # 检查字典包含必要的字段
+        assert all("id" in item and "title" in item for item in result["items"])
 
         # 验证execute被调用2次
         assert mock_db.execute.call_count == 2
@@ -261,29 +267,53 @@ class TestHotspotService:
         mock_hotspot_result = MagicMock()
         mock_hotspot_result.scalar_one_or_none = MagicMock(return_value=mock_hotspot)
 
-        # 模拟分析查询
-        mock_analysis = MagicMock(spec=HotspotAnalysis)
-        mock_analysis.id = "test_analysis_id"
-        mock_analysis.relevance_score = 85
-        mock_analysis.importance_level = ImportanceLevel.HIGH
+        # 模拟分析查询 - 创建简单的分析对象，避免Pydantic验证MagicMock的问题
+        class MockAnalysis:
+            def __init__(self):
+                from datetime import datetime
+                import uuid
 
+                self.id = str(uuid.uuid4())  # 有效的UUID格式
+                self.relevance_score = 85
+                self.importance_level = ImportanceLevel.HIGH
+                self.business_impact = "测试业务影响分析"
+                self.importance_reason = "测试重要性原因"
+                self.action_suggestions = "测试行动建议"
+                self.technical_details = "测试技术细节"
+                # 使用有效的UUID格式
+                self.hotspot_id = mock_hotspot.id  # mock_hotspot.id已经是有效的UUID字符串
+                self.user_id = "550e8400-e29b-41d4-a716-446655440002"  # 有效的UUID字符串
+                self.model_used = "deepseek-chat"
+                self.tokens_used = 150
+                self.analysis_metadata = {"key": "value"}
+                self.analyzed_at = datetime(2024, 1, 1, 0, 0, 0)
+                self.created_at = datetime(2024, 1, 1, 0, 0, 0)
+                self.updated_at = datetime(2024, 1, 1, 0, 0, 0)
+
+        mock_analysis = MockAnalysis()
         mock_analysis_result = MagicMock()
         mock_analysis_result.scalar_one_or_none = MagicMock(return_value=mock_analysis)
 
         # 设置execute的返回值序列：第一次热点查询，第二次分析查询
         mock_db.execute.side_effect = [mock_hotspot_result, mock_analysis_result]
 
-        # 调用方法，提供user_id
+        # 调用方法，提供user_id（使用有效的UUID格式）
+        test_user_uuid = "550e8400-e29b-41d4-a716-446655440002"
         result = await HotspotService.get_hotspot_detail(
             db=mock_db,
             hotspot_id=mock_hotspot.id,
-            user_id="test_user_id"
+            user_id=test_user_uuid
         )
 
         assert result is not None
         assert "analysis" in result
         assert result["analysis"] is not None
-        assert result["analysis"].id == "test_analysis_id"
+        # 分析结果应该是字典
+        assert isinstance(result["analysis"], dict)
+        # 检查字典包含必要的字段
+        assert "id" in result["analysis"]
+        assert result["analysis"]["relevance_score"] == 85
+        assert result["analysis"]["importance_level"] == "high"
 
         # 验证execute被调用2次
         assert mock_db.execute.call_count == 2

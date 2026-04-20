@@ -26,7 +26,7 @@
 - **框架**: FastAPI (Python)
 - **数据库**: PostgreSQL
 - **任务队列**: Celery + Redis
-- **大模型集成**: OpenAI兼容API
+- **大模型集成**: DeepSeek/OpenAI兼容API
 
 ### 部署
 - **容器化**: Docker + Docker Compose
@@ -144,7 +144,7 @@ hotspot_analysis/
 
 ```env
 # LLM API配置（必须）
-LLM_API_KEY=sk-a81a8ee7f98241eb99950607caed45b7
+LLM_API_KEY=sk-274f031095b04a6a90cbef3ec319281f
 
 # 数据库配置
 DATABASE_URL=postgresql+asyncpg://admin:password@postgres/hotspot_analysis
@@ -188,22 +188,80 @@ UPDATE_SCHEDULE=0 2 * * *  # 每天凌晨2点
 
 ### 生产环境部署
 
-1. **构建生产镜像**
-   ```bash
-   docker-compose -f docker-compose.prod.yml build
-   ```
+本系统提供了专门的生产环境Docker配置，包含安全加固、性能优化和健康检查。
 
-2. **配置生产环境变量**
-   ```bash
-   # 设置生产环境专用变量
-   export DEBUG=false
-   export SECRET_KEY=your-production-secret
-   ```
+#### 1. 准备工作
 
-3. **启动生产服务**
-   ```bash
-   docker-compose -f docker-compose.prod.yml up -d
-   ```
+```bash
+# 克隆项目
+git clone https://github.com/yourdadisco/hotspot_analysis.git
+cd hotspot_analysis
+
+# 复制环境变量配置文件
+cp .env.example .env
+```
+
+#### 2. 配置生产环境变量
+
+编辑 `.env` 文件，设置以下关键变量：
+
+```bash
+# 必需配置
+DB_PASSWORD=your_secure_postgres_password
+REDIS_PASSWORD=your_secure_redis_password
+LLM_API_KEY=sk-your-deepseek-api-key-here
+SECRET_KEY=your-secret-key-change-in-production-with-minimum-32-chars
+
+# 重要生产设置（必须设为False）
+DEBUG=False
+LLM_MOCK_MODE=False
+USE_MOCK_COLLECTOR=False
+
+# CORS配置（根据实际域名调整）
+CORS_ORIGINS=https://yourdomain.com,http://localhost:3000
+```
+
+#### 3. 构建生产镜像
+
+```bash
+# 构建所有服务镜像
+docker-compose -f docker-compose.prod.yml build
+```
+
+#### 4. 启动生产服务
+
+```bash
+# 启动所有服务（后台运行）
+docker-compose -f docker-compose.prod.yml up -d
+
+# 查看服务状态
+docker-compose -f docker-compose.prod.yml ps
+
+# 查看日志
+docker-compose -f docker-compose.prod.yml logs -f
+```
+
+#### 5. 验证部署
+
+- **前端应用**: http://yourdomain.com 或 http://localhost:80
+- **后端API文档**: http://yourdomain.com:8001/docs 或 http://localhost:8001/docs
+- **健康检查**: http://yourdomain.com:8001/api/v1/health
+
+#### 6. 服务说明
+
+生产环境包含以下服务：
+- **前端**: Nginx服务静态文件 (端口80)
+- **后端**: FastAPI应用 (端口8001)
+- **PostgreSQL**: 数据库 (端口5432)
+- **Redis**: 缓存和消息队列 (端口6379)
+- **Celery Worker**: 异步任务处理
+- **Celery Beat**: 定时任务调度
+
+#### 7. 数据持久化
+
+数据通过Docker卷持久化：
+- `postgres_data_prod`: PostgreSQL数据
+- `redis_data_prod`: Redis数据
 
 ### 监控和维护
 

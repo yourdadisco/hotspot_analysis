@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { LogIn, Mail, Building, Users } from 'lucide-react'
 import { authApi } from '../services/api'
 
@@ -16,13 +16,13 @@ const Login: React.FC = () => {
 
     try {
       const response = await authApi.login({ email })
-      if (response.data.access_token) {
+      if (response.access_token) {
         // 保存token和用户信息到localStorage
-        localStorage.setItem('access_token', response.data.access_token)
-        localStorage.setItem('user_id', response.data.user.id)
-        localStorage.setItem('user_email', response.data.user.email)
-        if (response.data.settings) {
-          localStorage.setItem('user_settings', JSON.stringify(response.data.settings))
+        localStorage.setItem('access_token', response.access_token)
+        localStorage.setItem('user_id', response.user.id)
+        localStorage.setItem('user_email', response.user.email)
+        if (response.settings) {
+          localStorage.setItem('user_settings', JSON.stringify(response.settings))
         }
 
         // 跳转到仪表板

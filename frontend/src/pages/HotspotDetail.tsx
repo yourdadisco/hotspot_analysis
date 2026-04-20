@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import ImportanceBadge from '../components/ImportanceBadge'
 import { hotspotsApi, analysisApi } from '../services/api'
+import { renderSafeSummary, stripHtmlTags } from '../utils/sanitize'
 
 const HotspotDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -19,7 +20,7 @@ const HotspotDetail: React.FC = () => {
   const { data: hotspotData, isLoading, refetch } = useQuery({
     queryKey: ['hotspot', id, userId],
     queryFn: () => hotspotsApi.getHotspotDetail(id!, userId),
-    enabled: !!id && !!userId,
+    enabled: !!id,
   })
 
   // 触发分析
@@ -34,8 +35,25 @@ const HotspotDetail: React.FC = () => {
     }
   })
 
-  const hotspot = hotspotData?.data
+  const hotspot = hotspotData
   const analysis = hotspot?.analysis
+
+  // 兼容性处理：支持新旧数据结构
+  const getAnalysisProcess = () => {
+    if (analysis?.analysis_metadata?.analysis_process) {
+      return analysis.analysis_metadata.analysis_process
+    }
+    // 新数据结构：analysis_process在根级别
+    return analysis?.analysis_process || ''
+  }
+
+  const getAnalysisConclusion = () => {
+    if (analysis?.analysis_metadata?.analysis_conclusion) {
+      return analysis.analysis_metadata.analysis_conclusion
+    }
+    // 新数据结构：analysis_conclusion在根级别
+    return analysis?.analysis_conclusion || ''
+  }
 
   const handleAnalyze = () => {
     if (!analysis) {
@@ -147,11 +165,11 @@ const HotspotDetail: React.FC = () => {
             <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
               <div className="flex items-center space-x-2">
                 <Calendar size={16} />
-                <span>发布时间：{new Date(hotspot.publish_date).toLocaleString('zh-CN')}</span>
+                <span>发布时间：{hotspot.publish_date ? new Date(hotspot.publish_date).toLocaleString('zh-CN') : '未知'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <User size={16} />
-                <span>来源：{hotspot.source_name || hotspot.source_type}</span>
+                <span>来源：{hotspot.source_name || hotspot.source_type || '未知'}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Eye size={16} />
@@ -183,7 +201,7 @@ const HotspotDetail: React.FC = () => {
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">内容摘要</h3>
               <p className="text-gray-700 leading-relaxed">
-                {hotspot.summary}
+                {renderSafeSummary(hotspot.summary) || '暂无摘要'}
               </p>
             </div>
 
@@ -199,7 +217,7 @@ const HotspotDetail: React.FC = () => {
               </div>
               {showFullContent && (
                 <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
-                  {hotspot.raw_content || hotspot.summary || '暂无详细内容'}
+                  {stripHtmlTags(hotspot.raw_content || hotspot.summary || '暂无详细内容')}
                 </div>
               )}
             </div>
@@ -215,6 +233,43 @@ const HotspotDetail: React.FC = () => {
                   <ExternalLink size={16} />
                   <span>查看原始来源</span>
                 </a>
+              </div>
+            )}
+          </div>
+
+          {/* 分析过程 */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <AlertTriangle className="text-orange-600" size={24} />
+              <h2 className="text-lg font-semibold text-gray-900">AI分析过程</h2>
+            </div>
+            {analysis?.analysis_metadata?.analysis_process ? (
+              <div className="prose max-w-none text-gray-700">
+                {analysis.analysis_metadata.analysis_process.split('\n').map((line, index) => (
+                  <p key={index} className="mb-3">{line}</p>
+                ))}
+              </div>
+            ) : analysis?.business_impact ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">分析过程详情不可用（旧版本分析）</p>
+                <button
+                  onClick={handleRefreshAnalysis}
+                  disabled={analyzeMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {analyzeMutation.isPending ? '分析中...' : '重新分析以获取详细过程'}
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">尚未进行AI分析</p>
+                <button
+                  onClick={handleAnalyze}
+                  disabled={analyzeMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {analyzeMutation.isPending ? '分析中...' : '立即分析'}
+                </button>
               </div>
             )}
           </div>
@@ -276,6 +331,43 @@ const HotspotDetail: React.FC = () => {
             )}
           </div>
 
+          {/* 分析结论 */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center space-x-3 mb-6">
+              <Lightbulb className="text-green-600" size={24} />
+              <h2 className="text-lg font-semibold text-gray-900">分析结论</h2>
+            </div>
+            {analysis?.analysis_metadata?.analysis_conclusion ? (
+              <div className="prose max-w-none text-gray-700">
+                {analysis.analysis_metadata.analysis_conclusion.split('\n').map((line, index) => (
+                  <p key={index} className="mb-3">{line}</p>
+                ))}
+              </div>
+            ) : analysis?.business_impact ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">分析结论不可用（旧版本分析）</p>
+                <button
+                  onClick={handleRefreshAnalysis}
+                  disabled={analyzeMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {analyzeMutation.isPending ? '分析中...' : '重新分析以获取详细结论'}
+                </button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">尚未进行分析</p>
+                <button
+                  onClick={handleAnalyze}
+                  disabled={analyzeMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {analyzeMutation.isPending ? '分析中...' : '立即分析'}
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* 行动建议 */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center space-x-3 mb-6">
@@ -327,7 +419,7 @@ const HotspotDetail: React.FC = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">分析时间</span>
                   <span className="text-gray-900">
-                    {new Date(analysis.analyzed_at).toLocaleString('zh-CN')}
+                    {analysis.analyzed_at ? new Date(analysis.analyzed_at).toLocaleString('zh-CN') : '未知'}
                   </span>
                 </div>
                 <div className="flex justify-between">

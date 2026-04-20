@@ -56,10 +56,10 @@ const BusinessConfig: React.FC = () => {
 
   // 当用户数据加载完成时，填充表单
   useEffect(() => {
-    if (userData?.data) {
-      setCompanyName(userData.data.company_name || '')
-      setIndustry(userData.data.industry || '')
-      setBusinessDescription(userData.data.business_description || '')
+    if (userData) {
+      setCompanyName(userData.company_name || '')
+      setIndustry(userData.industry || '')
+      setBusinessDescription(userData.business_description || '')
     }
   }, [userData])
 

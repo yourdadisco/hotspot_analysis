@@ -2,12 +2,21 @@ import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, Filter, Clock, TrendingUp, AlertTriangle,
-  BarChart3, ExternalLink, ChevronRight, RefreshCw, Target
+  BarChart3, ChevronRight, RefreshCw, Target
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { hotspotsApi } from '../services/api'
-import HotspotCard from '../components/HotspotCard'
+import { hotspotsApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import ImportanceBadge from '../components/ImportanceBadge'
+
+interface Stats {
+  total_hotspots?: number
+  today_count?: number
+  emergency_count?: number
+  high_count?: number
+  medium_count?: number
+  low_count?: number
+  pending_analysis?: number
+}
 
 
 const Dashboard: React.FC = () => {
@@ -15,28 +24,34 @@ const Dashboard: React.FC = () => {
   const [selectedImportance, setSelectedImportance] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
+  const [limit] = useState(10)
   const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false)
 
   // 获取用户ID
   const userId = localStorage.getItem('user_id') || ''
 
   // 获取热点列表
-  const { data: hotspotsData, isLoading: isLoadingHotspots, refetch: refetchHotspots } = useQuery({
+  const { data: hotspotsData, isLoading: isLoadingHotspots, refetch: refetchHotspots } = useQuery<PaginatedResponse<Hotspot>>({
     queryKey: ['hotspots', page, limit, selectedImportance, searchQuery],
-    queryFn: () => hotspotsApi.getHotspots({
-      page,
-      limit,
-      importance_levels: selectedImportance !== 'all' ? selectedImportance : undefined,
-      // 搜索功能需要后端支持，这里暂时只做前端筛选
-    }),
+    queryFn: async () => {
+      const response = await hotspotsApi.getHotspots({
+        page,
+        limit,
+        importance_levels: selectedImportance !== 'all' ? selectedImportance : undefined,
+        // 搜索功能需要后端支持，这里暂时只做前端筛选
+      })
+      return response
+    },
     enabled: !!userId,
   })
 
   // 获取统计信息
-  const { data: statsData, isLoading: isLoadingStats } = useQuery({
+  const { data: statsData, isLoading: isLoadingStats } = useQuery<Stats>({
     queryKey: ['hotspots-stats'],
-    queryFn: () => hotspotsApi.getStats(),
+    queryFn: async () => {
+      const response = await hotspotsApi.getStats()
+      return response
+    },
     enabled: !!userId,
   })
 
@@ -87,7 +102,6 @@ const Dashboard: React.FC = () => {
 
   // 分页处理
   const totalPages = hotspotsData?.total_pages || 1
-  const currentPage = page
 
   const handlePrevPage = () => {
     if (page > 1) {
@@ -269,7 +283,7 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="divide-y divide-gray-200">
           {hotspotsData?.items && hotspotsData.items.length > 0 ? (
-            hotspotsData.items.map((hotspot) => (
+            hotspotsData.items.map((hotspot: Hotspot) => (
               <div key={hotspot.id} className="p-6 hover:bg-gray-50 transition-colors" onClick={() => handleHotspotClick(hotspot.id)}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -296,7 +310,7 @@ const Dashboard: React.FC = () => {
                     </p>
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-2">
-                        {hotspot.tags.slice(0, 3).map((tag) => (
+                        {hotspot.tags.slice(0, 3).map((tag: string) => (
                           <span
                             key={tag}
                             className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full"

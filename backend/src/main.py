@@ -50,9 +50,13 @@ app = FastAPI(
 )
 
 # Configure CORS
+# In development, allow all origins for easier testing
+# In production, use specific origins from settings
+allow_origins = ["*"] if settings.DEBUG else settings.CORS_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

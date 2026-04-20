@@ -39,20 +39,19 @@ const Settings: React.FC = () => {
 
   // 当设置数据加载完成时，填充表单
   useEffect(() => {
-    if (settingsData?.data) {
-      const data = settingsData.data
+    if (settingsData) {
       setSettings({
-        updateSchedule: data.update_schedule || 'daily_2am',
-        notifyOnEmergency: data.notify_on_emergency || 'Y',
-        notifyOnHigh: data.notify_on_high || 'Y',
-        notifyOnMedium: data.notify_on_medium || 'N',
-        notifyOnLow: data.notify_on_low || 'N',
-        itemsPerPage: data.items_per_page || '20',
-        defaultSort: data.default_sort || 'relevance',
-        defaultImportanceLevels: data.default_importance_levels ?
-          data.default_importance_levels.split(',') : ['emergency', 'high', 'medium'],
-        defaultSourceTypes: data.default_source_types ?
-          data.default_source_types.split(',') : ['news', 'tech_blog'],
+        updateSchedule: settingsData.update_schedule || 'daily_2am',
+        notifyOnEmergency: settingsData.notify_on_emergency || 'Y',
+        notifyOnHigh: settingsData.notify_on_high || 'Y',
+        notifyOnMedium: settingsData.notify_on_medium || 'N',
+        notifyOnLow: settingsData.notify_on_low || 'N',
+        itemsPerPage: settingsData.items_per_page || '20',
+        defaultSort: settingsData.default_sort || 'relevance',
+        defaultImportanceLevels: settingsData.default_importance_levels ?
+          settingsData.default_importance_levels.split(',') : ['emergency', 'high', 'medium'],
+        defaultSourceTypes: settingsData.default_source_types ?
+          settingsData.default_source_types.split(',') : ['news', 'tech_blog'],
         theme: 'light', // 从API获取的主题字段可能不存在
         language: 'zh'  // 从API获取的语言字段可能不存在
       })

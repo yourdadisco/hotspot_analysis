@@ -1,62 +1,78 @@
 #!/usr/bin/env python3
 """
-测试分析函数
+测试分析API
 """
-
 import asyncio
-import sys
-import os
-
-# 添加src到路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+import aiohttp
+import json
 
 async def test_analysis():
-    try:
-        from app.tasks.analysis_tasks import analyze_hotspot_for_user_async
+    # 获取第一个热点ID
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-        hotspot_id = "58b20efe-b08c-4485-9039-d24a96cbbbb1"
-        user_id = "60cd5b4e-cbfe-4105-ae21-e085f5168505"
+    from app.core.database import AsyncSessionLocal
+    from app.models.hotspot import Hotspot
+    from sqlalchemy import select
 
-        print(f"测试分析: hotspot_id={hotspot_id}, user_id={user_id}")
+    async with AsyncSessionLocal() as db:
+        stmt = select(Hotspot).limit(1)
+        result = await db.execute(stmt)
+        hotspot = result.scalar_one_or_none()
+        if not hotspot:
+            print("没有热点数据")
+            return
+        hotspot_id = str(hotspot.id)
+        print(f"测试热点: {hotspot_id} - {hotspot.title[:50]}...")
 
-        result = await analyze_hotspot_for_user_async(hotspot_id, user_id)
+    # 用户ID（从登录测试获取）
+    user_id = "8b93c6d2-a65b-46b1-b92c-a4a211edd466"
 
-        print("分析结果:")
-        print(result)
+    # 触发分析
+    url = f"http://localhost:8001/api/v1/hotspots/{hotspot_id}/analyze"
+    params = {"user_id": user_id}
 
-        if result.get("success"):
-            print(f"✓ 分析成功: {result.get('message')}")
-            print(f"  分析ID: {result.get('analysis_id')}")
-            print(f"  相关性评分: {result.get('relevance_score')}")
-            print(f"  重要性级别: {result.get('importance_level')}")
-        else:
-            print(f"✗ 分析失败: {result.get('error')}")
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, params=params) as resp:
+            print(f"分析请求状态: {resp.status}")
+            response_text = await resp.text()
+            print(f"分析响应: {response_text[:200]}...")
+            try:
+                json_data = await resp.json()
+                print(f"JSON响应: {json.dumps(json_data, indent=2, ensure_ascii=False)}")
+            except:
+                print("响应不是JSON")
 
-    except Exception as e:
-        print(f"测试过程中发生异常: {e}")
-        import traceback
-        traceback.print_exc()
+    # 等待几秒后获取分析结果
+    await asyncio.sleep(3)
 
-async def test_llm_connection():
-    try:
-        from app.core.llm import llm_client
+    # 获取热点详情（包含分析）
+    detail_url = f"http://localhost:8001/api/v1/hotspots/{hotspot_id}"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(detail_url, params={"user_id": user_id}) as resp:
+            print(f"\n热点详情状态: {resp.status}")
+            try:
+                detail_data = await resp.json()
+                analysis = detail_data.get("analysis")
+                if analysis:
+                    print(f"分析ID: {analysis.get('id')}")
+                    print(f"重要性级别: {analysis.get('importance_level')}")
+                    print(f"相关性评分: {analysis.get('relevance_score')}")
 
-        print("\n测试LLM连接...")
-        connected = await llm_client.test_connection()
+                    # 检查新字段
+                    metadata = analysis.get("analysis_metadata", {})
+                    print(f"分析过程字段存在: {'analysis_process' in metadata}")
+                    print(f"分析结论字段存在: {'analysis_conclusion' in metadata}")
 
-        if connected:
-            print("✓ LLM连接成功")
-        else:
-            print("✗ LLM连接失败")
-
-    except Exception as e:
-        print(f"LLM连接测试异常: {e}")
-        import traceback
-        traceback.print_exc()
+                    if 'analysis_process' in metadata:
+                        print(f"分析过程预览: {metadata['analysis_process'][:100]}...")
+                    if 'analysis_conclusion' in metadata:
+                        print(f"分析结论预览: {metadata['analysis_conclusion'][:100]}...")
+                else:
+                    print("热点暂无分析结果")
+            except Exception as e:
+                print(f"解析响应失败: {e}")
 
 if __name__ == "__main__":
-    print("开始测试分析功能...")
-
-    # 运行测试
-    asyncio.run(test_llm_connection())
     asyncio.run(test_analysis())

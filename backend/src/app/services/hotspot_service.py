@@ -6,7 +6,7 @@ import hashlib
 import json
 
 from ..models.hotspot import Hotspot, HotspotAnalysis, ImportanceLevel, SourceType
-from ..schemas.hotspot import HotspotResponse, HotspotWithAnalysisResponse
+from ..schemas.hotspot import HotspotResponse, HotspotAnalysisResponse, HotspotWithAnalysisResponse
 from ..core.cache_utils import cached, invalidate_cache
 from ..core.cache import cache
 
@@ -81,8 +81,8 @@ class HotspotService:
         # 计算总页数
         total_pages = (total + limit - 1) // limit
 
-        # 转换为响应模型
-        items = [HotspotResponse.model_validate(hotspot) for hotspot in hotspots]
+        # 转换为响应模型并序列化为字典（使用JSON模式以确保datetime正确序列化）
+        items = [HotspotResponse.model_validate(hotspot).model_dump(mode='json') for hotspot in hotspots]
 
         return {
             "items": items,
@@ -120,12 +120,18 @@ class HotspotService:
             result = await db.execute(stmt)
             analysis = result.scalar_one_or_none()
 
-        # 转换为响应模型
-        hotspot_response = HotspotResponse.model_validate(hotspot)
+        # 转换为响应模型并序列化为字典（使用JSON模式以确保datetime正确序列化）
+        hotspot_response = HotspotResponse.model_validate(hotspot).model_dump(mode='json')
+
+        # 如果存在分析结果，也转换为字典
+        analysis_dict = None
+        if analysis:
+            # 使用Pydantic模型进行序列化，正确处理datetime等类型
+            analysis_dict = HotspotAnalysisResponse.model_validate(analysis).model_dump(mode='json')
 
         return {
-            **hotspot_response.model_dump(),
-            "analysis": analysis
+            **hotspot_response,
+            "analysis": analysis_dict
         }
 
     @staticmethod

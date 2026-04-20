@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timedelta
 
 from app.core.database import AsyncSessionLocal
-from app.core.llm import llm_client
+from app.core.ai_analysis import ai_analyzer  # 使用新的AI分析器
 from app.models.hotspot import Hotspot, HotspotAnalysis, ImportanceLevel
 from app.models.user import User
 
@@ -59,11 +59,35 @@ async def analyze_hotspot_for_user_async(hotspot_id: str, user_id: str) -> Dict[
             logger.info(f"开始分析热点 {hotspot_id} 对用户 {user_id}")
             business_description = user.business_description or ""
 
-            analysis_result = await llm_client.analyze_hotspot(
+            analysis_result = await ai_analyzer.generate_analysis(
                 hotspot_title=hotspot.title,
                 hotspot_content=hotspot.summary or hotspot.raw_content or "",
                 business_description=business_description
             )
+
+            # 调试：记录分析结果字段
+            logger.info(f"分析结果字段: {list(analysis_result.keys())}")
+            logger.info(f"包含analysis_process: {'analysis_process' in analysis_result}")
+            logger.info(f"包含analysis_conclusion: {'analysis_conclusion' in analysis_result}")
+            logger.info(f"完整的analysis_result: {analysis_result}")
+
+            # 创建一个干净的元数据字典，只包含JSON可序列化的数据
+            import json
+            def make_json_serializable(obj):
+                """递归地将对象转换为JSON可序列化的形式"""
+                if isinstance(obj, (str, int, float, bool, type(None))):
+                    return obj
+                elif isinstance(obj, dict):
+                    return {k: make_json_serializable(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [make_json_serializable(item) for item in obj]
+                elif hasattr(obj, 'isoformat'):  # 处理datetime对象
+                    return obj.isoformat()
+                else:
+                    return str(obj)
+
+            clean_metadata = make_json_serializable(analysis_result)
+            logger.info(f"清理后的元数据字段: {list(clean_metadata.keys())}")
 
             # 创建分析记录
             analysis = HotspotAnalysis(
@@ -75,9 +99,9 @@ async def analyze_hotspot_for_user_async(hotspot_id: str, user_id: str) -> Dict[
                 importance_reason=analysis_result["importance_reason"],
                 action_suggestions=analysis_result.get("action_suggestions", ""),
                 technical_details=analysis_result.get("technical_details", ""),
-                model_used=llm_client.model,
+                model_used=ai_analyzer.model,
                 tokens_used=0,  # 实际应从LLM响应中获取
-                analysis_metadata=analysis_result,
+                analysis_metadata=clean_metadata,
                 analyzed_at=datetime.utcnow()
             )
 

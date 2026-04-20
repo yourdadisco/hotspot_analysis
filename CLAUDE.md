@@ -103,7 +103,7 @@ python test_collection_service.py
 ### Backend (.env)
 - `DATABASE_URL`: PostgreSQL/SQLite connection string
 - `REDIS_URL`: Redis connection URL
-- `LLM_API_KEY`: OpenAI-compatible API key
+- `LLM_API_KEY`: DeepSeek/OpenAI-compatible API key
 - `LLM_MOCK_MODE`: Set to True for development without real API calls
 - `USE_MOCK_COLLECTOR`: Set to True for mock data collection
 

@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api/v1'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -26,7 +26,7 @@ api.interceptors.request.use(
 
 // 响应拦截器
 api.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
       // 处理未授权
@@ -67,6 +67,7 @@ export interface Hotspot {
   collected_at: string
   created_at: string
   updated_at: string
+  analysis?: HotspotAnalysis | null
 }
 
 export interface HotspotAnalysis {
@@ -105,6 +106,7 @@ export interface UserSettings {
   notify_on_emergency: string
   notify_on_high: string
   notify_on_medium: string
+  notify_on_low: string
   items_per_page: string
   default_sort: string
   default_importance_levels: string
@@ -147,7 +149,7 @@ export const hotspotsApi = {
   getHotspotDetail: (hotspotId: string, userId?: string) =>
     api.get<Hotspot & { analysis: HotspotAnalysis | null }>(
       `/hotspots/${hotspotId}`,
-      { params: { user_id: userId } }
+      { params: userId ? { user_id: userId } : undefined }
     ),
 
   refreshHotspots: () => api.post('/hotspots/refresh'),

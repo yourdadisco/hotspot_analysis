@@ -36,12 +36,17 @@ services:
   backend:
     build: ./backend
     container_name: hotspot_analysis_backend
+    user: root
     ports:
       - "8000:8000"
     environment:
+      - PYTHONPATH=/app/src
       - DATABASE_URL=postgresql+asyncpg://admin:dev_password@postgres/hotspot_analysis
       - REDIS_URL=redis://redis:6379/0
-      - LLM_API_KEY=${LLM_API_KEY:-sk-a81a8ee7f98241eb99950607caed45b7}
+      - LLM_API_KEY=${LLM_API_KEY:-sk-274f031095b04a6a90cbef3ec319281f}
+      - LLM_API_BASE=${LLM_API_BASE:-https://api.deepseek.com}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-true}
       - DEBUG=true
     depends_on:
       postgres:
@@ -55,10 +60,15 @@ services:
   celery-worker:
     build: ./backend
     container_name: hotspot_analysis_celery_worker
+    user: root
     environment:
+      - PYTHONPATH=/app/src
       - DATABASE_URL=postgresql+asyncpg://admin:dev_password@postgres/hotspot_analysis
       - REDIS_URL=redis://redis:6379/0
-      - LLM_API_KEY=${LLM_API_KEY:-sk-a81a8ee7f98241eb99950607caed45b7}
+      - LLM_API_KEY=${LLM_API_KEY:-sk-274f031095b04a6a90cbef3ec319281f}
+      - LLM_API_BASE=${LLM_API_BASE:-https://api.deepseek.com}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-true}
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,10 +81,15 @@ services:
   celery-beat:
     build: ./backend
     container_name: hotspot_analysis_celery_beat
+    user: root
     environment:
+      - PYTHONPATH=/app/src
       - DATABASE_URL=postgresql+asyncpg://admin:dev_password@postgres/hotspot_analysis
       - REDIS_URL=redis://redis:6379/0
-      - LLM_API_KEY=${LLM_API_KEY:-sk-a81a8ee7f98241eb99950607caed45b7}
+      - LLM_API_KEY=${LLM_API_KEY:-sk-274f031095b04a6a90cbef3ec319281f}
+      - LLM_API_BASE=${LLM_API_BASE:-https://api.deepseek.com}
+      - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
+      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-true}
     depends_on:
       postgres:
         condition: service_healthy

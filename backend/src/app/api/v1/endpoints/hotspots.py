@@ -50,6 +50,15 @@ async def get_hotspots(
         total_pages=result["total_pages"]
     )
 
+@router.get("/hotspots/stats")
+async def get_hotspot_stats(
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    获取热点统计信息（带缓存）
+    """
+    return await HotspotService.get_hotspot_stats(db)
+
 @router.get("/hotspots/{hotspot_id}", response_model=HotspotWithAnalysisResponse)
 async def get_hotspot_detail(
     hotspot_id: str,
@@ -90,12 +99,3 @@ async def refresh_hotspots(
         "task_id": "simulated_task_id",
         "status": "processing"
     }
-
-@router.get("/hotspots/stats")
-async def get_hotspot_stats(
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    获取热点统计信息（带缓存）
-    """
-    return await HotspotService.get_hotspot_stats(db)
