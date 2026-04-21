@@ -10,6 +10,7 @@ import uuid
 
 from app.core.database import AsyncSessionLocal
 from app.models.hotspot import Hotspot, SourceType, ImportanceLevel
+from app.services.collector_service import collector_service
 
 logger = logging.getLogger(__name__)
 
@@ -65,82 +66,51 @@ MOCK_HOTSPOTS = [
 @shared_task(name="collect_hotspots")
 def collect_hotspots_task():
     """
-    收集热点信息（模拟实现）
+    收集热点信息（使用真实收集器服务）
 
-    实际项目中应替换为真实的爬虫或API调用
+    调用collector_service从配置的数据源（RSS、搜索引擎、社交媒体）收集AI热点信息
     """
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(collect_hotspots_async())
 
 async def collect_hotspots_async() -> Dict[str, Any]:
     """
-    异步收集热点信息
+    异步收集热点信息（调用真实收集器服务）
+
+    使用collector_service.collect_all()从所有配置的数据源收集热点
     """
-    async with AsyncSessionLocal() as db:
-        try:
-            collected_count = 0
-            updated_count = 0
+    try:
+        # 调用真正的收集器服务
+        logger.info("开始执行真实数据收集任务")
+        result = await collector_service.collect_all()
 
-            for mock_hotspot in MOCK_HOTSPOTS:
-                # 检查是否已存在相同标题的热点（简单去重）
-                stmt = select(Hotspot).where(Hotspot.title == mock_hotspot["title"])
-                result = await db.execute(stmt)
-                existing = result.scalar_one_or_none()
+        # 转换结果格式以保持兼容
+        success = result.get("success", False)
+        total_collected = result.get("total_collected", 0)
+        total_updated = result.get("total_updated", 0)
+        message = result.get("message", "收集完成")
 
-                if existing:
-                    # 更新已有热点
-                    existing.summary = mock_hotspot["summary"]
-                    existing.tags = mock_hotspot["tags"]
-                    existing.category = mock_hotspot["category"]
-                    updated_count += 1
-                else:
-                    # 创建新热点
-                    hotspot = Hotspot(
-                        title=mock_hotspot["title"],
-                        summary=mock_hotspot["summary"],
-                        content_url=mock_hotspot.get("source_url"),
-                        source_type=mock_hotspot["source_type"],
-                        source_name=mock_hotspot["source_name"],
-                        source_url=mock_hotspot["source_url"],
-                        publish_date=datetime.utcnow() - timedelta(days=random.randint(0, 7)),
-                        language="zh",
-                        author=mock_hotspot["source_name"],
-                        tags=mock_hotspot["tags"],
-                        category=mock_hotspot["category"],
-                        raw_content=f"原始内容: {mock_hotspot['summary']}",
-                        processed_content={
-                            "key_points": ["要点1", "要点2", "要点3"],
-                            "sentiment": "positive",
-                            "entities": ["AI", "大模型", "技术"]
-                        },
-                        metadata={
-                            "collected_by": "mock_collector",
-                            "collection_time": datetime.utcnow().isoformat()
-                        },
-                        view_count=str(random.randint(100, 10000)),
-                        like_count=str(random.randint(10, 1000)),
-                        share_count=str(random.randint(5, 500)),
-                        collected_at=datetime.utcnow()
-                    )
-                    db.add(hotspot)
-                    collected_count += 1
-
-            await db.commit()
-
-            logger.info(f"热点收集完成: 新增{collected_count}个, 更新{updated_count}个")
-
+        if success:
+            logger.info(f"热点收集完成: 新增{total_collected}个, 更新{total_updated}个")
             return {
                 "success": True,
-                "collected": collected_count,
-                "updated": updated_count,
-                "total": collected_count + updated_count,
-                "message": f"热点收集完成，新增{collected_count}个，更新{updated_count}个"
+                "collected": total_collected,
+                "updated": total_updated,
+                "total": total_collected + total_updated,
+                "message": message,
+                "details": result  # 包含完整结果供调试
+            }
+        else:
+            logger.error(f"热点收集失败: {message}")
+            return {
+                "success": False,
+                "error": message,
+                "details": result
             }
 
-        except Exception as e:
-            logger.error(f"热点收集失败: {e}", exc_info=True)
-            await db.rollback()
-            return {"success": False, "error": str(e)}
+    except Exception as e:
+        logger.error(f"热点收集任务执行失败: {e}", exc_info=True)
+        return {"success": False, "error": str(e)}
 
 @shared_task(name="collect_hotspots_from_source")
 def collect_hotspots_from_source_task(source_type: str, source_url: str = None):

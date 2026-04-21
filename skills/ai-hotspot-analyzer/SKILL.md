@@ -1,5 +1,5 @@
 ---
-name: ai-business-trend-analyzer
+name: ai-hotspot-analyzer
 description: 分析AI行业技术热点与用户业务的相关度，过滤八卦信息，专注于新技术、新模型、研究进展。根据业务内容进行相关度分析、分级排序，生成结构化报告。当用户提到"AI热点分析"、"技术趋势"、"业务相关度"、"AI趋势报告"、"热点分级"时触发。
 ---
 

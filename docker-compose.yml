@@ -46,7 +46,7 @@ services:
       - LLM_API_KEY=${LLM_API_KEY:-sk-274f031095b04a6a90cbef3ec319281f}
       - LLM_API_BASE=${LLM_API_BASE:-https://api.deepseek.com}
       - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
-      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-true}
+      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-false}
       - DEBUG=true
     depends_on:
       postgres:
@@ -68,7 +68,7 @@ services:
       - LLM_API_KEY=${LLM_API_KEY:-sk-274f031095b04a6a90cbef3ec319281f}
       - LLM_API_BASE=${LLM_API_BASE:-https://api.deepseek.com}
       - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
-      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-true}
+      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-false}
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,7 +89,7 @@ services:
       - LLM_API_KEY=${LLM_API_KEY:-sk-274f031095b04a6a90cbef3ec319281f}
       - LLM_API_BASE=${LLM_API_BASE:-https://api.deepseek.com}
       - LLM_MODEL=${LLM_MODEL:-deepseek-chat}
-      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-true}
+      - LLM_MOCK_MODE=${LLM_MOCK_MODE:-false}
     depends_on:
       postgres:
         condition: service_healthy

@@ -57,7 +57,7 @@ class RSSCollector(BaseCollector):
                                 continue
                             return []
 
-                        content = await response.text()
+                        content_bytes = await response.read()
                         break  # 成功获取内容，跳出重试循环
             except Exception as e:
                 logger.warning(f"RSS订阅请求失败 (尝试 {attempt + 1}/{max_retries}): {e}")
@@ -73,7 +73,7 @@ class RSSCollector(BaseCollector):
 
         # 解析RSS
         try:
-            feed = feedparser.parse(content)
+            feed = feedparser.parse(content_bytes)
 
             items = []
             for entry in feed.entries[:15]:  # 增加数量以便过滤后仍有足够数据
