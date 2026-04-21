@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { hotspotsApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import ImportanceBadge from '../components/ImportanceBadge'
+import { renderSafeSummary } from '../utils/sanitize'
 
 interface Stats {
   total_hotspots?: number
@@ -209,8 +210,8 @@ const Dashboard: React.FC = () => {
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
+          <div key={stat.label} className="bg-white rounded-xl shadow-sm p-6 min-h-[140px] flex flex-col justify-between">
+            <div className="flex-1 flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">{stat.label}</p>
                 <div className="flex items-baseline mt-2">
@@ -302,11 +303,11 @@ const Dashboard: React.FC = () => {
                         {new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}
                       </span>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 break-words line-clamp-1">
                       {hotspot.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">
-                      {hotspot.summary}
+                    <p className="text-gray-600 mb-4 line-clamp-2 overflow-hidden break-words">
+                      {renderSafeSummary(hotspot.summary)}
                     </p>
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-2">
