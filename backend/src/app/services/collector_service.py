@@ -37,17 +37,42 @@ class RSSCollector(BaseCollector):
         """从RSS订阅收集热点"""
         logger.info(f"从RSS订阅收集热点: {self.name} ({self.feed_url})")
 
+        max_retries = 3
+        retry_delay = 5  # 秒
+
+        for attempt in range(max_retries):
+            try:
+                # 异步获取RSS内容
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                }
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(self.feed_url, headers=headers, timeout=10, ssl=False) as response:
+                        if response.status != 200:
+                            logger.error(f"RSS订阅请求失败: {response.status}")
+                            if attempt < max_retries - 1:
+                                await asyncio.sleep(retry_delay)
+                                continue
+                            return []
+
+                        content = await response.text()
+                        break  # 成功获取内容，跳出重试循环
+            except Exception as e:
+                logger.warning(f"RSS订阅请求失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error(f"RSS订阅请求最终失败: {e}")
+                    return []
+        else:
+            # 所有重试都失败
+            logger.error(f"RSS订阅请求失败，已尝试 {max_retries} 次")
+            return []
+
+        # 解析RSS
         try:
-            # 异步获取RSS内容
-            async with aiohttp.ClientSession() as session:
-                async with session.get(self.feed_url, timeout=10) as response:
-                    if response.status != 200:
-                        logger.error(f"RSS订阅请求失败: {response.status}")
-                        return []
-
-                    content = await response.text()
-
-            # 解析RSS
             feed = feedparser.parse(content)
 
             items = []
@@ -157,10 +182,11 @@ class RSSCollector(BaseCollector):
 
                     # 核心AI关键词（标题中出现这些关键词则优先通过）
                     core_ai_keywords = [
-                        "gemma", "gpt", "claude", "llama", "sora", "midjourney",
+                        "gemma", "gemma 4", "gemma4", "gpt", "claude", "llama", "sora", "midjourney",
                         "stable diffusion", "dall-e", "chatgpt", "bard", "copilot",
                         "大模型", "人工智能", "机器学习", "深度学习", "神经网络",
-                        "transformer", "llm", "生成式ai", "generative ai", "harness engineering"
+                        "transformer", "llm", "生成式ai", "generative ai", "harness engineering",
+                        "Gemma 4", "Gemma4", "AI工程化", "AI工程"
                     ]
 
                     # 检查标题中是否包含核心AI关键词
@@ -173,12 +199,12 @@ class RSSCollector(BaseCollector):
                     # 如果标题中包含核心AI关键词，则放宽过滤条件
                     if title_has_core_ai:
                         # 标题有核心AI关键词，即使非AI内容稍多也允许通过
-                        if has_non_ai_content and non_ai_keyword_count > ai_keyword_count * 2 and ai_keyword_count < 3:
+                        if has_non_ai_content and non_ai_keyword_count > ai_keyword_count * 3 and ai_keyword_count < 1:
                             continue
                     else:
                         # 普通文章：更严格的过滤
-                        # 如果非AI关键词数量超过AI关键词数量，且AI关键词数量小于3，则跳过
-                        if has_non_ai_content and non_ai_keyword_count > ai_keyword_count and ai_keyword_count < 3:
+                        # 如果非AI关键词数量超过AI关键词数量，且AI关键词数量小于2，则跳过
+                        if has_non_ai_content and non_ai_keyword_count > ai_keyword_count * 2 and ai_keyword_count < 2:
                             continue
                     # 检测语言（基于标题和摘要）
                     # 简单的中英文检测：检查是否包含中文字符
@@ -227,78 +253,6 @@ class RSSCollector(BaseCollector):
             return datetime.utcnow()
 
 
-class MockCollector(BaseCollector):
-    """模拟数据收集器（用于开发测试）"""
-
-    def __init__(self, name: str, source_type: SourceType):
-        super().__init__(name, source_type)
-
-    async def collect(self) -> List[Dict[str, Any]]:
-        """生成模拟热点数据"""
-        logger.info(f"使用模拟收集器: {self.name}")
-
-        import random
-
-        # 模拟AI热点数据
-        mock_hotspots = [
-            {
-                "title": "OpenAI发布新一代多模态模型GPT-4.5",
-                "summary": "OpenAI近日发布了GPT-4.5，支持更强大的多模态理解和生成能力，在多个基准测试中表现优异。",
-                "content": "OpenAI最新发布的GPT-4.5在图像理解、视频分析和音频处理方面有重大突破。该模型支持128K上下文，推理能力显著提升。",
-                "url": "https://openai.com/blog/gpt-4-5",
-                "publish_date": datetime.utcnow() - timedelta(days=random.randint(0, 3)),
-                "author": "OpenAI官方",
-                "tags": ["openai", "gpt", "多模态", "大模型", "AI"],
-                "category": "技术突破",
-                "metadata": {"simulated": True, "importance": "high"}
-            },
-            {
-                "title": "谷歌发布Gemini 2.0，挑战GPT-4领导地位",
-                "summary": "谷歌DeepMind发布了Gemini 2.0，在推理和代码生成方面有显著提升，与GPT-4形成直接竞争。",
-                "content": "Gemini 2.0采用了新的架构设计，在数学推理和代码生成任务上超越了GPT-4。谷歌计划通过云服务提供API访问。",
-                "url": "https://blog.google/technology/ai/gemini-2-0",
-                "publish_date": datetime.utcnow() - timedelta(days=random.randint(0, 5)),
-                "author": "Google AI",
-                "tags": ["google", "gemini", "大模型", "竞争", "AI"],
-                "category": "行业动态",
-                "metadata": {"simulated": True, "importance": "high"}
-            },
-            {
-                "title": "Meta开源Llama 3.1，700亿参数模型免费商用",
-                "summary": "Meta发布了Llama 3.1系列模型，最大700亿参数版本完全开源，支持商业用途。",
-                "content": "Llama 3.1包括7B、13B和70B三个版本，在多个基准测试中表现优秀。开源协议允许商业使用，预计将促进AI应用创新。",
-                "url": "https://ai.meta.com/blog/llama-3-1",
-                "publish_date": datetime.utcnow() - timedelta(days=random.randint(0, 7)),
-                "author": "Meta AI",
-                "tags": ["meta", "llama", "开源", "大模型", "商业"],
-                "category": "开源生态",
-                "metadata": {"simulated": True, "importance": "medium"}
-            },
-            {
-                "title": "AI芯片短缺影响大模型训练进度",
-                "summary": "由于全球AI芯片供应紧张，多家公司的大模型训练计划受到影响，预计将持续到明年。",
-                "content": "英伟达H100和A100芯片供应不足，导致多家AI公司推迟模型训练计划。行业正在寻找替代方案和国产替代芯片。",
-                "url": "https://news.tech/ai-chip-shortage",
-                "publish_date": datetime.utcnow() - timedelta(days=random.randint(0, 10)),
-                "author": "科技新闻",
-                "tags": ["芯片", "供应链", "训练", "硬件", "AI"],
-                "category": "基础设施",
-                "metadata": {"simulated": True, "importance": "medium"}
-            },
-            {
-                "title": "中国发布首个千亿参数中文大模型",
-                "summary": "国内研究机构发布了首个千亿参数规模的中文大模型，在中文理解和生成任务上达到国际领先水平。",
-                "content": "该模型在中文NLP任务上表现出色，支持多种中文方言和专业领域。预计将推动中文AI应用发展。",
-                "url": "https://news.china/chinese-llm",
-                "publish_date": datetime.utcnow() - timedelta(days=random.randint(0, 14)),
-                "author": "中国科技",
-                "tags": ["中文大模型", "国产", "研究突破", "NLP", "AI"],
-                "category": "国内动态",
-                "metadata": {"simulated": True, "importance": "high"}
-            }
-        ]
-
-        return mock_hotspots
 
 
 class CollectorService:
@@ -310,38 +264,26 @@ class CollectorService:
 
     def _init_collectors(self):
         """初始化收集器"""
-        # 根据配置决定使用模拟收集器还是真实收集器
-        use_mock = getattr(settings, "USE_MOCK_COLLECTOR", True)
+        # 不再使用模拟收集器，始终使用真实数据源
+        # 1. RSS订阅源 - 专注于AI前沿技术和权威信息源
+        # 用户要求：量子位、机器之心、AI科技评论、新智元（科技学习气息浓的平台）
+        # 由于机器之心RSS不可访问，使用钛媒体替代
+        rss_sources = [
+            # 用户指定的AI科技媒体
+            ("AI科技评论", SourceType.NEWS, "https://www.leiphone.com/feed"),  # 已验证有效
+            ("量子位", SourceType.NEWS, "https://www.qbitai.com/feed"),  # 已验证有效
+            ("新智元", SourceType.NEWS, "https://www.zhidx.com/rss"),  # 新增，已验证有效
+            # 机器之心RSS失效，使用钛媒体作为替代（知名科技媒体）
+            ("钛媒体", SourceType.NEWS, "https://www.tmtpost.com/feed"),  # 已验证有效
+            # 其他优质AI/技术媒体
+            ("InfoQ AI技术", SourceType.TECH_BLOG, "https://www.infoq.cn/feed"),  # 已验证有效
+            ("少数派AI", SourceType.TECH_BLOG, "https://sspai.com/feed"),  # 已验证有效
+        ]
 
-        if use_mock:
-            # 使用模拟收集器
-            self.collectors.extend([
-                MockCollector("AI新闻模拟", SourceType.NEWS),
-                MockCollector("技术博客模拟", SourceType.TECH_BLOG),
-                MockCollector("社交媒体模拟", SourceType.SOCIAL_MEDIA),
-            ])
-            logger.info("使用模拟收集器模式（USE_MOCK_COLLECTOR=True）")
-        else:
-            # 使用真实收集器（即使DEBUG=True也使用真实数据）
-            # 1. RSS订阅源 - 专注于AI前沿技术和权威信息源
-            # 用户要求：量子位、机器之心、AI科技评论、新智元（科技学习气息浓的平台）
-            # 由于机器之心RSS不可访问，使用钛媒体替代
-            rss_sources = [
-                # 用户指定的AI科技媒体
-                ("AI科技评论", SourceType.NEWS, "https://www.leiphone.com/feed"),  # 已验证有效
-                ("量子位", SourceType.NEWS, "https://www.qbitai.com/feed"),  # 已验证有效
-                ("新智元", SourceType.NEWS, "https://www.zhidx.com/rss"),  # 新增，已验证有效
-                # 机器之心RSS失效，使用钛媒体作为替代（知名科技媒体）
-                ("钛媒体", SourceType.NEWS, "https://www.tmtpost.com/feed"),  # 已验证有效
-                # 其他优质AI/技术媒体
-                ("InfoQ AI技术", SourceType.TECH_BLOG, "https://www.infoq.cn/feed"),  # 已验证有效
-                ("少数派AI", SourceType.TECH_BLOG, "https://sspai.com/feed"),  # 已验证有效
-            ]
+        for name, source_type, url in rss_sources:
+            self.collectors.append(RSSCollector(name, source_type, url))
 
-            for name, source_type, url in rss_sources:
-                self.collectors.append(RSSCollector(name, source_type, url))
-
-            logger.info(f"启用 {len(rss_sources)} 个RSS订阅源")
+        logger.info(f"启用 {len(rss_sources)} 个RSS订阅源")
 
         # 2. 搜索引擎收集器（无论模拟模式如何，根据配置启用）
         # 优先使用Bing搜索（根据用户偏好：搜索引擎一般是必应）
@@ -351,10 +293,7 @@ class CollectorService:
             # 搜索引擎收集器已全局初始化，直接添加到列表
             self.collectors.append(universal_search_collector)
             logger.info("启用搜索引擎收集器（Bing优先）")
-        elif not settings.DEBUG and not getattr(settings, "USE_MOCK_COLLECTOR", True):
-            # 如果没有启用搜索引擎但也不是模拟模式，仍添加搜索引擎收集器（会使用模拟数据）
-            self.collectors.append(universal_search_collector)
-            logger.info("启用搜索引擎收集器（备用模式）")
+        # 注意：如果未启用搜索引擎且USE_MOCK_COLLECTOR=False，不会添加任何搜索引擎收集器，避免模拟数据
 
         # 3. 社交媒体收集器（无论模拟模式如何，根据配置启用）
         # 优先使用B站（根据用户偏好：媒体我一般只看b站）
@@ -364,18 +303,10 @@ class CollectorService:
             # 社交媒体收集器已全局初始化，直接添加到列表
             self.collectors.append(universal_social_collector)
             logger.info("启用社交媒体收集器（B站优先）")
-        elif not settings.DEBUG and not getattr(settings, "USE_MOCK_COLLECTOR", True):
-            # 如果没有启用社交媒体API但也不是模拟模式，仍添加社交媒体收集器（会使用模拟数据）
-            self.collectors.append(universal_social_collector)
-            logger.info("启用社交媒体收集器（备用模式）")
+        # 注意：如果未启用社交媒体且USE_MOCK_COLLECTOR=False，不会添加任何社交媒体收集器，避免模拟数据
 
         if not self.collectors:
-            logger.warning("没有启用任何收集器，将使用模拟收集器")
-            self.collectors.extend([
-                MockCollector("AI新闻模拟", SourceType.NEWS),
-                MockCollector("技术博客模拟", SourceType.TECH_BLOG),
-                MockCollector("社交媒体模拟", SourceType.SOCIAL_MEDIA),
-            ])
+            logger.error("没有启用任何收集器！请检查配置，确保至少启用一种数据源（RSS、搜索引擎或社交媒体）")
 
     async def collect_all(self) -> Dict[str, Any]:
         """从所有收集器收集数据"""
@@ -431,10 +362,11 @@ class CollectorService:
         async with AsyncSessionLocal() as db:
             saved_count = 0
 
-            for item in items:
+            for idx, item in enumerate(items):
                 try:
                     # 处理数据项
                     processed = await collector.process_item(item)
+                    logger.debug(f"处理第{idx+1}个热点: {processed['title'][:50]}...")
 
                     # 检查是否已存在（基于标题和来源）
                     stmt = select(Hotspot).where(
@@ -446,6 +378,7 @@ class CollectorService:
 
                     if existing:
                         # 更新现有热点（简化处理，只更新部分字段）
+                        logger.debug(f"热点已存在，更新: {existing.title[:50]}...")
                         existing.summary = processed["summary"]
                         existing.tags = processed["tags"]
                         existing.category = processed["category"]
@@ -477,11 +410,12 @@ class CollectorService:
                             collected_at=datetime.utcnow()
                         )
                         db.add(hotspot)
+                        logger.debug(f"添加新热点: {hotspot.title[:50]}...")
 
                     saved_count += 1
 
                 except Exception as e:
-                    logger.warning(f"保存热点失败: {e}")
+                    logger.warning(f"保存热点失败: {e}", exc_info=True)
                     continue
 
             try:
@@ -490,7 +424,7 @@ class CollectorService:
                 return saved_count
             except Exception as e:
                 await db.rollback()
-                logger.error(f"数据库提交失败: {e}")
+                logger.error(f"数据库提交失败: {e}", exc_info=True)
                 return 0
 
 

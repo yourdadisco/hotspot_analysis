@@ -10,18 +10,17 @@ class Settings(BaseSettings):
     PORT: int = 8001
 
     # CORS
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:3003",
-        "http://localhost:3005",
-        "http://localhost:8000",
-        "http://localhost:8001",
-    ]
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3005,http://localhost:8000,http://localhost:8001"
+
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """将CORS_ORIGINS字符串转换为列表"""
+        if not self.CORS_ORIGINS:
+            return []
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://admin:password@localhost/hotspot_analysis"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./hotspot_analysis.db?check_same_thread=false"  # 使用SQLite进行开发
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -89,6 +88,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "allow"
 
 # Create settings instance
 settings = Settings()
@@ -96,3 +96,4 @@ settings = Settings()
 # 强制覆盖用户偏好的设置
 settings.USE_BAIDU_SEARCH = False  # 禁用百度搜索，用户偏好Bing搜索
 settings.USE_WEIBO_API = False     # 禁用微博API，用户继续使用RSS科技媒体源
+settings.USE_BING_SEARCH = False   # 禁用Bing搜索，用户继续使用RSS科技媒体源
