@@ -29,10 +29,6 @@ export function stripHtmlTags(html: string): string {
 export function createSafeHtml(html: string): string {
   if (!html) return '';
 
-  // 只允许简单的格式化标签
-  const allowedTags = ['b', 'i', 'u', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-  const allowedAttributes = ['href', 'target', 'rel'];
-
   // 简化处理：移除脚本和其他危险标签
   let safeHtml = html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
