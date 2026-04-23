@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 import uuid
 
 from app.schemas.base import TimestampSchema, UUIDSchema
@@ -9,7 +9,7 @@ from app.schemas.base import TimestampSchema, UUIDSchema
 
 class UserBase(BaseModel):
     """用户基础信息"""
-    email: EmailStr
+    email: str
     company_name: Optional[str] = None
     industry: Optional[str] = None
     business_description: Optional[str] = None
@@ -101,7 +101,7 @@ class UserModelConfigResponse(UserModelConfigInDB):
 
 class LoginRequest(BaseModel):
     """登录请求"""
-    email: EmailStr
+    email: str
 
 class LoginResponse(BaseModel):
     """登录响应"""
