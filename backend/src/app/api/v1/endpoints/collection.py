@@ -1,8 +1,12 @@
-from typing import Dict, Any
+import asyncio
+import uuid
+from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, status, BackgroundTasks
 import logging
 
 from app.services.collector_service import collector_service
+from app.services.progress_tracker import progress_tracker
+from app.services.hotspot_service import HotspotService
 
 logger = logging.getLogger(__name__)
 
@@ -107,3 +111,47 @@ async def get_collection_status() -> Dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"获取收集状态失败: {str(e)}"
         )
+
+
+@router.post("/collection/async")
+async def trigger_collection_async() -> Dict[str, Any]:
+    """
+    异步触发数据收集，立即返回 task_id，前端轮询进度
+    """
+    task_id = str(uuid.uuid4())
+    progress_tracker.create_task(
+        task_id=task_id,
+        task_type="collection",
+        title="热点数据收集"
+    )
+
+    asyncio.create_task(_run_collection_with_progress(task_id))
+
+    return {"task_id": task_id, "status": "started"}
+
+
+@router.get("/collection/progress/{task_id}")
+async def get_collection_progress(task_id: str) -> Dict[str, Any]:
+    """
+    获取收集任务的进度
+    """
+    progress = progress_tracker.get_progress(task_id)
+    if not progress:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="任务未找到或已过期"
+        )
+    return progress
+
+
+async def _run_collection_with_progress(task_id: str) -> None:
+    """后台执行收集并更新进度"""
+    try:
+        result = await collector_service.collect_all(progress_task_id=task_id)
+        progress_tracker.update_progress(task_id, progress=100, current_step="收集完成")
+        # 使缓存失效，确保前端获取最新数据
+        await HotspotService.invalidate_hotspots_cache()
+        progress_tracker.complete_task(task_id)
+    except Exception as e:
+        logger.error(f"收集失败: {e}", exc_info=True)
+        progress_tracker.fail_task(task_id, str(e))

@@ -39,7 +39,8 @@ class HotspotService:
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         sort_by: str = "collected_at",
-        sort_order: str = "desc"
+        sort_order: str = "desc",
+        user_id: Optional[str] = None
     ):
         """
         获取热点列表（带缓存）
@@ -81,8 +82,36 @@ class HotspotService:
         # 计算总页数
         total_pages = (total + limit - 1) // limit
 
-        # 转换为响应模型并序列化为字典（使用JSON模式以确保datetime正确序列化）
-        items = [HotspotResponse.model_validate(hotspot).model_dump(mode='json') for hotspot in hotspots]
+        # 查询分析状态（如果提供了user_id）
+        analyzed_map = {}  # hotspot_id -> {importance_level, relevance_score}
+        if user_id and hotspots:
+            hotspot_ids = [str(h.id) for h in hotspots]
+            analysis_stmt = select(
+                HotspotAnalysis.hotspot_id,
+                HotspotAnalysis.importance_level,
+                HotspotAnalysis.relevance_score
+            ).where(
+                HotspotAnalysis.user_id == user_id,
+                HotspotAnalysis.hotspot_id.in_(hotspot_ids)
+            )
+            analysis_result = await db.execute(analysis_stmt)
+            for row in analysis_result.all():
+                imp = row.importance_level.value if hasattr(row.importance_level, 'value') else row.importance_level
+                analyzed_map[str(row.hotspot_id)] = {
+                    'importance_level': imp,
+                    'relevance_score': row.relevance_score,
+                }
+
+        # 转换为响应模型并序列化为字典，添加分析状态
+        items = []
+        for hotspot in hotspots:
+            item = HotspotResponse.model_validate(hotspot).model_dump(mode='json')
+            hid = str(hotspot.id)
+            info = analyzed_map.get(hid)
+            item['has_analysis'] = hid in analyzed_map
+            item['analysis_importance_level'] = info['importance_level'] if info else None
+            item['analysis_relevance_score'] = info['relevance_score'] if info else None
+            items.append(item)
 
         return {
             "items": items,
@@ -161,8 +190,12 @@ class HotspotService:
         importance_result = await db.execute(importance_stmt)
         by_importance = {row.importance_level: row.count for row in importance_result.all()}
 
-        # 按日期统计（最近7天）
-        # 简化处理，实际应计算日期范围
+        # 今日新增热点
+        today_stmt = select(func.count()).where(
+            func.date(Hotspot.collected_at) == func.date('now')
+        )
+        today_result = await db.execute(today_stmt)
+        today_count = today_result.scalar() or 0
 
         # 最后更新时间
         last_update_stmt = select(func.max(Hotspot.collected_at))
@@ -189,7 +222,7 @@ class HotspotService:
             "last_update": last_update.isoformat() if last_update else None,
             "pending_analysis": pending_analysis,
             # 为前端兼容性添加的字段
-            "today_count": 0,  # 需要根据日期计算
+            "today_count": today_count,
             "emergency_count": by_importance.get("emergency", 0),
             "high_count": by_importance.get("high", 0),
             "medium_count": by_importance.get("medium", 0),

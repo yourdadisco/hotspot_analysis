@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Brain, Home, Settings, Briefcase, Bell, LogOut, User } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Brain, Home, Settings, Briefcase, Cpu, Bell, LogOut, User } from 'lucide-react'
+import { hotspotsApi } from '../services/api'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
@@ -8,6 +10,18 @@ const Layout: React.FC = () => {
   const [showLogout, setShowLogout] = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const userId = localStorage.getItem('user_id') || ''
+
+  // 获取统计信息（与Dashboard共享同一个queryKey，一方刷新另一方自动更新）
+  const { data: statsData } = useQuery({
+    queryKey: ['hotspots-stats'],
+    queryFn: async () => {
+      const response = await hotspotsApi.getStats()
+      return response as any
+    },
+    enabled: !!userId,
+    refetchInterval: 60000, // 每分钟自动刷新
+  })
 
   useEffect(() => {
     const email = localStorage.getItem('user_email')
@@ -41,6 +55,7 @@ const Layout: React.FC = () => {
   const navItems = [
     { path: '/dashboard', icon: <Home size={20} />, label: '热点看板' },
     { path: '/business', icon: <Briefcase size={20} />, label: '业务配置' },
+    { path: '/model-config', icon: <Cpu size={20} />, label: '模型配置' },
     { path: '/settings', icon: <Settings size={20} />, label: '设置' },
   ]
 
@@ -129,15 +144,15 @@ const Layout: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">新热点</span>
-                    <span className="font-semibold text-gray-900">12</span>
+                    <span className="font-semibold text-gray-900">{statsData?.today_count ?? '-'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">待分析</span>
-                    <span className="font-semibold text-amber-600">5</span>
+                    <span className="font-semibold text-amber-600">{statsData?.pending_analysis ?? '-'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">紧急事项</span>
-                    <span className="font-semibold text-red-600">2</span>
+                    <span className="font-semibold text-red-600">{statsData?.emergency_count ?? '-'}</span>
                   </div>
                 </div>
               </div>

@@ -18,6 +18,7 @@ from app.core.config import settings
 from app.models.hotspot import Hotspot, SourceType
 from app.models.user import User
 from app.core.database import AsyncSessionLocal
+from app.services.progress_tracker import progress_tracker
 
 from .base_collector import BaseCollector
 from .search_collector import universal_search_collector
@@ -277,7 +278,9 @@ class CollectorService:
             ("钛媒体", SourceType.NEWS, "https://www.tmtpost.com/feed"),  # 已验证有效
             # 其他优质AI/技术媒体
             ("InfoQ AI技术", SourceType.TECH_BLOG, "https://www.infoq.cn/feed"),  # 已验证有效
-            ("少数派AI", SourceType.TECH_BLOG, "https://sspai.com/feed"),  # 已验证有效
+            ("36氪", SourceType.NEWS, "https://36kr.com/feed"),  # 新增，替换少数派
+            ("虎嗅", SourceType.NEWS, "https://www.huxiu.com/rss"),  # 新增
+            ("OSCHINA", SourceType.TECH_BLOG, "https://www.oschina.net/news/rss"),  # 新增
         ]
 
         for name, source_type, url in rss_sources:
@@ -308,15 +311,22 @@ class CollectorService:
         if not self.collectors:
             logger.error("没有启用任何收集器！请检查配置，确保至少启用一种数据源（RSS、搜索引擎或社交媒体）")
 
-    async def collect_all(self) -> Dict[str, Any]:
-        """从所有收集器收集数据"""
+    async def collect_all(self, progress_task_id: Optional[str] = None) -> Dict[str, Any]:
+        """从所有收集器收集数据，支持进度报告"""
         logger.info("开始收集所有来源的热点数据")
 
         total_collected = 0
         total_updated = 0
         results = {}
+        total = len(self.collectors)
 
-        for collector in self.collectors:
+        for i, collector in enumerate(self.collectors):
+            step_name = f"正在从 {collector.name} 获取数据..."
+            if progress_task_id:
+                pct = int((i / total) * 85) if total > 0 else 0
+                progress_tracker.update_progress(progress_task_id, progress=pct, current_step=step_name)
+                progress_tracker.append_step(progress_task_id, step_name)
+
             try:
                 result = await self._collect_with_collector(collector)
                 results[collector.name] = result
@@ -325,6 +335,9 @@ class CollectorService:
             except Exception as e:
                 logger.error(f"收集器 {collector.name} 失败: {e}")
                 results[collector.name] = {"success": False, "error": str(e)}
+
+        if progress_task_id:
+            progress_tracker.update_progress(progress_task_id, progress=95, current_step="保存到数据库...")
 
         return {
             "success": True,

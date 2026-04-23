@@ -11,6 +11,8 @@ from app.core.database import AsyncSessionLocal
 from app.core.ai_analysis import ai_analyzer  # 使用新的AI分析器
 from app.models.hotspot import Hotspot, HotspotAnalysis, ImportanceLevel
 from app.models.user import User
+from app.models.model_config import UserModelConfig
+from app.services.progress_tracker import progress_tracker
 
 logger = logging.getLogger(__name__)
 
@@ -59,10 +61,29 @@ async def analyze_hotspot_for_user_async(hotspot_id: str, user_id: str) -> Dict[
             logger.info(f"开始分析热点 {hotspot_id} 对用户 {user_id}")
             business_description = user.business_description or ""
 
+            # 获取用户的模型配置（每用户自己的API密钥）
+            user_api_key = None
+            user_api_base = None
+            user_model = None
+            stmt = select(UserModelConfig).where(
+                UserModelConfig.user_id == user_id,
+                UserModelConfig.is_active == "Y"
+            )
+            result = await db.execute(stmt)
+            user_config = result.scalar_one_or_none()
+            if user_config and user_config.api_key:
+                user_api_key = user_config.api_key
+                user_api_base = user_config.api_base_url
+                user_model = user_config.model_name
+                logger.info(f"使用用户自定义模型配置: provider={user_config.provider}, model={user_model}")
+
             analysis_result = await ai_analyzer.generate_analysis(
                 hotspot_title=hotspot.title,
                 hotspot_content=hotspot.summary or hotspot.raw_content or "",
-                business_description=business_description
+                business_description=business_description,
+                api_key=user_api_key,
+                api_base_url=user_api_base,
+                model_name=user_model,
             )
 
             # 调试：记录分析结果字段
@@ -99,7 +120,7 @@ async def analyze_hotspot_for_user_async(hotspot_id: str, user_id: str) -> Dict[
                 importance_reason=analysis_result["importance_reason"],
                 action_suggestions=analysis_result.get("action_suggestions", ""),
                 technical_details=analysis_result.get("technical_details", ""),
-                model_used=ai_analyzer.model,
+                model_used=user_model or ai_analyzer.model,
                 tokens_used=0,  # 实际应从LLM响应中获取
                 analysis_metadata=clean_metadata,
                 analyzed_at=datetime.utcnow()
@@ -134,7 +155,7 @@ def batch_analyze_hotspots_task(user_id: str, limit: int = 10):
         batch_analyze_hotspots_async(user_id, limit)
     )
 
-async def batch_analyze_hotspots_async(user_id: str, limit: int = 10) -> Dict[str, Any]:
+async def batch_analyze_hotspots_async(user_id: str, limit: int = 10, progress_task_id: str | None = None) -> Dict[str, Any]:
     """
     异步批量分析热点
     """
@@ -163,16 +184,33 @@ async def batch_analyze_hotspots_async(user_id: str, limit: int = 10) -> Dict[st
             hotspots = result.scalars().all()
 
             if not hotspots:
+                if progress_task_id:
+                    progress_tracker.update_progress(progress_task_id, progress=100, current_step="没有需要分析的新热点")
                 return {"success": True, "message": "没有需要分析的新热点", "analyzed_count": 0}
+
+            total = len(hotspots)
+            if progress_task_id:
+                progress_tracker.append_step(progress_task_id, f"准备批量分析 {total} 个热点")
+                progress_tracker.update_progress(progress_task_id, progress=5, current_step=f"准备批量分析 {total} 个热点")
 
             # 逐个分析
             analyzed_count = 0
-            for hotspot in hotspots:
+            for i, hotspot in enumerate(hotspots):
+                step_name = f"正在分析热点 {i+1}/{total}: {hotspot.title[:30]}..."
+                logger.info(f"批量分析进度: {step_name}")
+                if progress_task_id:
+                    pct = int(((i + 1) / total) * 90) + 5  # 5% ~ 95%
+                    progress_tracker.update_progress(progress_task_id, progress=pct, current_step=step_name)
+                    progress_tracker.append_step(progress_task_id, step_name)
+
                 try:
                     await analyze_hotspot_for_user_async(str(hotspot.id), user_id)
                     analyzed_count += 1
                 except Exception as e:
                     logger.error(f"批量分析失败: {hotspot.id} - {e}")
+
+            if progress_task_id:
+                progress_tracker.update_progress(progress_task_id, progress=100, current_step="批量分析完成")
 
             return {
                 "success": True,

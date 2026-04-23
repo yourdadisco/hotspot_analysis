@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -8,70 +8,78 @@ import {
 } from 'lucide-react'
 import ImportanceBadge from '../components/ImportanceBadge'
 import { hotspotsApi, analysisApi } from '../services/api'
+import ProgressOverlay from '../components/ProgressOverlay'
 import { renderSafeSummary, stripHtmlTags } from '../utils/sanitize'
+import { useToastStore } from '../stores/toastStore'
+import { useProgressPolling } from '../hooks/useProgressPolling'
 
 const HotspotDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const addToast = useToastStore((s) => s.addToast)
   const [showFullContent, setShowFullContent] = useState(false)
 
   const userId = localStorage.getItem('user_id') || ''
 
+  // 分析进度
+  const [analysisTaskId, setAnalysisTaskId] = useState<string | null>(null)
+  const [showAnalysisProgress, setShowAnalysisProgress] = useState(false)
+  const { state: analysisProgress, isPolling: isAnalysisPolling, reset: resetAnalysisProgress } =
+    useProgressPolling(analysisTaskId, (tid) => analysisApi.getAnalysisProgress(tid))
+
   // 获取热点详情和分析
-  const { data: hotspotData, isLoading, refetch } = useQuery({
+  const { data: hotspot, isLoading, refetch } = useQuery({
     queryKey: ['hotspot', id, userId],
     queryFn: () => hotspotsApi.getHotspotDetail(id!, userId),
     enabled: !!id,
   })
 
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const hotspotData: any = hotspot
+  const analysis = hotspotData?.analysis
 
-  const hotspot = hotspotData
-  const analysis = hotspot?.analysis
-
-  // 兼容性处理：支持新旧数据结构
-  const getAnalysisProcess = () => {
-    if (analysis?.analysis_metadata?.analysis_process) {
-      return analysis.analysis_metadata.analysis_process
-    }
-    return analysis?.analysis_process || ''
-  }
-
-  const getAnalysisConclusion = () => {
-    if (analysis?.analysis_metadata?.analysis_conclusion) {
-      return analysis.analysis_metadata.analysis_conclusion
-    }
-    return analysis?.analysis_conclusion || ''
-  }
-
-  // 触发分析（新分析）
-  const handleAnalyze = async () => {
-    if (!analysis) {
-      setIsAnalyzing(true)
-      try {
-        await analysisApi.triggerAnalysis(id!, userId)
-        alert('分析请求已提交，请稍后查看结果')
-        refetch()
-      } catch (error: any) {
-        alert(`分析失败: ${error.response?.data?.detail || '未知错误'}`)
-      } finally {
-        setIsAnalyzing(false)
-      }
-    } else {
-      alert('该热点已有分析结果，如需重新分析请点击"重新分析"按钮')
-    }
-  }
-
-  // 触发重新分析（force=true 强制重新调用大模型）
-  const handleRefreshAnalysis = async () => {
-    setIsAnalyzing(true)
-    try {
-      await analysisApi.triggerAnalysis(id!, userId, true)
-      alert('重新分析完成')
+  // 分析完成/失败处理
+  useEffect(() => {
+    if (!analysisProgress) return
+    if (analysisProgress.status === 'completed') {
+      addToast('AI分析完成！', 'success')
+      setShowAnalysisProgress(false)
+      setAnalysisTaskId(null)
       refetch()
+      resetAnalysisProgress()
+    } else if (analysisProgress.status === 'failed') {
+      addToast(`分析失败: ${analysisProgress.error || '未知错误'}`, 'error')
+      setShowAnalysisProgress(false)
+      setAnalysisTaskId(null)
+      resetAnalysisProgress()
+    }
+  }, [analysisProgress?.status])
+
+  const isAnalyzing = isAnalysisPolling || showAnalysisProgress
+
+  // 触发分析（异步+进度）
+  const handleAnalyze = async () => {
+    if (analysis) {
+      addToast('该热点已有分析结果，如需重新分析请点击"重新分析"按钮', 'info')
+      return
+    }
+    try {
+      setShowAnalysisProgress(true)
+      const result: any = await analysisApi.triggerAnalysisAsync(id!, userId)
+      setAnalysisTaskId(result.task_id)
     } catch (error: any) {
-      alert(`重新分析失败: ${error.response?.data?.detail || '未知错误'}`)
-    } finally {
-      setIsAnalyzing(false)
+      addToast(`启动分析失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
+      setShowAnalysisProgress(false)
+    }
+  }
+
+  // 触发重新分析（force=true）
+  const handleRefreshAnalysis = async () => {
+    try {
+      setShowAnalysisProgress(true)
+      const result: any = await analysisApi.triggerAnalysisAsync(id!, userId, true)
+      setAnalysisTaskId(result.task_id)
+    } catch (error: any) {
+      addToast(`启动重新分析失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
+      setShowAnalysisProgress(false)
     }
   }
 
@@ -113,6 +121,24 @@ const HotspotDetail: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* 分析进度覆盖层 */}
+      {showAnalysisProgress && analysisProgress && (
+        <ProgressOverlay
+          isOpen={true}
+          title="AI热点分析"
+          progress={analysisProgress.progress}
+          currentStep={analysisProgress.currentStep}
+          steps={analysisProgress.steps}
+          status={analysisProgress.status === 'pending' ? 'running' : analysisProgress.status}
+          error={analysisProgress.error}
+          onClose={() => {
+            setShowAnalysisProgress(false)
+            setAnalysisTaskId(null)
+            resetAnalysisProgress()
+          }}
+        />
+      )}
+
       {/* 返回和操作 */}
       <div className="flex justify-between items-center">
         <Link
@@ -129,10 +155,11 @@ const HotspotDetail: React.FC = () => {
           </button>
           <button
             onClick={handleRefreshAnalysis}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+            disabled={isAnalyzing}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center space-x-2"
           >
-            <RefreshCw size={16} />
-            <span>重新分析</span>
+            <RefreshCw size={16} className={isAnalyzing ? 'animate-spin' : ''} />
+            <span>{isAnalyzing ? '分析中...' : '重新分析'}</span>
           </button>
           <button
             onClick={handleAnalyze}

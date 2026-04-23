@@ -18,6 +18,7 @@ class User(Base, TimestampMixin):
 
     # 关系
     settings = relationship("UserSettings", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    model_config = relationship("UserModelConfig", back_populates="user", uselist=False, cascade="all, delete-orphan")
     hotspot_analyses = relationship("HotspotAnalysis", back_populates="user", cascade="all, delete-orphan")
     api_usage_records = relationship("APIUsage", back_populates="user", cascade="all, delete-orphan")
 

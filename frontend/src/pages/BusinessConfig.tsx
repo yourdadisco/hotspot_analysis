@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { Briefcase, Building, Globe, Save, HelpCircle } from 'lucide-react'
 import { authApi } from '../services/api'
+import { useToastStore } from '../stores/toastStore'
 
 const BusinessConfig: React.FC = () => {
   const userId = localStorage.getItem('user_id') || ''
+  const addToast = useToastStore((s) => s.addToast)
   const [businessDescription, setBusinessDescription] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [industry, setIndustry] = useState('')
@@ -47,10 +49,10 @@ const BusinessConfig: React.FC = () => {
     mutationFn: (data: { company_name: string; industry: string; business_description: string }) =>
       authApi.updateUserBusiness(userId, data),
     onSuccess: () => {
-      alert('业务配置已保存！')
+      addToast('业务配置已保存！', 'success')
     },
     onError: (error: any) => {
-      alert(`保存失败: ${error.response?.data?.detail || '未知错误'}`)
+      addToast(`保存失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
     }
   })
 
@@ -65,7 +67,7 @@ const BusinessConfig: React.FC = () => {
 
   const handleSave = () => {
     if (!companyName.trim() || !industry.trim() || !businessDescription.trim()) {
-      alert('请填写所有必填字段')
+      addToast('请填写所有必填字段', 'warning')
       return
     }
 

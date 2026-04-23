@@ -25,10 +25,13 @@ async def get_hotspots(
     date_to: Optional[str] = Query(None, description="结束日期，格式: YYYY-MM-DD"),
     sort_by: str = Query("collected_at", description="排序字段"),
     sort_order: str = Query("desc", description="排序顺序"),
+    user_id: Optional[str] = Query(None, description="用户ID，用于查询分析状态"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     获取热点列表（支持分页和筛选，带缓存）
+
+    如果提供user_id，每个热点会包含 has_analysis 和 analysis_importance_level 字段
     """
     result = await HotspotService.get_hotspots(
         db=db,
@@ -39,7 +42,8 @@ async def get_hotspots(
         date_from=date_from,
         date_to=date_to,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
+        user_id=user_id
     )
 
     return PaginatedResponse(

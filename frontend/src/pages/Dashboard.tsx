@@ -5,9 +5,12 @@ import {
   BarChart3, ChevronRight, RefreshCw, Target
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { hotspotsApi, type PaginatedResponse, type Hotspot } from '../services/api'
+import { hotspotsApi, collectionApi, analysisApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import ImportanceBadge from '../components/ImportanceBadge'
+import ProgressOverlay from '../components/ProgressOverlay'
 import { renderSafeSummary } from '../utils/sanitize'
+import { useToastStore } from '../stores/toastStore'
+import { useProgressPolling } from '../hooks/useProgressPolling'
 
 interface Stats {
   total_hotspots?: number
@@ -19,14 +22,29 @@ interface Stats {
   pending_analysis?: number
 }
 
-
 const Dashboard: React.FC = () => {
   const navigate = useNavigate()
+  const addToast = useToastStore((s) => s.addToast)
   const [selectedImportance, setSelectedImportance] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
-  const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false)
+
+  // 收集进度
+  const [collectTaskId, setCollectTaskId] = useState<string | null>(null)
+  const [showCollectProgress, setShowCollectProgress] = useState(false)
+  const { state: collectProgress, isPolling: isCollecting, reset: resetCollectProgress } =
+    useProgressPolling(collectTaskId, (tid) => collectionApi.getProgress(tid))
+
+  // 批量分析进度
+  const [batchTaskId, setBatchTaskId] = useState<string | null>(null)
+  const [showBatchProgress, setShowBatchProgress] = useState(false)
+  const { state: batchProgress, isPolling: isBatchAnalyzing, reset: resetBatchProgress } =
+    useProgressPolling(batchTaskId, (tid) => analysisApi.getAnalysisProgress(tid))
+
+  // 批量分析对话框
+  const [showBatchDialog, setShowBatchDialog] = useState(false)
+  const [batchLimit, setBatchLimit] = useState<number>(10)
 
   // 获取用户ID
   const userId = localStorage.getItem('user_id') || ''
@@ -39,7 +57,7 @@ const Dashboard: React.FC = () => {
         page,
         limit,
         importance_levels: selectedImportance !== 'all' ? selectedImportance : undefined,
-        // 搜索功能需要后端支持，这里暂时只做前端筛选
+        user_id: userId,
       })
       return response
     },
@@ -47,7 +65,7 @@ const Dashboard: React.FC = () => {
   })
 
   // 获取统计信息
-  const { data: statsData, isLoading: isLoadingStats } = useQuery<Stats>({
+  const { data: statsData, isLoading: isLoadingStats, refetch: refetchStats } = useQuery<Stats>({
     queryKey: ['hotspots-stats'],
     queryFn: async () => {
       const response = await hotspotsApi.getStats()
@@ -56,48 +74,78 @@ const Dashboard: React.FC = () => {
     enabled: !!userId,
   })
 
+  // 收集完成/失败处理
+  useEffect(() => {
+    if (!collectProgress) return
+    if (collectProgress.status === 'completed') {
+      addToast('热点数据更新完成！', 'success')
+      setShowCollectProgress(false)
+      setCollectTaskId(null)
+      refetchHotspots()
+      refetchStats()
+      resetCollectProgress()
+    } else if (collectProgress.status === 'failed') {
+      addToast(`更新失败: ${collectProgress.error || '未知错误'}`, 'error')
+      setShowCollectProgress(false)
+      setCollectTaskId(null)
+      resetCollectProgress()
+    }
+  }, [collectProgress?.status])
+
+  // 批量分析完成/失败处理
+  useEffect(() => {
+    if (!batchProgress) return
+    if (batchProgress.status === 'completed') {
+      addToast('批量分析完成！', 'success')
+      setShowBatchProgress(false)
+      setBatchTaskId(null)
+      refetchHotspots()
+      refetchStats()
+      resetBatchProgress()
+    } else if (batchProgress.status === 'failed') {
+      addToast(`批量分析失败: ${batchProgress.error || '未知错误'}`, 'error')
+      setShowBatchProgress(false)
+      setBatchTaskId(null)
+      resetBatchProgress()
+    }
+  }, [batchProgress?.status])
+
   // 处理热点点击
   const handleHotspotClick = (hotspotId: string) => {
     navigate(`/hotspots/${hotspotId}`)
   }
 
-  // 处理手动更新
+  // 处理手动更新（异步+进度）
   const handleRefresh = async () => {
     try {
-      await hotspotsApi.refreshHotspots()
-      refetchHotspots()
-      alert('热点已开始更新，请稍后查看最新内容')
-    } catch (error) {
-      alert('更新失败，请稍后重试')
+      const result: any = await collectionApi.triggerAsync()
+      setCollectTaskId(result.task_id)
+      setShowCollectProgress(true)
+    } catch {
+      addToast('启动更新失败，请稍后重试', 'error')
     }
   }
 
-  // 批量分析热点
-  const handleBatchAnalyze = async () => {
+  // 打开批量分析对话框
+  const handleOpenBatchDialog = () => {
     if (!userId) {
-      alert('请先登录')
+      addToast('请先登录', 'warning')
       return
     }
-    if (confirm('确定要分析所有未分析的热点吗？这可能需要一些时间。')) {
-      setIsBatchAnalyzing(true)
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8003/api/v1'}/users/${userId}/analyze-latest?limit=10`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        })
-        const result = await response.json()
-        if (result.status === 'completed') {
-          alert(`批量分析完成！成功分析 ${result.analyzed_count} 个热点`)
-          refetchHotspots()
-        } else {
-          alert(`批量分析失败：${result.error || '未知错误'}`)
-        }
-      } catch (error) {
-        alert('批量分析请求失败')
-        console.error(error)
-      } finally {
-        setIsBatchAnalyzing(false)
-      }
+    setShowBatchDialog(true)
+  }
+
+  // 开始批量分析
+  const handleStartBatchAnalysis = async () => {
+    setShowBatchDialog(false)
+    const limit = batchLimit === 0 ? 999 : batchLimit
+
+    try {
+      const result: any = await analysisApi.analyzeLatestAsync(userId, limit)
+      setBatchTaskId(result.task_id)
+      setShowBatchProgress(true)
+    } catch (error: any) {
+      addToast(`启动批量分析失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
     }
   }
 
@@ -178,6 +226,92 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* 批量分析选择对话框 */}
+      {showBatchDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowBatchDialog(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">批量AI分析</h3>
+            <p className="text-gray-600 mb-6">选择要分析的热点数量：</p>
+            <div className="flex flex-wrap gap-3 mb-6">
+              {[5, 10, 20, 50].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setBatchLimit(n)}
+                  className={`px-5 py-2.5 rounded-lg font-medium transition-colors ${
+                    batchLimit === n && batchLimit !== 0
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {n} 个
+                </button>
+              ))}
+              <button
+                onClick={() => setBatchLimit(0)}
+                className={`px-5 py-2.5 rounded-lg font-medium transition-colors ${
+                  batchLimit === 0
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                全部未分析 ({(statsData as any)?.pending_analysis || '?'})
+              </button>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowBatchDialog(false)}
+                className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleStartBatchAnalysis}
+                className="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                开始分析
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 进度覆盖层 */}
+      {showCollectProgress && collectProgress && (
+        <ProgressOverlay
+          isOpen={true}
+          title="数据收集"
+          progress={collectProgress.progress}
+          currentStep={collectProgress.currentStep}
+          steps={collectProgress.steps}
+          status={collectProgress.status === 'pending' ? 'running' : collectProgress.status}
+          error={collectProgress.error}
+          onClose={() => {
+            setShowCollectProgress(false)
+            setCollectTaskId(null)
+            resetCollectProgress()
+          }}
+        />
+      )}
+
+      {/* 批量分析进度覆盖层 */}
+      {showBatchProgress && batchProgress && (
+        <ProgressOverlay
+          isOpen={true}
+          title="批量AI分析"
+          progress={batchProgress.progress}
+          currentStep={batchProgress.currentStep}
+          steps={batchProgress.steps}
+          status={batchProgress.status === 'pending' ? 'running' : batchProgress.status}
+          error={batchProgress.error}
+          onClose={() => {
+            setShowBatchProgress(false)
+            setBatchTaskId(null)
+            resetBatchProgress()
+          }}
+        />
+      )}
+
       {/* 标题和操作 */}
       <div className="flex justify-between items-center">
         <div>
@@ -187,13 +321,14 @@ const Dashboard: React.FC = () => {
         <div className="flex space-x-3">
           <button
             onClick={handleRefresh}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+            disabled={isCollecting}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center space-x-2"
           >
-            <RefreshCw size={16} />
-            <span>手动更新</span>
+            <RefreshCw size={16} className={isCollecting ? 'animate-spin' : ''} />
+            <span>{isCollecting ? '更新中...' : '手动更新'}</span>
           </button>
           <button
-            onClick={handleBatchAnalyze}
+            onClick={handleOpenBatchDialog}
             disabled={isBatchAnalyzing}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
           >
@@ -289,17 +424,17 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      {hotspot.analysis ? (
-                        <ImportanceBadge level={hotspot.analysis.importance_level || 'medium'} />
+                      {hotspot.has_analysis ? (
+                        <ImportanceBadge level={hotspot.analysis_importance_level || 'medium'} size="sm" />
                       ) : (
-                        <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-gray-200 text-gray-800">
+                        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-200 text-gray-800">
                           未分析
                         </span>
                       )}
-                      <span className="text-xs font-medium px-2.5 py-0.5 rounded bg-gray-100 text-gray-800">
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800">
                         {hotspot.source_name || hotspot.source_type}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-500">
                         {new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}
                       </span>
                     </div>
@@ -327,7 +462,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-6">
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>相关度: <strong className="text-gray-900">{hotspot.analysis?.relevance_score || 0}%</strong></span>
+                          <span>相关度: <strong className="text-gray-900">{hotspot.analysis_relevance_score ?? hotspot.analysis?.relevance_score ?? 0}%</strong></span>
                           <span>浏览: {hotspot.view_count}</span>
                           <span>点赞: {hotspot.like_count}</span>
                         </div>
@@ -346,9 +481,10 @@ const Dashboard: React.FC = () => {
               <p className="text-gray-500">暂无热点数据</p>
               <button
                 onClick={handleRefresh}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={isCollecting}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                刷新热点
+                {isCollecting ? '更新中...' : '刷新热点'}
               </button>
             </div>
           )}

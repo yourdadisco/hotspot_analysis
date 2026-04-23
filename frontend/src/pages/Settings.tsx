@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { Bell, Clock, Filter, Layout, Save, Moon, Globe } from 'lucide-react'
+import { Bell, Clock, Filter, Layout, Save } from 'lucide-react'
 import { userSettingsApi } from '../services/api'
+import { useToastStore } from '../stores/toastStore'
 
 const Settings: React.FC = () => {
   const userId = localStorage.getItem('user_id') || ''
+  const addToast = useToastStore((s) => s.addToast)
   const [settings, setSettings] = useState({
     updateSchedule: 'daily_2am',
     notifyOnEmergency: 'Y',
@@ -30,10 +32,10 @@ const Settings: React.FC = () => {
   const updateSettingsMutation = useMutation({
     mutationFn: (data: any) => userSettingsApi.updateSettings(userId, data),
     onSuccess: () => {
-      alert('设置已保存！')
+      addToast('设置已保存！', 'success')
     },
     onError: (error: any) => {
-      alert(`保存失败: ${error.response?.data?.detail || '未知错误'}`)
+      addToast(`保存失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
     }
   })
 
@@ -242,6 +244,24 @@ const Settings: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* 保存按钮（移到中间主列） */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-900">保存设置</h3>
+                <p className="text-sm text-gray-600 mt-1">保存后立即生效</p>
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={updateSettingsMutation.isPending}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
+              >
+                <Save size={20} />
+                <span>{updateSettingsMutation.isPending ? '保存中...' : '保存设置'}</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* 右侧设置 */}
@@ -334,76 +354,27 @@ const Settings: React.FC = () => {
             </div>
           </div>
 
-          {/* 界面设置 */}
+          {/* 提示信息 */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <Moon className="text-blue-600" size={24} />
-              <h2 className="text-lg font-semibold text-gray-900">界面设置</h2>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  主题模式
-                </label>
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => setSettings({ ...settings, theme: 'light' })}
-                    className={`px-4 py-2 rounded-lg flex-1 ${
-                      settings.theme === 'light'
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    浅色模式
-                  </button>
-                  <button
-                    onClick={() => setSettings({ ...settings, theme: 'dark' })}
-                    className={`px-4 py-2 rounded-lg flex-1 ${
-                      settings.theme === 'dark'
-                        ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    深色模式
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  界面语言
-                </label>
-                <div className="flex items-center space-x-3">
-                  <Globe className="text-gray-400" size={20} />
-                  <select
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                    value={settings.language}
-                    onChange={(e) => setSettings({ ...settings, language: e.target.value })}
-                  >
-                    <option value="zh">简体中文</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 保存按钮 */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-900">应用设置</h3>
-                <p className="text-sm text-gray-600 mt-1">保存后立即生效</p>
-              </div>
-              <button
-                onClick={handleSave}
-                disabled={updateSettingsMutation.isPending}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
-              >
-                <Save size={20} />
-                <span>{updateSettingsMutation.isPending ? '保存中...' : '保存设置'}</span>
-              </button>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">配置生效后</h3>
+            <ul className="space-y-3 text-sm text-gray-600">
+              <li className="flex items-start space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
+                <span>AI将根据您的业务分析热点相关性</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
+                <span>获得个性化的热点重要性分级</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
+                <span>收到针对性的行动建议和技术分析</span>
+              </li>
+              <li className="flex items-start space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
+                <span>系统自动过滤无关信息，聚焦关键动态</span>
+              </li>
+            </ul>
           </div>
         </div>
       </div>

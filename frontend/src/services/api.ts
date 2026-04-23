@@ -68,6 +68,9 @@ export interface Hotspot {
   created_at: string
   updated_at: string
   analysis?: HotspotAnalysis | null
+  has_analysis?: boolean
+  analysis_importance_level?: string
+  analysis_relevance_score?: number
 }
 
 export interface HotspotAnalysis {
@@ -144,6 +147,7 @@ export const hotspotsApi = {
     date_to?: string
     sort_by?: string
     sort_order?: string
+    user_id?: string
   }) => api.get<PaginatedResponse<Hotspot>>('/hotspots', { params }),
 
   getHotspotDetail: (hotspotId: string, userId?: string) =>
@@ -163,11 +167,61 @@ export const hotspotsApi = {
     api.get<HotspotAnalysis>(`/hotspots/${hotspotId}/analysis/${userId}`),
 }
 
+// 数据收集API
+export const collectionApi = {
+  triggerAsync: () =>
+    api.post<{ task_id: string; status: string }>('/collection/async'),
+
+  getProgress: (taskId: string) =>
+    api.get<{
+      task_id: string
+      task_type: string
+      title: string
+      status: 'pending' | 'running' | 'completed' | 'failed'
+      progress: number
+      current_step: string
+      steps: string[]
+      error?: string
+    }>(`/collection/progress/${taskId}`),
+}
+
+// 模型配置API
+export interface UserModelConfig {
+  id: string
+  user_id: string
+  provider: string
+  api_key: string
+  api_base_url: string
+  model_name: string
+  is_active: string
+  created_at: string
+  updated_at: string
+}
+
+export const modelConfigApi = {
+  getConfig: (userId: string) =>
+    api.get<UserModelConfig>(`/users/${userId}/model-config`),
+  updateConfig: (userId: string, data: {
+    provider?: string
+    api_key?: string
+    api_base_url?: string
+    model_name?: string
+    is_active?: string
+  }) => api.put<UserModelConfig>(`/users/${userId}/model-config`, data),
+  testConnection: (userId: string, data: {
+    api_key?: string
+    api_base_url?: string
+    model_name?: string
+  }) => api.post<{ success: boolean; message?: string; error?: string }>(
+    `/users/${userId}/model-config/test`, data
+  ),
+}
+
 // 用户设置API
 export const userSettingsApi = {
-  getSettings: (userId: string) => api.get<UserSettings>(`/user-settings/users/${userId}/settings`),
+  getSettings: (userId: string) => api.get<UserSettings>(`/users/${userId}/settings`),
   updateSettings: (userId: string, data: Partial<UserSettings>) =>
-    api.put<UserSettings>(`/user-settings/users/${userId}/settings`, data),
+    api.put<UserSettings>(`/users/${userId}/settings`, data),
 }
 
 // 分析API
@@ -175,10 +229,34 @@ export const analysisApi = {
   triggerAnalysis: (hotspotId: string, userId: string, force: boolean = false) =>
     api.post(`/hotspots/${hotspotId}/analyze`, null, { params: { user_id: userId, force } }),
 
+  triggerAnalysisAsync: (hotspotId: string, userId: string, force: boolean = false) =>
+    api.post<{ task_id: string; status: string }>(
+      `/hotspots/${hotspotId}/analyze-async`,
+      null,
+      { params: { user_id: userId, force } }
+    ),
+
+  getAnalysisProgress: (taskId: string) =>
+    api.get<{
+      task_id: string
+      task_type: string
+      title: string
+      status: 'pending' | 'running' | 'completed' | 'failed'
+      progress: number
+      current_step: string
+      steps: string[]
+      error?: string
+    }>(`/analysis/progress/${taskId}`),
+
   getTaskStatus: (taskId: string) => api.get(`/analysis/tasks/${taskId}/status`),
 
   analyzeLatest: (userId: string, limit: number = 10) =>
     api.post(`/users/${userId}/analyze-latest`, null, { params: { limit } }),
+
+  analyzeLatestAsync: (userId: string, limit: number = 10) =>
+    api.post<{ task_id: string; status: string }>(
+      `/users/${userId}/analyze-latest-async?limit=${limit}`, null
+    ),
 }
 
 // API使用统计

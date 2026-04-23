@@ -4,8 +4,10 @@ import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import BusinessConfig from './pages/BusinessConfig'
+import ModelConfig from './pages/ModelConfig'
 import HotspotDetail from './pages/HotspotDetail'
 import Settings from './pages/Settings'
+import ToastContainer from './components/ToastContainer'
 
 // 私有路由组件
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,12 +29,14 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
+        <ToastContainer />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="business" element={<BusinessConfig />} />
+            <Route path="model-config" element={<ModelConfig />} />
             <Route path="hotspots/:id" element={<HotspotDetail />} />
             <Route path="settings" element={<Settings />} />
           </Route>

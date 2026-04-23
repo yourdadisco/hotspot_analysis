@@ -27,7 +27,10 @@ class AIAnalyzer:
         self,
         hotspot_title: str,
         hotspot_content: str,
-        business_description: str
+        business_description: str,
+        api_key: str | None = None,
+        api_base_url: str | None = None,
+        model_name: str | None = None,
     ) -> Dict[str, Any]:
         """
         生成AI分析
@@ -51,8 +54,20 @@ class AIAnalyzer:
         )
 
         try:
-            response = await self.client.chat.completions.create(
-                model=self.model,
+            # 支持每用户自定义 API 配置
+            client = self.client
+            model = self.model
+            if api_key:
+                client = AsyncOpenAI(
+                    api_key=api_key,
+                    base_url=api_base_url or "https://api.deepseek.com",
+                    timeout=30.0,
+                )
+                model = model_name or "deepseek-chat"
+                logger.info(f"使用用户自定义模型配置: {model}")
+
+            response = await client.chat.completions.create(
+                model=model,
                 messages=[
                     {"role": "system", "content": "你是一位专业的AI行业分析师，擅长分析AI技术热点对用户业务的具体影响。"},
                     {"role": "user", "content": prompt}
