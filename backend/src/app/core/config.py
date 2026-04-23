@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # LLM API
-    LLM_API_KEY: str = "sk-274f031095b04a6a90cbef3ec319281f"
+    LLM_API_KEY: str = ""  # 部署时必须设置
     LLM_API_BASE: str = "https://api.deepseek.com"
     LLM_MODEL: str = "deepseek-chat"
     LLM_MOCK_MODE: bool = False
@@ -93,7 +93,7 @@ class Settings(BaseSettings):
 # Create settings instance
 settings = Settings()
 
-# 强制覆盖用户偏好的设置
-settings.USE_BAIDU_SEARCH = False  # 禁用百度搜索，用户偏好Bing搜索
-settings.USE_WEIBO_API = False     # 禁用微博API，用户继续使用RSS科技媒体源
-settings.USE_BING_SEARCH = False   # 禁用Bing搜索，用户继续使用RSS科技媒体源
+# 用户偏好的覆盖设置（硬编码，不受环境变量影响）
+settings.USE_BAIDU_SEARCH = False
+settings.USE_WEIBO_API = False
+settings.USE_BING_SEARCH = False
