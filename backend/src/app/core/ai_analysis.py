@@ -30,21 +30,20 @@ class AIAnalyzer:
         business_description: str
     ) -> Dict[str, Any]:
         """
-        生成AI分析 - 简化实现，严格控制输出长度
+        生成AI分析
 
         返回标准化字段：
-        - analysis_process: 分析过程 (≤150字符)
-        - analysis_conclusion: 结论 (≤80字符)
+        - analysis_process: 分析过程
+        - analysis_conclusion: 结论
         - relevance_score: 相关度分数 (0-100)
         - importance_level: 重要性级别
-        - business_impact: 业务影响 (≤120字符)
-        - importance_reason: 原因 (≤80字符)
-        - action_suggestions: 建议 (≤150字符)
-        - technical_details: 技术细节 (≤100字符)
+        - business_impact: 业务影响
+        - importance_reason: 重要性原因
+        - action_suggestions: 行动建议
+        - technical_details: 技术细节
         """
         logger.info(f"生成AI分析: {hotspot_title[:50]}...")
 
-        # 构建极简提示词
         prompt = self._build_minimal_prompt(
             hotspot_title=hotspot_title,
             hotspot_content=hotspot_content,
@@ -52,14 +51,13 @@ class AIAnalyzer:
         )
 
         try:
-            # 调用API，严格限制输出
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
-                    {"role": "system", "content": "AI行业分析师，请提供简洁分析。"},
+                    {"role": "system", "content": "你是一位专业的AI行业分析师，擅长分析AI技术热点对用户业务的具体影响。"},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=400,  # 严格控制输出长度
+                max_tokens=1500,
                 temperature=0.7,
                 response_format={"type": "json_object"}
             )
@@ -80,33 +78,32 @@ class AIAnalyzer:
         hotspot_content: str,
         business_description: str
     ) -> str:
-        """构建最小化提示词，避免过长输入"""
-        # 截断输入，防止上下文过长
-        title = hotspot_title[:80]
-        content = (hotspot_content[:200] if hotspot_content else "")
-        business = (business_description[:150] if business_description else "")
+        """构建提示词"""
+        title = hotspot_title[:200]
+        content = (hotspot_content[:1500] if hotspot_content else "")
+        business = (business_description[:500] if business_description else "")
 
-        return f"""分析热点对业务的影响，返回JSON：
+        return f"""分析以下AI技术热点对用户业务的影响，返回JSON格式结果。
 
+## 热点信息
 标题：{title}
-内容：{content}
-业务：{business}
+内容摘要：{content}
 
-返回JSON格式（内容简洁）：
-{{
-  "analysis_process": "简要分析步骤",
-  "analysis_conclusion": "核心结论",
-  "relevance_score": 0-100整数,
-  "importance_level": "emergency/high/medium/low/watch",
-  "business_impact": "业务影响简述",
-  "importance_reason": "重要性原因",
-  "action_suggestions": "1-2条建议",
-  "technical_details": "技术要点"
-}}
+## 用户业务
+{business}
 
-要求：
-- 每个文本字段≤150字符
-- 直接返回JSON，不要其他内容"""
+## 要求
+返回JSON需包含以下字段：
+- analysis_process: 分析思路和步骤，结合热点和业务具体说明
+- analysis_conclusion: 核心结论，一句话总结
+- relevance_score: 相关度评分，0-100的整数
+- importance_level: 重要性级别，可选 emergency/high/medium/low/watch
+- business_impact: 业务影响分析，具体说明热点对用户业务的实际影响
+- importance_reason: 给出该重要性评级的理由
+- action_suggestions: 具体行动建议，用字符串格式返回，每条建议用数字编号和换行分隔
+- technical_details: 涉及的关键技术要点
+
+直接返回JSON对象，不要包含其他内容。"""
 
     def _parse_response(self, content: str) -> Dict[str, Any]:
         """解析API响应，确保格式正确"""
@@ -130,7 +127,14 @@ class AIAnalyzer:
 
         result = {}
         for field, default in fields:
-            result[field] = data.get(field, default)
+            value = data.get(field, default)
+            # 确保文本字段是字符串（LLM有时返回列表）
+            if isinstance(value, list):
+                if field in ("action_suggestions", "analysis_process", "technical_details"):
+                    value = "\n".join(f"{i+1}. {item}" if not str(item).startswith(f"{i+1}.") else str(item) for i, item in enumerate(value))
+                else:
+                    value = "\n".join(str(item) for item in value)
+            result[field] = value
 
         # 验证和清理
         result["relevance_score"] = self._clamp_score(result["relevance_score"])
@@ -180,12 +184,12 @@ class AIAnalyzer:
     def _truncate_fields(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """截断文本字段，避免过长"""
         limits = {
-            "analysis_process": 150,
-            "analysis_conclusion": 80,
-            "business_impact": 120,
-            "importance_reason": 80,
-            "action_suggestions": 150,
-            "technical_details": 100
+            "analysis_process": 500,
+            "analysis_conclusion": 300,
+            "business_impact": 500,
+            "importance_reason": 300,
+            "action_suggestions": 500,
+            "technical_details": 500
         }
 
         for field, limit in limits.items():
@@ -198,14 +202,14 @@ class AIAnalyzer:
     def _create_safe_response(self) -> Dict[str, Any]:
         """创建安全回退响应"""
         return {
-            "analysis_process": "分析过程：初步评估→相关性分析→影响预测",
+            "analysis_process": "初步评估热点内容→分析用户业务相关性→预测潜在业务影响",
             "analysis_conclusion": "需要进一步分析以获得准确结论",
             "relevance_score": 50,
             "importance_level": "medium",
-            "business_impact": "潜在业务影响需要进一步评估",
-            "importance_reason": "基于初步分析的重要性评估",
-            "action_suggestions": "1. 继续监控该热点\n2. 分析更多相关数据",
-            "technical_details": "技术方面需要专业评估"
+            "business_impact": "该热点可能对AI相关业务产生一定影响，建议持续关注后续发展",
+            "importance_reason": "基于热点与用户业务的相关度和潜在影响综合评估",
+            "action_suggestions": "1. 继续监控该热点\n2. 分析更多相关数据\n3. 评估是否调整策略",
+            "technical_details": "具体技术细节需要专业评估"
         }
 
     async def test_connection(self) -> bool:

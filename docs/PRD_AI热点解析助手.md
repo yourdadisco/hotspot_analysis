@@ -203,7 +203,7 @@
 - **前端**：React + TypeScript + Tailwind CSS
 - **后端**：Python + FastAPI（更适合AI集成）
 - **数据库**：PostgreSQL（结构化数据存储）
-- **部署**：Docker + Docker Compose
+- **部署**：直接部署（暂不容器化）
 - **任务调度**：Celery + Redis（定时更新任务）
 
 ## 7. 成功指标

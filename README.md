@@ -29,18 +29,18 @@
 - **大模型集成**: DeepSeek/OpenAI兼容API
 
 ### 部署
-- **容器化**: Docker + Docker Compose
 - **数据库**: PostgreSQL 15
 - **缓存/队列**: Redis 7
 
 ## 快速开始
 
 ### 环境要求
-- Docker & Docker Compose
 - Node.js 18+ (仅前端开发需要)
 - Python 3.11+ (仅后端开发需要)
+- PostgreSQL 15+
+- Redis 7+
 
-### 使用Docker快速启动
+### 手动启动（开发环境）
 
 1. **克隆项目**
    ```bash
@@ -51,18 +51,26 @@
 2. **配置环境变量**
    ```bash
    cp .env.example .env
-   # 编辑.env文件，设置您的LLM API密钥
+   # 编辑.env文件，设置您的LLM API密钥和数据库连接
    ```
 
-3. **启动所有服务**
+3. **启动后端**
    ```bash
-   docker-compose up -d
+   cd backend
+   pip install -r requirements.txt
+   python src/main.py
    ```
 
-4. **访问应用**
-   - 前端: http://localhost:3000
-   - 后端API文档: http://localhost:8000/docs
-   - 数据库管理: PostgreSQL on port 5432
+4. **启动前端**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+5. **访问应用**
+   - 前端: http://localhost:3001
+   - 后端API文档: http://localhost:8001/docs
 
 ### 开发环境设置
 
@@ -106,9 +114,7 @@ hotspot_analysis/
 │   │   │   ├── services/# 业务逻辑
 │   │   │   └── tasks/  # Celery任务
 │   └── requirements.txt # Python依赖
-├── docker/             # Docker配置
 ├── docs/               # 项目文档
-├── docker-compose.yml  # 容器编排
 └── .env.example        # 环境变量示例
 ```
 
@@ -147,10 +153,10 @@ hotspot_analysis/
 LLM_API_KEY=sk-274f031095b04a6a90cbef3ec319281f
 
 # 数据库配置
-DATABASE_URL=postgresql+asyncpg://admin:password@postgres/hotspot_analysis
+DATABASE_URL=postgresql+asyncpg://admin:password@localhost/hotspot_analysis
 
 # Redis配置
-REDIS_URL=redis://redis:6379/0
+REDIS_URL=redis://localhost:6379/0
 
 # 更新计划（Cron表达式）
 UPDATE_SCHEDULE=0 2 * * *  # 每天凌晨2点
@@ -188,16 +194,13 @@ UPDATE_SCHEDULE=0 2 * * *  # 每天凌晨2点
 
 ### 生产环境部署
 
-本系统提供了专门的生产环境Docker配置，包含安全加固、性能优化和健康检查。
+本系统可直接部署在任意 Linux/Windows 服务器上。
 
 #### 1. 准备工作
 
 ```bash
-# 克隆项目
 git clone https://github.com/yourdadisco/hotspot_analysis.git
 cd hotspot_analysis
-
-# 复制环境变量配置文件
 cp .env.example .env
 ```
 
@@ -207,8 +210,8 @@ cp .env.example .env
 
 ```bash
 # 必需配置
-DB_PASSWORD=your_secure_postgres_password
-REDIS_PASSWORD=your_secure_redis_password
+DATABASE_URL=postgresql+asyncpg://user:password@localhost/hotspot_analysis
+REDIS_URL=redis://localhost:6379/0
 LLM_API_KEY=sk-your-deepseek-api-key-here
 SECRET_KEY=your-secret-key-change-in-production-with-minimum-32-chars
 
@@ -221,51 +224,26 @@ USE_MOCK_COLLECTOR=False
 CORS_ORIGINS=https://yourdomain.com,http://localhost:3000
 ```
 
-#### 3. 构建生产镜像
+#### 3. 启动后端
 
 ```bash
-# 构建所有服务镜像
-docker-compose -f docker-compose.prod.yml build
+cd backend
+pip install -r requirements.txt
+python src/main.py
 ```
 
-#### 4. 启动生产服务
+#### 4. 构建并启动前端
 
 ```bash
-# 启动所有服务（后台运行）
-docker-compose -f docker-compose.prod.yml up -d
-
-# 查看服务状态
-docker-compose -f docker-compose.prod.yml ps
-
-# 查看日志
-docker-compose -f docker-compose.prod.yml logs -f
+cd frontend
+npm install
+npm run build
+# 使用 Nginx 等静态服务器托管 frontend/dist/ 目录
 ```
-
-#### 5. 验证部署
-
-- **前端应用**: http://yourdomain.com 或 http://localhost:80
-- **后端API文档**: http://yourdomain.com:8001/docs 或 http://localhost:8001/docs
-- **健康检查**: http://yourdomain.com:8001/api/v1/health
-
-#### 6. 服务说明
-
-生产环境包含以下服务：
-- **前端**: Nginx服务静态文件 (端口80)
-- **后端**: FastAPI应用 (端口8001)
-- **PostgreSQL**: 数据库 (端口5432)
-- **Redis**: 缓存和消息队列 (端口6379)
-- **Celery Worker**: 异步任务处理
-- **Celery Beat**: 定时任务调度
-
-#### 7. 数据持久化
-
-数据通过Docker卷持久化：
-- `postgres_data_prod`: PostgreSQL数据
-- `redis_data_prod`: Redis数据
 
 ### 监控和维护
 
-- **日志查看**: `docker-compose logs -f [service_name]`
+- **日志查看**: 后端日志输出至控制台，可重定向至文件
 - **数据库备份**: 定期备份PostgreSQL数据
 - **性能监控**: 配置Prometheus + Grafana
 - **错误告警**: 设置异常监控和告警

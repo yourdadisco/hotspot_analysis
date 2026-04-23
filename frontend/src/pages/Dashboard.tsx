@@ -81,7 +81,7 @@ const Dashboard: React.FC = () => {
     if (confirm('确定要分析所有未分析的热点吗？这可能需要一些时间。')) {
       setIsBatchAnalyzing(true)
       try {
-        const response = await fetch(`http://localhost:8001/api/v1/users/${userId}/analyze-latest?limit=10`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8003/api/v1'}/users/${userId}/analyze-latest?limit=10`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         })
