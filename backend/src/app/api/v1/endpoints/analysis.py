@@ -1,7 +1,10 @@
+import logging
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+
+logger = logging.getLogger(__name__)
 # from celery.result import AsyncResult
 
 from app.core.database import get_db
@@ -18,13 +21,15 @@ router = APIRouter()
 async def trigger_hotspot_analysis(
     hotspot_id: str,
     user_id: str,
-    background_tasks: BackgroundTasks,
+    force: bool = False,
+    background_tasks: BackgroundTasks = None,
     db: AsyncSession = Depends(get_db)
 ):
     """
     触发对特定热点的分析
 
-    如果已有分析记录，直接返回；否则启动Celery任务进行分析
+    如果已有分析记录且 force=False，直接返回已有结果；
+    如果 force=True，删除旧分析并重新运行 LLM 分析。
     """
     # 验证热点存在
     stmt = select(Hotspot).where(Hotspot.id == hotspot_id)
@@ -57,11 +62,16 @@ async def trigger_hotspot_analysis(
     existing_analysis = result.scalar_one_or_none()
 
     if existing_analysis:
-        return {
-            "status": "already_exists",
-            "analysis_id": str(existing_analysis.id),
-            "message": "该热点已有分析记录"
-        }
+        if not force:
+            return {
+                "status": "already_exists",
+                "analysis_id": str(existing_analysis.id),
+                "message": "该热点已有分析记录"
+            }
+        # 强制重新分析：删除旧记录
+        await db.delete(existing_analysis)
+        await db.commit()
+        logger.info(f"已删除旧分析记录，准备重新分析: {hotspot_id} -> {user_id}")
 
     # 直接进行分析（开发模式，简化处理）
     try:

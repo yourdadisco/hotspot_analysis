@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
   ArrowLeft, ExternalLink, Calendar, User, Eye, ThumbsUp,
   Share2, AlertTriangle, BarChart3, Target, Lightbulb,
@@ -23,18 +23,6 @@ const HotspotDetail: React.FC = () => {
     enabled: !!id,
   })
 
-  // 触发分析
-  const analyzeMutation = useMutation({
-    mutationFn: () => analysisApi.triggerAnalysis(id!, userId),
-    onSuccess: () => {
-      alert('分析请求已提交，请稍后查看结果')
-      refetch()
-    },
-    onError: (error: any) => {
-      alert(`分析失败: ${error.response?.data?.detail || '未知错误'}`)
-    }
-  })
-
   const hotspot = hotspotData
   const analysis = hotspot?.analysis
 
@@ -43,7 +31,6 @@ const HotspotDetail: React.FC = () => {
     if (analysis?.analysis_metadata?.analysis_process) {
       return analysis.analysis_metadata.analysis_process
     }
-    // 新数据结构：analysis_process在根级别
     return analysis?.analysis_process || ''
   }
 
@@ -51,20 +38,31 @@ const HotspotDetail: React.FC = () => {
     if (analysis?.analysis_metadata?.analysis_conclusion) {
       return analysis.analysis_metadata.analysis_conclusion
     }
-    // 新数据结构：analysis_conclusion在根级别
     return analysis?.analysis_conclusion || ''
   }
 
+  // 触发分析（新分析）
   const handleAnalyze = () => {
     if (!analysis) {
-      analyzeMutation.mutate()
+      analysisApi.triggerAnalysis(id!, userId).then(() => {
+        alert('分析请求已提交，请稍后查看结果')
+        refetch()
+      }).catch((error: any) => {
+        alert(`分析失败: ${error.response?.data?.detail || '未知错误'}`)
+      })
     } else {
       alert('该热点已有分析结果，如需重新分析请点击"重新分析"按钮')
     }
   }
 
+  // 触发重新分析（force=true 强制重新调用大模型）
   const handleRefreshAnalysis = () => {
-    analyzeMutation.mutate()
+    analysisApi.triggerAnalysis(id!, userId, true).then(() => {
+      alert('重新分析完成')
+      refetch()
+    }).catch((error: any) => {
+      alert(`重新分析失败: ${error.response?.data?.detail || '未知错误'}`)
+    })
   }
 
   // 加载状态

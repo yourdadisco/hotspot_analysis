@@ -172,8 +172,8 @@ export const userSettingsApi = {
 
 // 分析API
 export const analysisApi = {
-  triggerAnalysis: (hotspotId: string, userId: string) =>
-    api.post(`/hotspots/${hotspotId}/analyze`, null, { params: { user_id: userId } }),
+  triggerAnalysis: (hotspotId: string, userId: string, force: boolean = false) =>
+    api.post(`/hotspots/${hotspotId}/analyze`, null, { params: { user_id: userId, force } }),
 
   getTaskStatus: (taskId: string) => api.get(`/analysis/tasks/${taskId}/status`),
 
