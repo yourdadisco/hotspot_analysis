@@ -34,10 +34,8 @@ class RedisCache:
                 logger.info("Redis缓存服务初始化成功")
             except Exception as e:
                 logger.error(f"Redis初始化失败: {e}")
-                # 开发模式下可以创建模拟缓存
-                if settings.DEBUG:
-                    self._redis = None
-                    logger.warning("Redis不可用，使用内存缓存（仅开发模式）")
+                self._redis = None
+                logger.warning("Redis不可用，使用无缓存模式")
 
     async def get(self, key: str) -> Optional[str]:
         """获取缓存值"""
