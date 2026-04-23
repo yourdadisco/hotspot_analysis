@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Cpu, Key, Globe, Box, Save, Play, HelpCircle, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react'
 import { modelConfigApi } from '../services/api'
 import { useToastStore } from '../stores/toastStore'
@@ -7,6 +7,7 @@ import { useToastStore } from '../stores/toastStore'
 const ModelConfig: React.FC = () => {
   const userId = localStorage.getItem('user_id') || ''
   const addToast = useToastStore((s) => s.addToast)
+  const queryClient = useQueryClient()
 
   const [provider, setProvider] = useState('deepseek')
   const [apiKey, setApiKey] = useState('')
@@ -32,6 +33,7 @@ const ModelConfig: React.FC = () => {
     mutationFn: (data: any) => modelConfigApi.updateConfig(userId, data),
     onSuccess: () => {
       addToast('模型配置已保存！', 'success')
+      queryClient.invalidateQueries({ queryKey: ['model-config', userId] })
     },
     onError: (error: any) => {
       addToast(`保存失败: ${error.response?.data?.detail || '未知错误'}`, 'error')

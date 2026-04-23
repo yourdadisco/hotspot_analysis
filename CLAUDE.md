@@ -1,278 +1,134 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文档为 Claude Code（claude.ai/code）在本仓库中工作时提供指导。
 
-## Project Overview
+## 项目概述
 
-This repository contains the **AI Super Hotspot Analysis Assistant** (AI超级热点解析助手) - a full-stack application for analyzing trending topics and providing AI-powered insights. The system collects AI-related news and updates from various sources, analyzes their relevance to user's business, and provides importance classification with detailed explanations.
+本仓库包含 **AI 超级热点解析助手** — 一个用于分析热点话题并提供 AI 驱动洞察的全栈应用。系统从多个来源收集 AI 相关新闻和动态，分析其与用户业务的相关性，并给出重要性分级和详细说明。
 
-## Development Environment
+## 开发环境
 
-### Prerequisites
-- Node.js 18+ for frontend development
-- Python 3.11+ for backend/AI services  
-- PostgreSQL 15+ (or SQLite for development)
-- Redis (for Celery task queue)
+### 前置条件
+- Node.js 18+（前端开发）
+- Python 3.11+（后端 / AI 服务）
+- PostgreSQL 15+（或 SQLite 用于开发）
+- Redis（用于 Celery 任务队列）
 
-### Initial Setup
+### 初始化设置
 ```bash
-# Backend setup
+# 后端设置
 cd backend
 pip install -r requirements.txt
 
-# Frontend setup
+# 前端设置
 cd frontend
 npm install
 
-# Environment configuration
-# Copy .env.example files and adjust as needed
+# 环境配置
+# 根据需要调整 .env.example 文件
 ```
 
-## Project Structure
+## 项目结构
 
 ```
-├── frontend/           # React + TypeScript + Tailwind CSS frontend
-│   ├── src/           # Source code
-│   ├── public/        # Static assets
-│   └── package.json   # Dependencies
-├── backend/           # FastAPI + SQLAlchemy + Celery backend
-│   ├── src/app/       # Application code
-│   ├── src/app/models/       # Database models
-│   ├── src/app/schemas/      # Pydantic schemas
-│   ├── src/app/api/v1/       # API endpoints
-│   ├── src/app/services/     # Business logic
-│   ├── src/app/tasks/        # Celery tasks
-│   └── requirements.txt      # Python dependencies
-└── CLAUDE.md          # This file
+├── frontend/           # React + TypeScript + Tailwind CSS 前端
+│   ├── src/           # 源代码
+│   ├── public/        # 静态资源
+│   └── package.json   # 依赖配置
+├── backend/           # FastAPI + SQLAlchemy + Celery 后端
+│   ├── src/app/       # 应用代码
+│   ├── src/app/models/       # 数据库模型
+│   ├── src/app/schemas/      # Pydantic 模式
+│   ├── src/app/api/v1/       # API 端点
+│   ├── src/app/services/     # 业务逻辑
+│   ├── src/app/tasks/        # Celery 任务
+│   └── requirements.txt      # Python 依赖
+└── CLAUDE.md          # 本文件
 ```
 
-## Building and Running
+## 构建与运行
 
-### Backend Development Server
+### 后端开发服务器
 ```bash
 cd backend
 python src/main.py
 ```
-Server runs on http://localhost:8001
-API documentation: http://localhost:8001/docs
+服务运行在 http://localhost:8001
+API 文档: http://localhost:8001/docs
 
-### Frontend Development Server
+### 前端开发服务器
 ```bash
 cd frontend
 npm run dev
 ```
-Frontend runs on http://localhost:3001 (or 3000 if available)
+前端运行在 http://localhost:3001（若不可用则为 3000）
 
-### Database Setup
+### 数据库设置
 ```bash
-# Using SQLite for development (automatically created)
-# For PostgreSQL, update DATABASE_URL in backend/.env
+# 开发环境使用 SQLite（自动创建）
+# 如需使用 PostgreSQL，更新 backend/.env 中的 DATABASE_URL
 ```
 
-## Testing
+## 测试
 
-### Backend Tests
+### 后端测试
 ```bash
 cd backend
 pytest
 ```
 
-### Frontend Tests
+### 前端测试
 ```bash
 cd frontend
 npm test
 ```
 
-### API Testing
+### API 测试
 ```bash
-# Test collection endpoints
+# 测试采集端点
 python test_collection_api.py
 
-# Test collection service
+# 测试采集服务
 python test_collection_service.py
 ```
 
-## Key Environment Variables
+## 关键环境变量
 
-### Backend (.env)
-- `DATABASE_URL`: PostgreSQL/SQLite connection string
-- `REDIS_URL`: Redis connection URL
-- `LLM_API_KEY`: DeepSeek/OpenAI-compatible API key
-- `LLM_MOCK_MODE`: Set to True for development without real API calls
-- `USE_MOCK_COLLECTOR`: Set to True for mock data collection
+### 后端（.env）
+- `DATABASE_URL`: PostgreSQL/SQLite 连接字符串
+- `REDIS_URL`: Redis 连接 URL
+- `LLM_API_KEY`: DeepSeek/OpenAI 兼容 API 密钥
+- `LLM_MOCK_MODE`: 设为 True 以在开发中不使用真实 API
+- `USE_MOCK_COLLECTOR`: 设为 True 以使用模拟数据采集
 
-### Frontend (.env)
-- `VITE_API_BASE_URL`: Backend API base URL (default: http://localhost:8001/api/v1)
-```
-
-## Project Development Workflow
-
-*The following section defines the coordination system for AI-assisted development of this project:*
-
-# 🚀 智能项目开发协调系统
-
-## 🎯 系统角色
-我是你的**全栈项目开发协调员**，负责从需求收集到成果交付的完整开发流程。
-
-## 🔄 工作流程
-
-### 阶段1：需求收集
-**当我看到这个文件时，我会主动询问：**
-```
-🎯 你好！我是你的项目开发协调员。
-
-请描述你的项目开发需求：
-1. 项目名称/类型是什么？
-2. 主要功能有哪些？
-3. 目标用户是谁？
-4. 有什么特殊要求或约束？
-5. 期望的时间节点（如果有）？
-
-（请尽量详细描述，我会基于此撰写完整的PRD）
-```
-
-### 阶段2：PRD撰写
-基于你的需求，我会输出**完整的产品需求文档**，包含：
-- **项目概述**：背景、目标、范围
-- **用户画像**：目标用户特征和使用场景
-- **功能清单**：详细的功能模块和描述
-- **非功能需求**：性能、安全、兼容性等要求
-- **优先级排序**：MVP功能 vs 进阶功能
-
-### 阶段3：技术团队组建与方案设计
-我会组建**完整的技术开发团队**，包括：
-
-#### 📋 产品经理
-- 细化需求，创建用户故事
-- 设计产品原型和交互流程
-- 定义验收标准
-
-#### 💻 技术架构师
-- 设计系统架构和技术栈
-- 制定开发规范和接口标准
-- 评估技术风险和解决方案
-
-#### 🖥️ 前端工程师
-- 设计用户界面和交互体验
-- 选择前端框架和组件库
-- 制定前端开发计划
-
-#### ⚙️ 后端工程师
-- 设计数据库结构和API接口
-- 规划后端服务和微服务架构
-- 制定后端开发计划
-
-#### 🧪 测试工程师
-- 制定测试策略和测试计划
-- 设计测试用例和自动化测试方案
-- 制定质量保障流程
-
-#### 🚀 DevOps工程师
-- 设计部署架构和CI/CD流程
-- 规划监控和运维方案
-- 制定上线计划
-
-### 阶段4：开发执行
-**我会协调各角色按以下步骤工作：**
-
-1. **技术方案确认**
-   - 输出完整的技术设计文档
-   - 确认技术栈和工具链
-   - 制定开发时间表（如需要）
-
-2. **并行开发**
-   - 前端：实现UI界面和交互逻辑
-   - 后端：实现API接口和业务逻辑
-   - 测试：编写测试用例和自动化脚本
-
-3. **集成测试**
-   - 前后端接口联调
-   - 功能完整性测试
-   - 性能和安全测试
-
-### 阶段5：成果交付
-**我会交付以下成果：**
-
-#### 📁 交付物清单
-1. **完整的产品需求文档**（PRD）
-2. **技术设计文档**（架构图、接口文档）
-3. **源代码**（按模块组织）
-4. **部署配置**（环境配置、启动脚本）
-5. **测试报告**（测试用例、测试结果）
-6. **用户手册**（使用说明）
-
-#### 🎯 交付方式
-- **代码仓库**：完整的项目代码
-- **文档**：Markdown格式的详细文档
-- **配置**：一键部署的配置脚本
-- **演示**：如果有前端界面，提供访问方式
-
-## 💡 使用示例
-
-### 用户输入示例：
-```
-开发一个个人博客系统，支持：
-1. 文章发布和分类管理
-2. 评论和点赞功能
-3. 用户注册和登录
-4. 响应式设计，支持手机访问
-5. 需要SEO优化
-```
-
-### 系统响应流程：
-1. **询问澄清**：确认具体细节（如是否需要图片上传、社交分享等）
-2. **撰写PRD**：输出完整的博客系统需求文档
-3. **技术设计**：前后端技术选型、数据库设计
-4. **团队开发**：协调前端、后端、测试同步工作
-5. **交付成果**：完整的博客系统代码和文档
-
-## 🛠️ 技术栈默认选择
-
-### 如果没有特别指定，我会选择：
-- **前端**：React + TypeScript + Tailwind CSS
-- **后端**：Node.js + Express / Python + FastAPI
-- **数据库**：PostgreSQL / MongoDB
-- **部署**：直接运行（开发期暂不容器化）
-- **测试**：Jest（前端） + Pytest（后端）
-
-## 🔧 自定义指令
-
-### 如果你有特定要求，可以直接指定：
-```
-使用 Vue 3 作为前端框架
-使用 Go 语言开发后端
-需要微信小程序版本
-需要支持高并发（>1000 QPS）
-```
-
-## 📞 沟通方式
-
-### 在开发过程中，你可以：
-1. **询问进度**："当前开发进展如何？"
-2. **调整需求**："需要增加一个导出功能"
-3. **技术咨询**："为什么选择这个数据库？"
-4. **查看成果**："请展示当前完成的部分"
-
-### 我会：
-1. **定期汇报**：关键节点主动汇报进展
-2. **风险预警**：遇到问题及时告知
-3. **决策支持**：提供技术选型建议
-4. **结果导向**：专注于交付可用成果
-
-## 🚀 立即开始
-
-**只需描述你的项目需求，我会启动完整的开发流程。**
+### 前端（.env）
+- `VITE_API_BASE_URL`: 后端 API 基础 URL（默认 http://localhost:8001/api/v1）
 
 ---
 
-## Updating This File
+## 开发守则（强制）
 
-As the project develops, update this CLAUDE.md with:
+### 守则1：Plan Mode 先行
+对于任何非平凡的开发任务（新增功能、重构、修改多处代码），必须在编写代码之前调用 EnterPlanMode 进入计划模式。先输出计划给用户确认，获得批准后再实施。简单的单文件修复、bug 修复可以不经过此流程。
 
-1. **Actual build commands** (`npm run dev`, `python app.py`, etc.)
-2. **Test commands** (`npm test`, `pytest`, etc.)
-3. **Project-specific architecture** diagrams and explanations
-4. **Environment variables** and configuration requirements
-5. **Deployment instructions** for staging and production
+### 守则2：上下文窗口管控 — 自主压缩，不打扰用户
+需求收集完成后、正式写代码之前，先确认模型型号及上下文窗口大小（问用户或自查）。确认之后自己把控，不要因为这个事来问用户。具体做法：
+  - 每次回复前估算当前上下文消耗，**自行判断何时接近上限**，不要设定固定百分比，而是根据对话内容量、已读文件大小、剩余可用轮次综合判断
+  - 接近上限时**自主压缩**：主动总结已完成的对话内容、丢弃非关键细节、用子代理做探索而非把大文件拉入主上下文
+  - 优先使用 Grep/Glob/Agent(Explore) 等聚焦工具代替全文读取
+  - 大任务主动拆分为多个独立子任务、分次完成
+  - 如果无论如何都装不下，才在回复末尾简短提一句「建议新会话继续」，不要专门停下来问
 
-*Last updated: 2026-04-20*
+---
+
+## 更新本文件
+
+随着项目发展，请更新此 CLAUDE.md 文件：
+
+1. **实际的构建命令**（`npm run dev`、`python app.py` 等）
+2. **测试命令**（`npm test`、`pytest` 等）
+3. **项目专属架构说明**
+4. **环境变量及配置要求**
+5. **部署说明**
+
+*最后更新: 2026-04-24*
