@@ -23,6 +23,8 @@ const HotspotDetail: React.FC = () => {
     enabled: !!id,
   })
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+
   const hotspot = hotspotData
   const analysis = hotspot?.analysis
 
@@ -42,27 +44,35 @@ const HotspotDetail: React.FC = () => {
   }
 
   // 触发分析（新分析）
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!analysis) {
-      analysisApi.triggerAnalysis(id!, userId).then(() => {
+      setIsAnalyzing(true)
+      try {
+        await analysisApi.triggerAnalysis(id!, userId)
         alert('分析请求已提交，请稍后查看结果')
         refetch()
-      }).catch((error: any) => {
+      } catch (error: any) {
         alert(`分析失败: ${error.response?.data?.detail || '未知错误'}`)
-      })
+      } finally {
+        setIsAnalyzing(false)
+      }
     } else {
       alert('该热点已有分析结果，如需重新分析请点击"重新分析"按钮')
     }
   }
 
   // 触发重新分析（force=true 强制重新调用大模型）
-  const handleRefreshAnalysis = () => {
-    analysisApi.triggerAnalysis(id!, userId, true).then(() => {
+  const handleRefreshAnalysis = async () => {
+    setIsAnalyzing(true)
+    try {
+      await analysisApi.triggerAnalysis(id!, userId, true)
       alert('重新分析完成')
       refetch()
-    }).catch((error: any) => {
+    } catch (error: any) {
       alert(`重新分析失败: ${error.response?.data?.detail || '未知错误'}`)
-    })
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   // 加载状态
@@ -126,11 +136,11 @@ const HotspotDetail: React.FC = () => {
           </button>
           <button
             onClick={handleAnalyze}
-            disabled={analyzeMutation.isPending}
+            disabled={isAnalyzing}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center space-x-2"
           >
             <Target size={16} />
-            <span>{analyzeMutation.isPending ? '分析中...' : analysis ? '重新分析' : '立即分析'}</span>
+            <span>{isAnalyzing ? '分析中...' : analysis ? '重新分析' : '立即分析'}</span>
           </button>
         </div>
       </div>
@@ -252,10 +262,10 @@ const HotspotDetail: React.FC = () => {
                 <p className="text-gray-500 mb-4">分析过程详情不可用（旧版本分析）</p>
                 <button
                   onClick={handleRefreshAnalysis}
-                  disabled={analyzeMutation.isPending}
+                  disabled={isAnalyzing}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {analyzeMutation.isPending ? '分析中...' : '重新分析以获取详细过程'}
+                  {isAnalyzing ? '分析中...' : '重新分析以获取详细过程'}
                 </button>
               </div>
             ) : (
@@ -263,10 +273,10 @@ const HotspotDetail: React.FC = () => {
                 <p className="text-gray-500 mb-4">尚未进行AI分析</p>
                 <button
                   onClick={handleAnalyze}
-                  disabled={analyzeMutation.isPending}
+                  disabled={isAnalyzing}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {analyzeMutation.isPending ? '分析中...' : '立即分析'}
+                  {isAnalyzing ? '分析中...' : '立即分析'}
                 </button>
               </div>
             )}
@@ -289,10 +299,10 @@ const HotspotDetail: React.FC = () => {
                 <p className="text-gray-500 mb-4">尚未进行业务影响分析</p>
                 <button
                   onClick={handleAnalyze}
-                  disabled={analyzeMutation.isPending}
+                  disabled={isAnalyzing}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {analyzeMutation.isPending ? '分析中...' : '立即分析'}
+                  {isAnalyzing ? '分析中...' : '立即分析'}
                 </button>
               </div>
             )}
@@ -346,10 +356,10 @@ const HotspotDetail: React.FC = () => {
                 <p className="text-gray-500 mb-4">分析结论不可用（旧版本分析）</p>
                 <button
                   onClick={handleRefreshAnalysis}
-                  disabled={analyzeMutation.isPending}
+                  disabled={isAnalyzing}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {analyzeMutation.isPending ? '分析中...' : '重新分析以获取详细结论'}
+                  {isAnalyzing ? '分析中...' : '重新分析以获取详细结论'}
                 </button>
               </div>
             ) : (
@@ -357,10 +367,10 @@ const HotspotDetail: React.FC = () => {
                 <p className="text-gray-500 mb-4">尚未进行分析</p>
                 <button
                   onClick={handleAnalyze}
-                  disabled={analyzeMutation.isPending}
+                  disabled={isAnalyzing}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {analyzeMutation.isPending ? '分析中...' : '立即分析'}
+                  {isAnalyzing ? '分析中...' : '立即分析'}
                 </button>
               </div>
             )}
