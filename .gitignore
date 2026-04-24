@@ -80,3 +80,19 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# Debug/test scripts
+debug_*.py
+test_*.py
+check_*.py
+*_backup.py
+*_final.py
+*_simple.py
+*_sample.json
+FIX_SUMMARY.md
+quick_fix.py
+fix_*.py
+cleanup_*.py
+
+# Vite cache
+frontend/.vite/
