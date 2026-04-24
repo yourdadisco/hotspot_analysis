@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  ArrowLeft, ExternalLink, Calendar, User, Eye, ThumbsUp,
-  Share2, AlertTriangle, BarChart3, Target, Lightbulb,
+  ArrowLeft, ExternalLink, Calendar, User,
+  AlertTriangle, BarChart3, Target, Lightbulb,
   RefreshCw, Download, MessageSquare
 } from 'lucide-react'
 import ImportanceBadge from '../components/ImportanceBadge'
+import FavoriteButton from '../components/FavoriteButton'
 import { hotspotsApi, analysisApi } from '../services/api'
 import ProgressOverlay from '../components/ProgressOverlay'
 import { renderSafeSummary, stripHtmlTags } from '../utils/sanitize'
@@ -148,7 +149,8 @@ const HotspotDetail: React.FC = () => {
           <ArrowLeft size={20} />
           <span>返回热点列表</span>
         </Link>
-        <div className="flex space-x-3">
+        <div className="flex items-center space-x-3">
+          <FavoriteButton hotspotId={id || ''} isFavorite={hotspotData?.is_favorite || false} size="md" />
           <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
             <Download size={16} />
             <span>导出分析</span>
@@ -205,18 +207,6 @@ const HotspotDetail: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <User size={16} />
                 <span>来源：{hotspot.source_name || hotspot.source_type || '未知'}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Eye size={16} />
-                <span>浏览：{hotspot.view_count}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <ThumbsUp size={16} />
-                <span>点赞：{hotspot.like_count}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Share2 size={16} />
-                <span>分享：{hotspot.share_count}</span>
               </div>
             </div>
 

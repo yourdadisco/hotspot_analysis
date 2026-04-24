@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Brain, Home, Settings, Briefcase, Cpu, Bell, LogOut, User } from 'lucide-react'
+import { Brain, Home, Heart, Settings, Briefcase, Cpu, Bell, LogOut, User, BookOpen } from 'lucide-react'
 import { hotspotsApi } from '../services/api'
+import UsageGuideModal from './UsageGuideModal'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
   const [userEmail, setUserEmail] = useState('')
   const [showLogout, setShowLogout] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const userId = localStorage.getItem('user_id') || ''
@@ -54,6 +56,7 @@ const Layout: React.FC = () => {
 
   const navItems = [
     { path: '/dashboard', icon: <Home size={20} />, label: '热点看板' },
+    { path: '/favorites', icon: <Heart size={20} />, label: '我的收藏' },
     { path: '/business', icon: <Briefcase size={20} />, label: '业务配置' },
     { path: '/model-config', icon: <Cpu size={20} />, label: '模型配置' },
     { path: '/settings', icon: <Settings size={20} />, label: '设置' },
@@ -156,6 +159,17 @@ const Layout: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* 使用教程 */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors w-full"
+                >
+                  <BookOpen size={18} className="text-gray-400" />
+                  <span className="font-medium text-sm">使用教程</span>
+                </button>
+              </div>
             </nav>
           </aside>
 
@@ -187,6 +201,8 @@ const Layout: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      <UsageGuideModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
     </div>
   )
 }

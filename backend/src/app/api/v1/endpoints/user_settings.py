@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.models.user import UserSettings
 from app.schemas.user import UserSettingsResponse, UserSettingsUpdate
+from app.services.scheduler_service import reschedule
 
 router = APIRouter()
 
@@ -54,5 +55,8 @@ async def update_user_settings(
 
     await db.commit()
     await db.refresh(settings)
+
+    # Reschedule auto-update jobs since settings have changed
+    await reschedule()
 
     return UserSettingsResponse.model_validate(settings)

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Search, Filter, Clock, TrendingUp, AlertTriangle,
-  BarChart3, ChevronRight, RefreshCw, Target
+  BarChart3, ChevronRight, RefreshCw, Target, Trash2
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { hotspotsApi, collectionApi, analysisApi, type PaginatedResponse, type Hotspot } from '../services/api'
+import { hotspotsApi, collectionApi, analysisApi, userActionsApi, type PaginatedResponse, type Hotspot } from '../services/api'
+import AdvancedFilterModal, { type AdvancedFilters } from '../components/AdvancedFilterModal'
 import ImportanceBadge from '../components/ImportanceBadge'
+import FavoriteButton from '../components/FavoriteButton'
 import ProgressOverlay from '../components/ProgressOverlay'
 import { renderSafeSummary } from '../utils/sanitize'
 import { useToastStore } from '../stores/toastStore'
@@ -29,6 +31,19 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [limit] = useState(10)
+  const [sortBy, setSortBy] = useState('collected_at')
+  const [sortOrder, setSortOrder] = useState('desc')
+
+  // 高级筛选
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false)
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    importance_levels: [],
+    date_from: '',
+    date_to: '',
+    source_types: '',
+    is_favorite: 'all',
+  })
+  const [showDismissDialog, setShowDismissDialog] = useState(false)
 
   // 收集进度
   const [collectTaskId, setCollectTaskId] = useState<string | null>(null)
@@ -51,13 +66,20 @@ const Dashboard: React.FC = () => {
 
   // 获取热点列表
   const { data: hotspotsData, isLoading: isLoadingHotspots, refetch: refetchHotspots } = useQuery<PaginatedResponse<Hotspot>>({
-    queryKey: ['hotspots', page, limit, selectedImportance, searchQuery],
+    queryKey: ['hotspots', page, limit, selectedImportance, searchQuery, sortBy, sortOrder, advancedFilters],
     queryFn: async () => {
       const response = await hotspotsApi.getHotspots({
         page,
         limit,
-        importance_levels: selectedImportance !== 'all' ? selectedImportance : undefined,
+        importance_levels: selectedImportance !== 'all' ? selectedImportance : advancedFilters.importance_levels.length > 0 ? advancedFilters.importance_levels.join(',') : undefined,
+        sort_by: sortBy,
+        sort_order: sortOrder,
         user_id: userId,
+        is_dismissed: false,
+        ...(advancedFilters.date_from && { date_from: advancedFilters.date_from }),
+        ...(advancedFilters.date_to && { date_to: advancedFilters.date_to }),
+        ...(advancedFilters.source_types && { source_types: advancedFilters.source_types }),
+        ...(advancedFilters.is_favorite !== 'all' && { is_favorite: advancedFilters.is_favorite === 'yes' }),
       })
       return response
     },
@@ -212,6 +234,42 @@ const Dashboard: React.FC = () => {
     }
   }, [userId, navigate])
 
+  // 高级筛选应用
+  const handleApplyAdvancedFilters = (filters: AdvancedFilters) => {
+    setAdvancedFilters(filters)
+    setShowAdvancedFilter(false)
+    setPage(1)
+  }
+
+  // 批量忽略确认
+  const handleBatchDismiss = async () => {
+    setShowDismissDialog(false)
+    try {
+      const payload: any = { user_id: userId }
+      if (advancedFilters.importance_levels.length > 0) {
+        payload.importance_levels = advancedFilters.importance_levels
+      }
+      if (advancedFilters.date_from) payload.date_from = advancedFilters.date_from
+      if (advancedFilters.date_to) payload.date_to = advancedFilters.date_to
+      if (advancedFilters.is_favorite !== 'all') {
+        payload.is_favorite = advancedFilters.is_favorite === 'yes'
+      }
+      const result: any = await userActionsApi.batchDismiss(payload)
+      addToast(`已忽略 ${result.dismissed_count} 个热点`, 'success')
+      refetchHotspots()
+      refetchStats()
+    } catch (error: any) {
+      addToast(`批量忽略失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
+    }
+  }
+
+  const activeFilterCount = [
+    advancedFilters.importance_levels.length > 0,
+    !!advancedFilters.date_from || !!advancedFilters.date_to,
+    !!advancedFilters.source_types,
+    advancedFilters.is_favorite !== 'all',
+  ].filter(Boolean).length
+
   // 加载状态
   if (isLoadingHotspots || isLoadingStats) {
     return (
@@ -335,9 +393,17 @@ const Dashboard: React.FC = () => {
             <Target size={16} />
             <span>{isBatchAnalyzing ? '分析中...' : '批量分析'}</span>
           </button>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+          <button
+            onClick={() => setShowAdvancedFilter(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
             <Filter size={16} />
             <span>高级筛选</span>
+            {activeFilterCount > 0 && (
+              <span className="bg-white text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -403,17 +469,104 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* 活动筛选条件 */}
+      {activeFilterCount > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-wrap gap-2">
+              <span className="text-sm text-gray-500">筛选中：</span>
+              {advancedFilters.importance_levels.length > 0 && (
+                <span className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                  <span>级别: {advancedFilters.importance_levels.join(', ')}</span>
+                  <button
+                    onClick={() => setAdvancedFilters((prev) => ({ ...prev, importance_levels: [] }))}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {(advancedFilters.date_from || advancedFilters.date_to) && (
+                <span className="inline-flex items-center space-x-1 px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
+                  <span>日期: {advancedFilters.date_from || '不限'} ~ {advancedFilters.date_to || '不限'}</span>
+                  <button
+                    onClick={() => setAdvancedFilters((prev) => ({ ...prev, date_from: '', date_to: '' }))}
+                    className="ml-1 hover:text-green-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {advancedFilters.is_favorite !== 'all' && (
+                <span className="inline-flex items-center space-x-1 px-3 py-1 bg-pink-50 text-pink-700 rounded-full text-sm">
+                  <span>{advancedFilters.is_favorite === 'yes' ? '已收藏' : '未收藏'}</span>
+                  <button
+                    onClick={() => setAdvancedFilters((prev) => ({ ...prev, is_favorite: 'all' }))}
+                    className="ml-1 hover:text-pink-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setShowDismissDialog(true)}
+              className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium"
+            >
+              <Trash2 size={16} />
+              <span>批量忽略</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 批量忽略确认对话框 */}
+      {showDismissDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDismissDialog(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">确认批量忽略</h3>
+            <p className="text-gray-600 mb-6">
+              将忽略当前筛选条件下的所有热点，忽略后热点将从列表中消失。确定要执行此操作吗？
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDismissDialog(false)}
+                className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleBatchDismiss}
+                className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                确认忽略
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 热点列表 */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-900">最新热点</h2>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">排序：</span>
-            <select className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500">
-              <option>相关性</option>
-              <option>重要性</option>
-              <option>发布时间</option>
-              <option>浏览量</option>
+            <select
+              value={`${sortBy}:${sortOrder}`}
+              onChange={(e) => {
+                const [newSortBy, newSortOrder] = e.target.value.split(':')
+                setSortBy(newSortBy)
+                setSortOrder(newSortOrder)
+                setPage(1)
+              }}
+              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="collected_at:desc">最新发布</option>
+              <option value="collected_at:asc">最早发布</option>
+              <option value="publish_date:desc">发布时间</option>
+              <option value="title:asc">标题排序</option>
             </select>
           </div>
         </div>
@@ -460,12 +613,11 @@ const Dashboard: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-6">
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>相关度: <strong className="text-gray-900">{hotspot.analysis_relevance_score ?? hotspot.analysis?.relevance_score ?? 0}%</strong></span>
-                          <span>浏览: {hotspot.view_count}</span>
-                          <span>点赞: {hotspot.like_count}</span>
-                        </div>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-sm text-gray-500">
+                          相关度: <strong className="text-gray-900">{hotspot.analysis_relevance_score ?? hotspot.analysis?.relevance_score ?? 0}%</strong>
+                        </span>
+                        <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
                         <button className="text-blue-600 hover:text-blue-800 flex items-center space-x-1">
                           <span>查看详情</span>
                           <ChevronRight size={16} />
@@ -546,6 +698,13 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* 高级筛选模态框 */}
+      <AdvancedFilterModal
+        isOpen={showAdvancedFilter}
+        onClose={() => setShowAdvancedFilter(false)}
+        onApply={handleApplyAdvancedFilters}
+        initialFilters={advancedFilters}
+      />
     </div>
   )
 }

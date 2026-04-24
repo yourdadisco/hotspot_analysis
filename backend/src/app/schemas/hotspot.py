@@ -134,3 +134,14 @@ class HotspotQueryParams(HotspotFilterParams):
 class HotspotWithAnalysisResponse(HotspotResponse):
     """热点响应（包含分析）"""
     analysis: Optional[HotspotAnalysisResponse] = None
+
+
+# 批量操作 Schema
+
+class BatchDismissRequest(BaseModel):
+    """批量忽略请求"""
+    user_id: str
+    importance_levels: Optional[List[str]] = None
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    is_favorite: Optional[bool] = None

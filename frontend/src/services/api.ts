@@ -61,9 +61,6 @@ export interface Hotspot {
   raw_content: string | null
   processed_content: Record<string, any> | null
   metadata: Record<string, any>
-  view_count: string
-  like_count: string
-  share_count: string
   collected_at: string
   created_at: string
   updated_at: string
@@ -71,6 +68,8 @@ export interface Hotspot {
   has_analysis?: boolean
   analysis_importance_level?: string
   analysis_relevance_score?: number
+  is_favorite?: boolean
+  is_dismissed?: boolean
 }
 
 export interface HotspotAnalysis {
@@ -148,6 +147,8 @@ export const hotspotsApi = {
     sort_by?: string
     sort_order?: string
     user_id?: string
+    is_favorite?: boolean
+    is_dismissed?: boolean
   }) => api.get<PaginatedResponse<Hotspot>>('/hotspots', { params }),
 
   getHotspotDetail: (hotspotId: string, userId?: string) =>
@@ -281,6 +282,33 @@ export const apiUsageApi = {
 // 健康检查
 export const healthApi = {
   check: () => api.get('/health'),
+}
+
+// 用户操作API（收藏、批量忽略）
+export const userActionsApi = {
+  toggleFavorite: (userId: string, hotspotId: string) =>
+    api.post<{ is_favorite: boolean }>('/user-actions/toggle-favorite', null, {
+      params: { user_id: userId, hotspot_id: hotspotId }
+    }),
+
+  batchDismiss: (data: {
+    user_id: string
+    importance_levels?: string[]
+    date_from?: string
+    date_to?: string
+    is_favorite?: boolean | null
+  }) => api.post<{ dismissed_count: number; message: string }>('/user-actions/batch-dismiss', data),
+
+  getFavorites: (params: {
+    user_id: string
+    page?: number
+    limit?: number
+  }) => api.get<PaginatedResponse<Hotspot>>('/user-actions/favorites', { params }),
+
+  getAction: (userId: string, hotspotId: string) =>
+    api.get<{ is_favorite: boolean; is_dismissed: boolean }>(
+      `/user-actions/${userId}/hotspot/${hotspotId}`
+    ),
 }
 
 export default api

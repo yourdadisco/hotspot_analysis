@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.core.cache import cache
 from app.api.v1.api import api_router
+from app.services.scheduler_service import init_scheduler, shutdown_scheduler
 
 # Configure logging
 logging.basicConfig(
@@ -34,10 +35,14 @@ async def lifespan(app: FastAPI):
     await cache.init()
     logger.info("Cache service initialized")
 
+    # Initialize scheduler for auto-update
+    await init_scheduler()
+
     yield
 
     # Shutdown
     logger.info("Shutting down Hotspot Analysis API...")
+    await shutdown_scheduler()
     await cache.close()
     await engine.dispose()
 

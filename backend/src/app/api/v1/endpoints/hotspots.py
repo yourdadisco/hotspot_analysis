@@ -26,12 +26,16 @@ async def get_hotspots(
     sort_by: str = Query("collected_at", description="排序字段"),
     sort_order: str = Query("desc", description="排序顺序"),
     user_id: Optional[str] = Query(None, description="用户ID，用于查询分析状态"),
+    is_dismissed: Optional[bool] = Query(False, description="是否包含已忽略的热点"),
+    is_favorite: Optional[bool] = Query(None, description="按收藏状态筛选"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     获取热点列表（支持分页和筛选，带缓存）
 
-    如果提供user_id，每个热点会包含 has_analysis 和 analysis_importance_level 字段
+    如果提供user_id，每个热点会包含 has_analysis、analysis_importance_level、
+    is_favorite、is_dismissed 等字段
+    默认排除已忽略的热点(is_dismissed=false)
     """
     result = await HotspotService.get_hotspots(
         db=db,
@@ -43,7 +47,9 @@ async def get_hotspots(
         date_to=date_to,
         sort_by=sort_by,
         sort_order=sort_order,
-        user_id=user_id
+        user_id=user_id,
+        is_dismissed=is_dismissed,
+        is_favorite=is_favorite,
     )
 
     return PaginatedResponse(

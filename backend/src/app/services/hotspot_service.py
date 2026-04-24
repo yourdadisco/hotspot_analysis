@@ -1,11 +1,13 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, asc, func, and_
+from sqlalchemy import select, desc, asc, func, and_, or_
 from sqlalchemy.orm import selectinload
 import hashlib
 import json
+from datetime import datetime
 
 from ..models.hotspot import Hotspot, HotspotAnalysis, ImportanceLevel, SourceType
+from ..models.user_action import UserHotspotAction
 from ..schemas.hotspot import HotspotResponse, HotspotAnalysisResponse, HotspotWithAnalysisResponse
 from ..core.cache_utils import cached, invalidate_cache
 from ..core.cache import cache
@@ -40,26 +42,54 @@ class HotspotService:
         date_to: Optional[str] = None,
         sort_by: str = "collected_at",
         sort_order: str = "desc",
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        is_dismissed: Optional[bool] = False,
+        is_favorite: Optional[bool] = None,
     ):
         """
         获取热点列表（带缓存）
+
+        支持按重要性级别、来源类型、日期、收藏/忽略状态筛选
         """
-        # 构建查询
+        # 构建查询 - 使用别名避免冲突
         stmt = select(Hotspot)
 
-        # 筛选条件
+        # 重要性级别筛选：需要左连 HotspotAnalysis 表
+        if importance_levels or is_dismissed is not None:
+            levels = importance_levels.split(",") if importance_levels else None
+            # 子查询：获取用户分析过的重要性级别
+            if user_id:
+                analysis_sub = select(HotspotAnalysis.hotspot_id).where(
+                    HotspotAnalysis.user_id == user_id
+                )
+                if levels:
+                    analysis_sub = analysis_sub.where(
+                        HotspotAnalysis.importance_level.in_(levels)
+                    )
+                stmt = stmt.where(Hotspot.id.in_(analysis_sub))
+        elif importance_levels:
+            # 没有 user_id 时无法按重要性过滤（因为没有用户上下文）
+            pass
+
+        # 来源类型筛选
         if source_types:
             types = source_types.split(",")
             stmt = stmt.where(Hotspot.source_type.in_(types))
 
+        # 日期范围筛选
         if date_from:
-            # 简化处理，实际应转换日期
-            pass
+            try:
+                dt_from = datetime.strptime(date_from, "%Y-%m-%d")
+                stmt = stmt.where(Hotspot.collected_at >= dt_from)
+            except ValueError:
+                pass
 
         if date_to:
-            # 简化处理，实际应转换日期
-            pass
+            try:
+                dt_to = datetime.strptime(date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+                stmt = stmt.where(Hotspot.collected_at <= dt_to)
+            except ValueError:
+                pass
 
         # 排序
         order_column = getattr(Hotspot, sort_by, Hotspot.collected_at)
@@ -83,9 +113,12 @@ class HotspotService:
         total_pages = (total + limit - 1) // limit
 
         # 查询分析状态（如果提供了user_id）
-        analyzed_map = {}  # hotspot_id -> {importance_level, relevance_score}
+        analyzed_map = {}
+        action_map = {}
         if user_id and hotspots:
             hotspot_ids = [str(h.id) for h in hotspots]
+
+            # 分析状态
             analysis_stmt = select(
                 HotspotAnalysis.hotspot_id,
                 HotspotAnalysis.importance_level,
@@ -102,7 +135,16 @@ class HotspotService:
                     'relevance_score': row.relevance_score,
                 }
 
-        # 转换为响应模型并序列化为字典，添加分析状态
+            # 用户操作状态（收藏/忽略）
+            action_stmt = select(UserHotspotAction).where(
+                UserHotspotAction.user_id == user_id,
+                UserHotspotAction.hotspot_id.in_(hotspot_ids)
+            )
+            action_result = await db.execute(action_stmt)
+            for action in action_result.scalars().all():
+                action_map[str(action.hotspot_id)] = action
+
+        # 转换为响应模型并序列化为字典
         items = []
         for hotspot in hotspots:
             item = HotspotResponse.model_validate(hotspot).model_dump(mode='json')
@@ -111,6 +153,18 @@ class HotspotService:
             item['has_analysis'] = hid in analyzed_map
             item['analysis_importance_level'] = info['importance_level'] if info else None
             item['analysis_relevance_score'] = info['relevance_score'] if info else None
+
+            # 用户操作状态
+            action = action_map.get(hid)
+            item['is_favorite'] = action.is_favorite if action else False
+            item['is_dismissed'] = action.is_dismissed if action else False
+
+            # 应用收藏/忽略过滤（后过滤，因为缓存可能混入用户数据）
+            if is_favorite is not None and item['is_favorite'] != is_favorite:
+                continue
+            if is_dismissed is False and item['is_dismissed']:
+                continue
+
             items.append(item)
 
         return {
@@ -131,7 +185,6 @@ class HotspotService:
         """
         获取热点详情（带缓存）
         """
-        # 查询热点
         stmt = select(Hotspot).where(Hotspot.id == hotspot_id)
         result = await db.execute(stmt)
         hotspot = result.scalar_one_or_none()
@@ -149,32 +202,41 @@ class HotspotService:
             result = await db.execute(stmt)
             analysis = result.scalar_one_or_none()
 
-        # 转换为响应模型并序列化为字典（使用JSON模式以确保datetime正确序列化）
         hotspot_response = HotspotResponse.model_validate(hotspot).model_dump(mode='json')
 
-        # 如果存在分析结果，也转换为字典
         analysis_dict = None
         if analysis:
-            # 使用Pydantic模型进行序列化，正确处理datetime等类型
             analysis_dict = HotspotAnalysisResponse.model_validate(analysis).model_dump(mode='json')
+
+        # 查询用户操作状态
+        is_favorite = False
+        is_dismissed = False
+        if user_id:
+            action_stmt = select(UserHotspotAction).where(
+                UserHotspotAction.user_id == user_id,
+                UserHotspotAction.hotspot_id == hotspot_id
+            )
+            action_result = await db.execute(action_stmt)
+            action = action_result.scalar_one_or_none()
+            if action:
+                is_favorite = action.is_favorite
+                is_dismissed = action.is_dismissed
 
         return {
             **hotspot_response,
-            "analysis": analysis_dict
+            "analysis": analysis_dict,
+            "is_favorite": is_favorite,
+            "is_dismissed": is_dismissed,
         }
 
     @staticmethod
     @cached(prefix="hotspot", expire=300)  # 5分钟缓存
     async def get_hotspot_stats(db: AsyncSession):
-        """
-        获取热点统计信息（带缓存）
-        """
-        # 热点总数
+        """获取热点统计信息（带缓存）"""
         total_stmt = select(func.count()).select_from(Hotspot)
         total_result = await db.execute(total_stmt)
         total_hotspots = total_result.scalar()
 
-        # 按来源统计
         source_stmt = select(
             Hotspot.source_type,
             func.count().label("count")
@@ -182,7 +244,6 @@ class HotspotService:
         source_result = await db.execute(source_stmt)
         by_source = {row.source_type: row.count for row in source_result.all()}
 
-        # 重要性分布统计（从分析结果）
         importance_stmt = select(
             HotspotAnalysis.importance_level,
             func.count().label("count")
@@ -190,25 +251,20 @@ class HotspotService:
         importance_result = await db.execute(importance_stmt)
         by_importance = {row.importance_level: row.count for row in importance_result.all()}
 
-        # 今日新增热点
         today_stmt = select(func.count()).where(
             func.date(Hotspot.collected_at) == func.date('now')
         )
         today_result = await db.execute(today_stmt)
         today_count = today_result.scalar() or 0
 
-        # 最后更新时间
         last_update_stmt = select(func.max(Hotspot.collected_at))
         last_update_result = await db.execute(last_update_stmt)
         last_update = last_update_result.scalar()
 
-        # 未分析热点数量
-        # 获取所有热点ID
         all_hotspots_stmt = select(Hotspot.id)
         all_hotspots_result = await db.execute(all_hotspots_stmt)
         all_hotspot_ids = set(all_hotspots_result.scalars().all())
 
-        # 获取已分析热点ID
         analyzed_stmt = select(HotspotAnalysis.hotspot_id).distinct()
         analyzed_result = await db.execute(analyzed_stmt)
         analyzed_hotspot_ids = set(analyzed_result.scalars().all())
@@ -221,7 +277,6 @@ class HotspotService:
             "by_importance": by_importance,
             "last_update": last_update.isoformat() if last_update else None,
             "pending_analysis": pending_analysis,
-            # 为前端兼容性添加的字段
             "today_count": today_count,
             "emergency_count": by_importance.get("emergency", 0),
             "high_count": by_importance.get("high", 0),

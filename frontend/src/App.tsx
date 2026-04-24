@@ -7,6 +7,7 @@ import BusinessConfig from './pages/BusinessConfig'
 import ModelConfig from './pages/ModelConfig'
 import HotspotDetail from './pages/HotspotDetail'
 import Settings from './pages/Settings'
+import Favorites from './pages/Favorites'
 import ToastContainer from './components/ToastContainer'
 
 // 私有路由组件
@@ -38,6 +39,7 @@ function App() {
             <Route path="business" element={<BusinessConfig />} />
             <Route path="model-config" element={<ModelConfig />} />
             <Route path="hotspots/:id" element={<HotspotDetail />} />
+            <Route path="favorites" element={<Favorites />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
