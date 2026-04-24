@@ -17,5 +17,5 @@ COPY . .
 # 暴露端口
 EXPOSE 8001
 
-# 启动命令（生产环境不用 reload）
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# 启动命令 - 使用 $PORT 环境变量（Zeabur 自动分配）
+CMD uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8001}
