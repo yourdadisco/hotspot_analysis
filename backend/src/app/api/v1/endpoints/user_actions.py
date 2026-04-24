@@ -208,10 +208,25 @@ async def get_favorites(
     result = await db.execute(stmt)
     hotspots = result.scalars().all()
 
+    # 查询这些热点的分析数据（与 hotspot_service 保持一致）
+    hid_list = [str(h.id) for h in hotspots]
+    analysis_stmt = select(HotspotAnalysis).where(
+        HotspotAnalysis.hotspot_id.in_(hid_list),
+        HotspotAnalysis.user_id == user_id
+    )
+    analysis_result = await db.execute(analysis_stmt)
+    analyses = analysis_result.scalars().all()
+    analyzed_map = {str(a.hotspot_id): a for a in analyses}
+
     items = []
     for hotspot in hotspots:
         item = HotspotResponse.model_validate(hotspot).model_dump(mode='json')
         item['is_favorite'] = True
+        hid = str(hotspot.id)
+        info = analyzed_map.get(hid)
+        item['has_analysis'] = hid in analyzed_map
+        item['analysis_importance_level'] = info.importance_level.value if info else None
+        item['analysis_relevance_score'] = info.relevance_score if info else None
         items.append(item)
 
     return PaginatedResponse(
