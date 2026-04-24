@@ -216,7 +216,13 @@ async def get_favorites(
     )
     analysis_result = await db.execute(analysis_stmt)
     analyses = analysis_result.scalars().all()
-    analyzed_map = {str(a.hotspot_id): a for a in analyses}
+    analyzed_map = {}
+    for a in analyses:
+        imp = a.importance_level.value if hasattr(a.importance_level, 'value') else a.importance_level
+        analyzed_map[str(a.hotspot_id)] = {
+            'importance_level': imp,
+            'relevance_score': a.relevance_score,
+        }
 
     items = []
     for hotspot in hotspots:
@@ -225,8 +231,8 @@ async def get_favorites(
         hid = str(hotspot.id)
         info = analyzed_map.get(hid)
         item['has_analysis'] = hid in analyzed_map
-        item['analysis_importance_level'] = info.importance_level.value if info else None
-        item['analysis_relevance_score'] = info.relevance_score if info else None
+        item['analysis_importance_level'] = info['importance_level'] if info else None
+        item['analysis_relevance_score'] = info['relevance_score'] if info else None
         items.append(item)
 
     return PaginatedResponse(
