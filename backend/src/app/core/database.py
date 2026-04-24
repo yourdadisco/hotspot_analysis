@@ -5,8 +5,13 @@ from sqlalchemy import Column, DateTime, func
 from .config import settings
 
 # Create async engine
+db_url = settings.DATABASE_URL
+# 如果用户配的是 postgresql:// 而非 postgresql+asyncpg://，自动修正
+if db_url.startswith('postgresql://') and '+asyncpg' not in db_url:
+    db_url = db_url.replace('postgresql://', 'postgresql+asyncpg://', 1)
+
 engine_args = {
-    'url': settings.DATABASE_URL,
+    'url': db_url,
     'echo': settings.DEBUG,
     'pool_pre_ping': True,
 }
