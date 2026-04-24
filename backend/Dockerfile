@@ -14,8 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制代码
 COPY . .
 
+# 确保 Python 能找到 src/ 下的模块
+ENV PYTHONPATH=/app/src
+
 # 暴露端口
 EXPOSE 8001
 
 # 启动命令 - 使用 $PORT 环境变量（Zeabur 自动分配）
-CMD uvicorn src.main:app --host 0.0.0.0 --port ${PORT:-8001}
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8001}
