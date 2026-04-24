@@ -24,18 +24,23 @@ FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Nginx 配置 — SPA 路由回退到 index.html
-RUN echo 'server { \
-    listen       ${PORT:-8080}; \
-    server_name  _; \
-    root         /usr/share/nginx/html; \
-    index        index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-    gzip on; \
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml; \
-}' > /etc/nginx/conf.d/default.conf
+# 注：使用 heredoc 避免 $uri 被 shell 展开
+RUN cat > /etc/nginx/conf.d/default.conf << 'EOF'
+server {
+    listen      8080;
+    server_name  _;
+    root         /usr/share/nginx/html;
+    index        index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+}
+EOF
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "nginx -g 'daemon off;'"]
+CMD ["nginx", "-g", "daemon off;"]
