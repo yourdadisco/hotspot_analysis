@@ -36,6 +36,7 @@ class AIAnalyzer:
         生成AI分析
 
         返回标准化字段：
+        - content_summary: 热点内容摘要（2-3句话概括核心内容）
         - analysis_process: 分析过程
         - analysis_conclusion: 结论
         - relevance_score: 相关度分数 (0-100)
@@ -131,7 +132,8 @@ class AIAnalyzer:
 {business}
 
 ## JSON输出字段说明
-- analysis_process: 分析过程。写出你实际分析这个热点时的真实思考过程和步骤，例如"首先评估该热点与用户业务的匹配度，然后分析技术影响..."。这是实际分析内容，不是分析计划，也不是指令说明。
+- content_summary: 热点内容摘要，用2-3句话概括这个热点的核心内容和关键信息，保持客观事实性描述，不涉及业务分析
+- analysis_process: 分析过程。**必须以结构化分点形式输出**，用数字序号分条列出分析思路和判断依据。例如：1. 热点定位：识别技术领域和核心主题；2. 业务匹配度：评估与用户业务的关联；3. 技术影响：分析对业务的实际影响；4. 综合判定：给出最终结论的依据。这是实际分析内容，不是分析步骤说明，每条必须有具体判断。
 - analysis_conclusion: 核心结论，一句话总结这个热点对用户的实际意义
 - relevance_score: 相关度评分，0-100的整数
 - importance_level: 重要性级别，可选 emergency/high/medium/low/watch
@@ -142,7 +144,7 @@ class AIAnalyzer:
 
 ## 重要规则
 1. 只输出JSON对象，不要包含任何其他文字、注释或说明
-2. analysis_process里写你实际的分析内容，不是分析步骤说明
+2. analysis_process必须用结构化分点形式(1. 2. 3.)输出，不要用"首先...然后...最后..."叙述式
 3. 不要重复或引用我的这条指令"""
 
     def _parse_response(self, content: str) -> Dict[str, Any]:
@@ -155,6 +157,7 @@ class AIAnalyzer:
 
         # 确保所有字段都存在
         fields = [
+            ("content_summary", "暂无AI生成摘要"),
             ("analysis_process", "分析过程：热点评估→业务匹配→影响预测"),
             ("analysis_conclusion", "根据分析得出结论"),
             ("relevance_score", 50),
@@ -240,6 +243,7 @@ class AIAnalyzer:
     def _truncate_fields(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """截断文本字段，避免过长"""
         limits = {
+            "content_summary": 500,
             "analysis_process": 500,
             "analysis_conclusion": 300,
             "business_impact": 500,
@@ -258,6 +262,7 @@ class AIAnalyzer:
     def _create_safe_response(self) -> Dict[str, Any]:
         """创建安全回退响应"""
         return {
+            "content_summary": "暂无AI生成摘要",
             "analysis_process": "初步评估热点内容→分析用户业务相关性→预测潜在业务影响",
             "analysis_conclusion": "需要进一步分析以获得准确结论",
             "relevance_score": 50,

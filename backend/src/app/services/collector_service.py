@@ -277,7 +277,7 @@ class CollectorService:
             # 机器之心RSS失效，使用钛媒体作为替代（知名科技媒体）
             ("钛媒体", SourceType.NEWS, "https://www.tmtpost.com/feed"),  # 已验证有效
             # 其他优质AI/技术媒体
-            ("InfoQ AI技术", SourceType.TECH_BLOG, "https://www.infoq.cn/feed"),  # 已验证有效
+            # InfoQ RSS只返回"点击查看原文"，无实际内容，已移除
             ("36氪", SourceType.NEWS, "https://36kr.com/feed"),  # 新增，替换少数派
             ("虎嗅", SourceType.NEWS, "https://www.huxiu.com/rss"),  # 新增
             ("OSCHINA", SourceType.TECH_BLOG, "https://www.oschina.net/news/rss"),  # 新增

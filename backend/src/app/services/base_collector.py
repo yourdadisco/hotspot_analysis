@@ -4,6 +4,7 @@
 """
 
 import logging
+import re
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 from datetime import datetime
@@ -11,6 +12,48 @@ from datetime import datetime
 from app.models.hotspot import SourceType
 
 logger = logging.getLogger(__name__)
+
+
+def clean_html_content(html: str) -> str:
+    """将HTML内容转为可读文本：解码实体、添加换行、去标签"""
+    if not html:
+        return ""
+
+    text = html
+    # 块级结束标签后加换行
+    text = re.sub(r'<\/(p|div|h[1-6]|li|blockquote|tr|table|dl|ol|ul)>', '\n', text, flags=re.IGNORECASE)
+    # 换行标签替换
+    text = re.sub(r'<br\s*\/?>', '\n', text, flags=re.IGNORECASE)
+    # 列表项前加换行
+    text = re.sub(r'<li[^>]*>', '\n', text, flags=re.IGNORECASE)
+    # 块级标签前加换行
+    text = re.sub(r'<(p|div|h[1-6]|blockquote)[^>]*>', '\n', text, flags=re.IGNORECASE)
+
+    # HTML实体映射
+    entities = {
+        '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'",
+        '&middot;': '·', '&bull;': '•', '&ldquo;': '“', '&rdquo;': '”',
+        '&lsquo;': '‘', '&rsquo;': '’',
+        '&mdash;': '—', '&ndash;': '–', '&hellip;': '…', '&nbsp;': ' ',
+        '&laquo;': '«', '&raquo;': '»', '&copy;': '©', '&reg;': '®',
+        '&trade;': '™', '&deg;': '°', '&plusmn;': '±', '&times;': '×', '&divide;': '÷',
+    }
+    for entity, char in entities.items():
+        text = text.replace(entity, char)
+
+    # 数字实体
+    text = re.sub(r'&#(\d+);', lambda m: chr(int(m.group(1))), text)
+
+    # 移除剩余HTML标签
+    text = re.sub(r'<[^>]*>', '', text)
+
+    # 合并多余空行
+    text = re.sub(r'\n{3,}', '\n\n', text)
+
+    # 逐行trim
+    text = '\n'.join(line.strip() for line in text.split('\n'))
+
+    return text.strip()
 
 
 class BaseCollector(ABC):
@@ -45,5 +88,11 @@ class BaseCollector(ABC):
         # 确保必要字段不为空
         if not processed["title"]:
             raise ValueError("热点标题不能为空")
+
+        # 清洗HTML内容：解码实体、添加换行
+        if processed.get("content"):
+            processed["content"] = clean_html_content(processed["content"])
+        if processed.get("summary"):
+            processed["summary"] = clean_html_content(processed["summary"])
 
         return processed

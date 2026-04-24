@@ -422,7 +422,7 @@ const Dashboard: React.FC = () => {
             hotspotsData.items.map((hotspot: Hotspot) => (
               <div key={hotspot.id} className="p-6 hover:bg-gray-50 transition-colors" onClick={() => handleHotspotClick(hotspot.id)}>
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3 mb-2">
                       {hotspot.has_analysis ? (
                         <ImportanceBadge level={hotspot.analysis_importance_level || 'medium'} size="sm" />
@@ -493,7 +493,7 @@ const Dashboard: React.FC = () => {
           <p className="text-sm text-gray-600">
             显示 {hotspotsData?.items?.length || 0} 个热点，共 {hotspotsData?.total || 0} 个
           </p>
-          <div className="flex space-x-2">
+          <div className="flex items-center space-x-2">
             <button
               onClick={handlePrevPage}
               disabled={page <= 1}
@@ -501,6 +501,9 @@ const Dashboard: React.FC = () => {
             >
               上一页
             </button>
+            <span className="text-sm text-gray-600 min-w-[80px] text-center">
+              第 {page}/{totalPages} 页
+            </span>
             <button
               onClick={handleNextPage}
               disabled={page >= totalPages}
