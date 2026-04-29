@@ -250,7 +250,7 @@ const HotspotDetail: React.FC = () => {
                 {hotspot.raw_content || hotspot.summary ? (
                   <button
                     onClick={() => setShowFullDetail(!showFullDetail)}
-                    className="text-sm text-blue-600 hover:text-blue-800"
+                    className="text-sm px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                   >
                     {showFullDetail ? '收起' : '展开全文'}
                   </button>
