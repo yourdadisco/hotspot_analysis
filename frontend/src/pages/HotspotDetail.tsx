@@ -17,7 +17,8 @@ import { useProgressPolling } from '../hooks/useProgressPolling'
 const HotspotDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const addToast = useToastStore((s) => s.addToast)
-  const [showFullContent, setShowFullContent] = useState(false)
+  const [showFullSummary, setShowFullSummary] = useState(false)
+  const [showFullDetail, setShowFullDetail] = useState(false)
 
   const userId = localStorage.getItem('user_id') || ''
 
@@ -222,36 +223,43 @@ const HotspotDetail: React.FC = () => {
               ))}
             </div>
 
-            {/* 摘要和全文 */}
+            {/* 摘要 */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">内容摘要</h3>
-              <p className={`text-gray-700 leading-relaxed ${!showFullContent ? 'line-clamp-3' : ''}`}>
+              <p className={`text-gray-700 leading-relaxed ${!showFullSummary ? 'line-clamp-3' : ''}`}>
                 {renderSafeSummary(hotspot.summary) || '暂无摘要'}
               </p>
               {(hotspot.summary?.length ?? 0) > 150 && (
                 <button
-                  onClick={() => setShowFullContent(!showFullContent)}
+                  onClick={() => setShowFullSummary(!showFullSummary)}
                   className="text-sm text-blue-600 hover:text-blue-800 mt-1"
                 >
-                  {showFullContent ? '收起' : '展开全文'}
+                  {showFullSummary ? '收起' : '展开全文'}
                 </button>
               )}
             </div>
 
+            {/* 详细内容（仅展示原始raw_content，不与summary重复） */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">详细内容</h3>
               </div>
-              <div className={`text-gray-700 whitespace-pre-wrap ${!showFullContent ? 'line-clamp-3' : ''}`}>
-                {stripHtmlTags(hotspot.raw_content || hotspot.summary || '暂无详细内容')}
-              </div>
-              {((hotspot.raw_content?.length ?? 0) > 200 || (hotspot.summary?.length ?? 0) > 200) && (
-                <button
-                  onClick={() => setShowFullContent(!showFullContent)}
-                  className="text-sm text-blue-600 hover:text-blue-800 mt-1"
-                >
-                  {showFullContent ? '收起' : '展开全文'}
-                </button>
+              {hotspot.raw_content ? (
+                <>
+                  <div className={`text-gray-700 whitespace-pre-wrap ${!showFullDetail ? 'line-clamp-3' : ''}`}>
+                    {stripHtmlTags(hotspot.raw_content)}
+                  </div>
+                  {hotspot.raw_content.length > 200 && (
+                    <button
+                      onClick={() => setShowFullDetail(!showFullDetail)}
+                      className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                    >
+                      {showFullDetail ? '收起' : '展开全文'}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="text-gray-400 text-sm">无详细内容（仅有摘要）</p>
               )}
             </div>
 
