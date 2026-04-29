@@ -247,6 +247,14 @@ const HotspotDetail: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">详细内容</h3>
+                {hotspot.raw_content || hotspot.summary ? (
+                  <button
+                    onClick={() => setShowFullDetail(!showFullDetail)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {showFullDetail ? '收起' : '展开全文'}
+                  </button>
+                ) : null}
               </div>
               {(() => {
                 const displayContent = hotspot.raw_content || hotspot.summary
@@ -254,21 +262,10 @@ const HotspotDetail: React.FC = () => {
                   return <p className="text-gray-400 text-sm">暂无详细内容</p>
                 }
                 const text = stripHtmlTags(displayContent)
-                const isLong = text.length > 100
                 return (
-                  <>
-                    <div className={`text-gray-700 whitespace-pre-wrap ${!showFullDetail && isLong ? 'line-clamp-3' : ''}`}>
-                      {text}
-                    </div>
-                    {isLong && (
-                      <button
-                        onClick={() => setShowFullDetail(!showFullDetail)}
-                        className="text-sm text-blue-600 hover:text-blue-800 mt-1"
-                      >
-                        {showFullDetail ? '收起' : '展开全文'}
-                      </button>
-                    )}
-                  </>
+                  <div className={`text-gray-700 whitespace-pre-wrap ${!showFullDetail ? 'line-clamp-3' : ''}`}>
+                    {text}
+                  </div>
                 )
               })()}
             </div>
