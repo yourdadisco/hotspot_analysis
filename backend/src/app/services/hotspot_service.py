@@ -54,10 +54,9 @@ class HotspotService:
         # 构建查询 - 使用别名避免冲突
         stmt = select(Hotspot)
 
-        # 重要性级别筛选：需要左连 HotspotAnalysis 表
-        if importance_levels or is_dismissed is not None:
-            levels = importance_levels.split(",") if importance_levels else None
-            # 子查询：获取用户分析过的重要性级别
+        # 重要性级别筛选：需要子查询 HotspotAnalysis 表
+        if importance_levels:
+            levels = importance_levels.split(",")
             if user_id:
                 analysis_sub = select(HotspotAnalysis.hotspot_id).where(
                     HotspotAnalysis.user_id == user_id
@@ -67,9 +66,6 @@ class HotspotService:
                         HotspotAnalysis.importance_level.in_(levels)
                     )
                 stmt = stmt.where(Hotspot.id.in_(analysis_sub))
-        elif importance_levels:
-            # 没有 user_id 时无法按重要性过滤（因为没有用户上下文）
-            pass
 
         # 来源类型筛选
         if source_types:
