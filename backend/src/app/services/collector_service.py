@@ -270,7 +270,6 @@ class CollectorService:
         # 用户要求：量子位、机器之心、AI科技评论、新智元（科技学习气息浓的平台）
         # 由于机器之心RSS不可访问，使用钛媒体替代
         rss_sources = [
-            # 国内AI科技媒体（部署在海外服务器可能无法访问）
             ("AI科技评论", SourceType.NEWS, "https://www.leiphone.com/feed"),
             ("量子位", SourceType.NEWS, "https://www.qbitai.com/feed"),
             ("新智元", SourceType.NEWS, "https://www.zhidx.com/rss"),
@@ -279,11 +278,6 @@ class CollectorService:
             ("36氪", SourceType.NEWS, "https://36kr.com/feed"),
             ("虎嗅", SourceType.NEWS, "https://www.huxiu.com/rss"),
             ("OSCHINA", SourceType.TECH_BLOG, "https://www.oschina.net/news/rss"),
-            # 全球可访问的AI RSS源（海外服务器备用）
-            ("ArXiv AI", SourceType.ACADEMIC, "http://export.arxiv.org/rss/cs.AI"),
-            ("TechCrunch AI", SourceType.NEWS, "https://techcrunch.com/tag/artificial-intelligence/feed/"),
-            ("Reddit ML", SourceType.SOCIAL_MEDIA, "https://www.reddit.com/r/MachineLearning/.rss"),
-            ("Hacker News AI", SourceType.NEWS, "https://hnrss.org/frontpage?q=AI+artificial+intelligence+LLM+GPT+machine+learning"),
         ]
 
         for name, source_type, url in rss_sources:

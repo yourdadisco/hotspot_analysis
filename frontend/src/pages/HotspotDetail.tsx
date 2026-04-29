@@ -17,7 +17,6 @@ import { useProgressPolling } from '../hooks/useProgressPolling'
 const HotspotDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const addToast = useToastStore((s) => s.addToast)
-  const [showFullSummary, setShowFullSummary] = useState(false)
   const [showFullDetail, setShowFullDetail] = useState(false)
 
   const userId = localStorage.getItem('user_id') || ''
@@ -226,20 +225,12 @@ const HotspotDetail: React.FC = () => {
             {/* 摘要 */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">内容摘要</h3>
-              <p className={`text-gray-700 leading-relaxed ${!showFullSummary ? 'line-clamp-3' : ''}`}>
+              <p className="text-gray-700 leading-relaxed">
                 {renderSafeSummary(hotspot.summary) || '暂无摘要'}
               </p>
-              {(hotspot.summary?.length ?? 0) > 150 && (
-                <button
-                  onClick={() => setShowFullSummary(!showFullSummary)}
-                  className="text-sm text-blue-600 hover:text-blue-800 mt-1"
-                >
-                  {showFullSummary ? '收起' : '展开全文'}
-                </button>
-              )}
             </div>
 
-            {/* 详细内容（仅展示原始raw_content，不与summary重复） */}
+            {/* 详细内容 */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">详细内容</h3>
@@ -258,8 +249,12 @@ const HotspotDetail: React.FC = () => {
                     </button>
                   )}
                 </>
+              ) : hotspot.summary ? (
+                <div className="text-gray-700 whitespace-pre-wrap">
+                  {stripHtmlTags(hotspot.summary)}
+                </div>
               ) : (
-                <p className="text-gray-400 text-sm">无详细内容（仅有摘要）</p>
+                <p className="text-gray-400 text-sm">暂无详细内容</p>
               )}
             </div>
 
