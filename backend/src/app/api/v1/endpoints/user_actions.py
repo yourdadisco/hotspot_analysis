@@ -103,10 +103,10 @@ async def batch_dismiss(
                 hotspot_ids.add(str(row.id))
 
     # 如果没有筛选条件，不执行批量操作（防止误删全部）
-    if not hotspot_ids and not request.importance_levels and not request.date_from and not request.date_to:
+    if not hotspot_ids and not request.importance_levels and not request.date_from and not request.date_to and request.is_favorite is None:
         return {"dismissed_count": 0, "message": "未指定筛选条件，不执行批量忽略"}
 
-    # 如果没有 importance_levels 也没有日期条件，无法确定要忽略的热点
+    # 如果没有 importance_levels 也没有日期条件，则使用用户的所有分析热点
     if not hotspot_ids:
         # 退回到当前用户所有分析过的热点
         stmt = select(HotspotAnalysis.hotspot_id).where(
