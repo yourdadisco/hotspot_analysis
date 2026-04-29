@@ -68,6 +68,7 @@ export interface Hotspot {
   has_analysis?: boolean
   analysis_importance_level?: string
   analysis_relevance_score?: number
+  analysis_content_summary?: string | null
   is_favorite?: boolean
   is_dismissed?: boolean
 }

@@ -52,6 +52,8 @@ const Dashboard: React.FC = () => {
     is_favorite: 'all',
   })
   const [showDismissDialog, setShowDismissDialog] = useState(false)
+  const [expandedSummaries, setExpandedSummaries] = useState<Set<string>>(new Set())
+  const [analyzingHotspots, setAnalyzingHotspots] = useState<Set<string>>(new Set())
 
   // 收集进度
   const [collectTaskId, setCollectTaskId] = useState<string | null>(null)
@@ -292,6 +294,34 @@ const Dashboard: React.FC = () => {
     !!advancedFilters.source_types,
     advancedFilters.is_favorite !== 'all',
   ].filter(Boolean).length
+
+  const toggleSummary = (id: string) => {
+    setExpandedSummaries(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const handleQuickAnalyze = async (e: React.MouseEvent, hotspotId: string) => {
+    e.stopPropagation()
+    if (!userId) return
+    setAnalyzingHotspots(prev => new Set(prev).add(hotspotId))
+    try {
+      await analysisApi.triggerAnalysis(hotspotId, userId)
+      addToast('AI分析完成！', 'success')
+      refetchHotspots()
+    } catch (error: any) {
+      addToast(`分析失败: ${error.response?.data?.detail || error.message || '未知错误'}`, 'error')
+    } finally {
+      setAnalyzingHotspots(prev => {
+        const next = new Set(prev)
+        next.delete(hotspotId)
+        return next
+      })
+    }
+  }
 
   // 加载状态
   if (isLoadingHotspots || isLoadingStats) {
@@ -617,29 +647,53 @@ const Dashboard: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-2 break-words line-clamp-1">
                       {hotspot.title}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2 overflow-hidden break-words">
-                      {renderSafeSummary(hotspot.summary)}
-                    </p>
+
+                    {/* 已分析：显示AI摘要，可展开 */}
+                    {hotspot.has_analysis ? (
+                      <div className="mb-4">
+                        <p className={`text-gray-600 overflow-hidden break-words ${!expandedSummaries.has(hotspot.id) ? 'line-clamp-2' : ''}`}>
+                          {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
+                        </p>
+                        {((hotspot.analysis_content_summary?.length ?? 0) > 100 || (hotspot.summary?.length ?? 0) > 150) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleSummary(hotspot.id) }}
+                            className="text-blue-600 text-sm hover:text-blue-800 mt-1"
+                          >
+                            {expandedSummaries.has(hotspot.id) ? '收起' : '展开全部'}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      /* 未分析：显示立即分析按钮 + 原文缩略 */
+                      <div className="mb-4">
+                        <p className="text-gray-400 text-sm mb-3 line-clamp-1 overflow-hidden break-words italic">
+                          {renderSafeSummary(hotspot.summary)?.slice(0, 80)}...
+                        </p>
+                        <button
+                          onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
+                          disabled={analyzingHotspots.has(hotspot.id)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition-colors"
+                        >
+                          {analyzingHotspots.has(hotspot.id) ? '分析中...' : '立即分析'}
+                        </button>
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-2">
                         {hotspot.tags.slice(0, 3).map((tag: string) => (
-                          <span
-                            key={tag}
-                            className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full"
-                          >
-                            {tag}
-                          </span>
+                          <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
                         ))}
                         {hotspot.tags.length > 3 && (
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">
-                            +{hotspot.tags.length - 3}
-                          </span>
+                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
                         )}
                       </div>
                       <div className="flex items-center space-x-4">
-                        <span className="text-sm text-gray-500">
-                          相关度: <strong className="text-gray-900">{hotspot.analysis_relevance_score ?? hotspot.analysis?.relevance_score ?? 0}%</strong>
-                        </span>
+                        {hotspot.has_analysis && (
+                          <span className="text-sm text-gray-500">
+                            相关度: <strong className="text-gray-900">{hotspot.analysis_relevance_score ?? 0}%</strong>
+                          </span>
+                        )}
                         <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
                         <button className="text-blue-600 hover:text-blue-800 flex items-center space-x-1">
                           <span>查看详情</span>

@@ -118,7 +118,8 @@ class HotspotService:
             analysis_stmt = select(
                 HotspotAnalysis.hotspot_id,
                 HotspotAnalysis.importance_level,
-                HotspotAnalysis.relevance_score
+                HotspotAnalysis.relevance_score,
+                HotspotAnalysis.analysis_metadata
             ).where(
                 HotspotAnalysis.user_id == user_id,
                 HotspotAnalysis.hotspot_id.in_(hotspot_ids)
@@ -126,9 +127,11 @@ class HotspotService:
             analysis_result = await db.execute(analysis_stmt)
             for row in analysis_result.all():
                 imp = row.importance_level.value if hasattr(row.importance_level, 'value') else row.importance_level
+                meta = row.analysis_metadata or {}
                 analyzed_map[str(row.hotspot_id)] = {
                     'importance_level': imp,
                     'relevance_score': row.relevance_score,
+                    'content_summary': meta.get('content_summary') if isinstance(meta, dict) else None,
                 }
 
             # 用户操作状态（收藏/忽略）
@@ -149,6 +152,7 @@ class HotspotService:
             item['has_analysis'] = hid in analyzed_map
             item['analysis_importance_level'] = info['importance_level'] if info else None
             item['analysis_relevance_score'] = info['relevance_score'] if info else None
+            item['analysis_content_summary'] = info['content_summary'] if info else None
 
             # 用户操作状态
             action = action_map.get(hid)

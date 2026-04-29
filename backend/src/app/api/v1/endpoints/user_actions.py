@@ -219,9 +219,11 @@ async def get_favorites(
     analyzed_map = {}
     for a in analyses:
         imp = a.importance_level.value if hasattr(a.importance_level, 'value') else a.importance_level
+        meta = a.analysis_metadata or {}
         analyzed_map[str(a.hotspot_id)] = {
             'importance_level': imp,
             'relevance_score': a.relevance_score,
+            'content_summary': meta.get('content_summary') if isinstance(meta, dict) else None,
         }
 
     items = []
@@ -233,6 +235,7 @@ async def get_favorites(
         item['has_analysis'] = hid in analyzed_map
         item['analysis_importance_level'] = info['importance_level'] if info else None
         item['analysis_relevance_score'] = info['relevance_score'] if info else None
+        item['analysis_content_summary'] = info['content_summary'] if info else None
         items.append(item)
 
     return PaginatedResponse(

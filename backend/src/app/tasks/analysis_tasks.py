@@ -130,15 +130,7 @@ async def analyze_hotspot_for_user_async(hotspot_id: str, user_id: str) -> Dict[
             await db.commit()
             await db.refresh(analysis)
 
-            # 用AI生成的摘要更新热点的summary字段
-            if analysis_result.get("content_summary"):
-                hotspot_stmt = select(Hotspot).where(Hotspot.id == hotspot_id)
-                hotspot_result = await db.execute(hotspot_stmt)
-                db_hotspot = hotspot_result.scalar_one_or_none()
-                if db_hotspot:
-                    db_hotspot.summary = analysis_result["content_summary"]
-                    await db.commit()
-                    logger.info(f"热点摘要已更新: {hotspot_id}")
+            # 注意：不再用AI摘要覆盖hotspot.summary，保留原始RSS内容
 
             logger.info(f"热点分析完成: {hotspot_id} -> {user_id}, 分析ID: {analysis.id}")
 

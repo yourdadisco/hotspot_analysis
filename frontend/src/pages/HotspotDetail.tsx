@@ -225,25 +225,33 @@ const HotspotDetail: React.FC = () => {
             {/* 摘要和全文 */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">内容摘要</h3>
-              <p className="text-gray-700 leading-relaxed">
+              <p className={`text-gray-700 leading-relaxed ${!showFullContent ? 'line-clamp-3' : ''}`}>
                 {renderSafeSummary(hotspot.summary) || '暂无摘要'}
               </p>
+              {(hotspot.summary?.length ?? 0) > 150 && (
+                <button
+                  onClick={() => setShowFullContent(!showFullContent)}
+                  className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                >
+                  {showFullContent ? '收起' : '展开全文'}
+                </button>
+              )}
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-lg font-semibold text-gray-900">详细内容</h3>
+              </div>
+              <div className={`text-gray-700 whitespace-pre-wrap ${!showFullContent ? 'line-clamp-3' : ''}`}>
+                {stripHtmlTags(hotspot.raw_content || hotspot.summary || '暂无详细内容')}
+              </div>
+              {((hotspot.raw_content?.length ?? 0) > 200 || (hotspot.summary?.length ?? 0) > 200) && (
                 <button
                   onClick={() => setShowFullContent(!showFullContent)}
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-blue-600 hover:text-blue-800 mt-1"
                 >
-                  {showFullContent ? '收起内容' : '展开全文'}
+                  {showFullContent ? '收起' : '展开全文'}
                 </button>
-              </div>
-              {showFullContent && (
-                <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
-                  {stripHtmlTags(hotspot.raw_content || hotspot.summary || '暂无详细内容')}
-                </div>
               )}
             </div>
 
