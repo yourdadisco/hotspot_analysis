@@ -29,7 +29,15 @@ const Dashboard: React.FC = () => {
   const addToast = useToastStore((s) => s.addToast)
   const [selectedImportance, setSelectedImportance] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState<number>(() => {
+    try {
+      const saved = sessionStorage.getItem('hotspot_page')
+      return saved ? Math.max(1, parseInt(saved, 10)) : 1
+    } catch { return 1 }
+  })
+  useEffect(() => {
+    try { sessionStorage.setItem('hotspot_page', String(page)) } catch {}
+  }, [page])
   const [limit] = useState(10)
   const [sortBy, setSortBy] = useState('collected_at')
   const [sortOrder, setSortOrder] = useState('desc')
@@ -184,6 +192,21 @@ const Dashboard: React.FC = () => {
     if (page < totalPages) {
       setPage(page + 1)
     }
+  }
+
+  // 页码按钮计算
+  const getPageNumbers = (): (number | '...')[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    const pages: (number | '...')[] = [1]
+    const start = Math.max(2, page - 2)
+    const end = Math.min(totalPages - 1, page + 2)
+    if (start > 2) pages.push('...')
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (end < totalPages - 1) pages.push('...')
+    pages.push(totalPages)
+    return pages
   }
 
   // 计算统计数据
@@ -449,7 +472,7 @@ const Dashboard: React.FC = () => {
             {importanceLevels.map((level) => (
               <button
                 key={level.id}
-                onClick={() => setSelectedImportance(level.id)}
+                onClick={() => { setSelectedImportance(level.id); setPage(1) }}
                 className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
                   selectedImportance === level.id
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -641,28 +664,65 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
-        <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+        <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4">
           <p className="text-sm text-gray-600">
             显示 {hotspotsData?.items?.length || 0} 个热点，共 {hotspotsData?.total || 0} 个
           </p>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5">
             <button
               onClick={handlePrevPage}
               disabled={page <= 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               上一页
             </button>
-            <span className="text-sm text-gray-600 min-w-[80px] text-center">
-              第 {page}/{totalPages} 页
-            </span>
+
+            {/* 页码按钮 */}
+            {getPageNumbers().map((p, idx) =>
+              p === '...' ? (
+                <span key={`e${idx}`} className="px-1.5 text-gray-400 text-sm">...</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`min-w-[36px] h-9 rounded-lg text-sm font-medium transition-colors ${
+                    page === p
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
+
             <button
               onClick={handleNextPage}
               disabled={page >= totalPages}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
               下一页
             </button>
+
+            {/* 跳转输入 */}
+            <div className="flex items-center space-x-1 ml-2">
+              <span className="text-sm text-gray-500">跳至</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                defaultValue={page}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const val = parseInt((e.target as HTMLInputElement).value, 10)
+                    if (val >= 1 && val <= totalPages) {
+                      setPage(val)
+                    }
+                  }
+                }}
+                className="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
           </div>
         </div>
       </div>
