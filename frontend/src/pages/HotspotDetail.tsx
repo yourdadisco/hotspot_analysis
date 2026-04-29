@@ -10,7 +10,7 @@ import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
 import { hotspotsApi, analysisApi } from '../services/api'
 import ProgressOverlay from '../components/ProgressOverlay'
-import { renderSafeSummary, stripHtmlTags } from '../utils/sanitize'
+import { stripHtmlTags } from '../utils/sanitize'
 import { useToastStore } from '../stores/toastStore'
 import { useProgressPolling } from '../hooks/useProgressPolling'
 
@@ -222,12 +222,25 @@ const HotspotDetail: React.FC = () => {
               ))}
             </div>
 
-            {/* 摘要 */}
+            {/* 摘要：分析前显示按钮，分析后显示AI生成的摘要 */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">内容摘要</h3>
-              <p className="text-gray-700 leading-relaxed">
-                {renderSafeSummary(hotspot.summary) || '暂无摘要'}
-              </p>
+              {analysis?.analysis_metadata?.content_summary ? (
+                <p className="text-gray-700 leading-relaxed">
+                  {analysis.analysis_metadata.content_summary}
+                </p>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500 mb-3">尚未进行AI分析</p>
+                  <button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isAnalyzing ? '分析中...' : '立即分析'}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* 详细内容 */}
