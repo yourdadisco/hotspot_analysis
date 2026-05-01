@@ -646,28 +646,32 @@ const Dashboard: React.FC = () => {
                         </p>
                       </div>
                     ) : (
-                      /* 未分析：显示立即分析按钮 + 原文缩略 */
+                      /* 未分析：显示原文缩略 */
                       <div className="mb-4">
-                        <p className="text-gray-400 text-sm mb-3 line-clamp-1 overflow-hidden break-words italic">
+                        <p className="text-gray-400 text-sm line-clamp-1 overflow-hidden break-words italic">
                           {renderSafeSummary(hotspot.summary)?.slice(0, 80)}...
                         </p>
-                        <button
-                          onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
-                          disabled={analyzingHotspots.has(hotspot.id)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium transition-colors"
-                        >
-                          {analyzingHotspots.has(hotspot.id) ? '分析中...' : '立即分析'}
-                        </button>
                       </div>
                     )}
 
                     <div className="flex items-center justify-between">
-                      <div className="flex flex-wrap gap-2">
-                        {hotspot.tags.slice(0, 3).map((tag: string) => (
-                          <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
-                        ))}
-                        {hotspot.tags.length > 3 && (
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap gap-2">
+                          {hotspot.tags.slice(0, 3).map((tag: string) => (
+                            <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
+                          ))}
+                          {hotspot.tags.length > 3 && (
+                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
+                          )}
+                        </div>
+                        {!hotspot.has_analysis && (
+                          <button
+                            onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
+                            disabled={analyzingHotspots.has(hotspot.id)}
+                            className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors whitespace-nowrap"
+                          >
+                            {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析获取摘要'}
+                          </button>
                         )}
                       </div>
                       <div className="flex items-center space-x-4">
