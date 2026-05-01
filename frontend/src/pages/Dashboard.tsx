@@ -656,14 +656,6 @@ const Dashboard: React.FC = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <div className="flex flex-wrap gap-2">
-                          {hotspot.tags.slice(0, 3).map((tag: string) => (
-                            <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
-                          ))}
-                          {hotspot.tags.length > 3 && (
-                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
-                          )}
-                        </div>
                         {!hotspot.has_analysis && (
                           <button
                             onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
@@ -672,6 +664,15 @@ const Dashboard: React.FC = () => {
                           >
                             {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析获取摘要'}
                           </button>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {hotspot.tags.slice(0, 3).map((tag: string) => (
+                            <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
+                          ))}
+                          {hotspot.tags.length > 3 && (
+                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
+                          )}
+                        </div>
                         )}
                       </div>
                       <div className="flex items-center space-x-4">
