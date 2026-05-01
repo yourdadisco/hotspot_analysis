@@ -4,15 +4,29 @@ import { useQuery } from '@tanstack/react-query'
 import { Brain, Home, Heart, Settings, Briefcase, Cpu, Bell, LogOut, User, BookOpen } from 'lucide-react'
 import { hotspotsApi } from '../services/api'
 import UsageGuideModal from './UsageGuideModal'
+import TutorialPrompt from './TutorialPrompt'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
   const [userEmail, setUserEmail] = useState('')
   const [showLogout, setShowLogout] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
+  const [showTutorialPrompt, setShowTutorialPrompt] = useState(false)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const userId = localStorage.getItem('user_id') || ''
+
+  // 首次登录显示使用教程引导
+  useEffect(() => {
+    if (userId) {
+      const dismissed = localStorage.getItem(`tutorial_dismissed_${userId}`)
+      if (!dismissed) {
+        // 延迟显示，等页面渲染完成
+        const timer = setTimeout(() => setShowTutorialPrompt(true), 500)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [userId])
 
   // 获取统计信息（与Dashboard共享同一个queryKey，一方刷新另一方自动更新）
   const { data: statsData } = useQuery({
@@ -163,6 +177,7 @@ const Layout: React.FC = () => {
               {/* 使用教程 — 醒目标识 */}
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <button
+                  id="tutorial-btn"
                   onClick={() => setShowTutorial(true)}
                   className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors w-full font-medium border border-blue-200"
                 >
@@ -203,6 +218,14 @@ const Layout: React.FC = () => {
       </footer>
 
       <UsageGuideModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
+
+      {showTutorialPrompt && (
+        <TutorialPrompt
+          userId={userId}
+          onDismiss={() => setShowTutorialPrompt(false)}
+          onOpenTutorial={() => setShowTutorial(true)}
+        />
+      )}
     </div>
   )
 }
