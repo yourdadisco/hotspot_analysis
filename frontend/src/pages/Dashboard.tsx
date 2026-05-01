@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
     try { sessionStorage.setItem('hotspot_page', String(page)) } catch {}
   }, [page])
   const [limit] = useState(10)
-  const [sortBy, setSortBy] = useState('collected_at')
+  const [sortBy, setSortBy] = useState('publish_date')
   const [sortOrder, setSortOrder] = useState('desc')
 
   // 高级筛选
@@ -607,9 +607,7 @@ const Dashboard: React.FC = () => {
               }}
               className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
             >
-              <option value="collected_at:desc">最新发布</option>
-              <option value="collected_at:asc">最早发布</option>
-              <option value="publish_date:desc">发布时间</option>
+              <option value="publish_date:desc">最新发布</option>
               <option value="title:asc">标题排序</option>
             </select>
           </div>
