@@ -293,7 +293,7 @@ const HotspotDetail: React.FC = () => {
             </div>
             {analysis?.analysis_metadata?.analysis_process ? (
               <div className="prose max-w-none text-gray-700">
-                {analysis.analysis_metadata.analysis_process.split('\n').map((line, index) => (
+                {analysis.analysis_metadata.analysis_process.split('\n').map((line: string, index: number) => (
                   <p key={index} className="mb-3">{line}</p>
                 ))}
               </div>
@@ -330,7 +330,7 @@ const HotspotDetail: React.FC = () => {
             </div>
             {analysis?.business_impact ? (
               <div className="prose max-w-none text-gray-700">
-                {analysis.business_impact.split('\n').map((line, index) => (
+                {analysis.business_impact.split('\n').map((line: string, index: number) => (
                   <p key={index} className="mb-3">{line}</p>
                 ))}
               </div>
@@ -366,7 +366,7 @@ const HotspotDetail: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-700 mb-2">重要性原因</h4>
                   <div className="text-gray-700 text-sm leading-relaxed">
-                    {analysis.importance_reason?.split('\n').map((line, index) => (
+                    {analysis.importance_reason?.split('\n').map((line: string, index: number) => (
                       <p key={index} className="mb-2">{line}</p>
                     )) || <p className="text-gray-500">暂无重要性原因分析</p>}
                   </div>
@@ -387,7 +387,7 @@ const HotspotDetail: React.FC = () => {
             </div>
             {analysis?.analysis_metadata?.analysis_conclusion ? (
               <div className="prose max-w-none text-gray-700">
-                {analysis.analysis_metadata.analysis_conclusion.split('\n').map((line, index) => (
+                {analysis.analysis_metadata.analysis_conclusion.split('\n').map((line: string, index: number) => (
                   <p key={index} className="mb-3">{line}</p>
                 ))}
               </div>
@@ -424,7 +424,7 @@ const HotspotDetail: React.FC = () => {
             </div>
             {analysis?.action_suggestions ? (
               <ol className="space-y-3">
-                {analysis.action_suggestions.split('\n').map((line, index) => (
+                {analysis.action_suggestions.split('\n').map((line: string, index: number) => (
                   <li key={index} className="flex items-start space-x-3">
                     <div className="w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
                       {index + 1}
@@ -448,7 +448,7 @@ const HotspotDetail: React.FC = () => {
             </div>
             {analysis?.technical_details ? (
               <div className="text-gray-700 text-sm leading-relaxed">
-                {analysis.technical_details.split('\n').map((line, index) => (
+                {analysis.technical_details.split('\n').map((line: string, index: number) => (
                   <p key={index} className="mb-2">{line}</p>
                 ))}
               </div>

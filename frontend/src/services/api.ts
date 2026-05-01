@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api/v1'
 
-const api = axios.create({
+const _api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -10,7 +10,7 @@ const api = axios.create({
 })
 
 // 请求拦截器
-api.interceptors.request.use(
+_api.interceptors.request.use(
   (config) => {
     // 可以在这里添加token等
     const token = localStorage.getItem('access_token')
@@ -24,9 +24,9 @@ api.interceptors.request.use(
   }
 )
 
-// 响应拦截器
-api.interceptors.response.use(
-  (response) => response.data,
+// 响应拦截器（仅处理401，数据提取由包装方法完成）
+_api.interceptors.response.use(
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       // 处理未授权
@@ -36,6 +36,18 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+// 类型安全的包装，使 api.get<T>() 直接返回 Promise<T>
+const api = {
+  get: <T = any>(url: string, config?: any) =>
+    _api.get<T>(url, config).then(res => res.data),
+  post: <T = any>(url: string, data?: any, config?: any) =>
+    _api.post<T>(url, data, config).then(res => res.data),
+  put: <T = any>(url: string, data?: any, config?: any) =>
+    _api.put<T>(url, data, config).then(res => res.data),
+  delete: <T = any>(url: string, config?: any) =>
+    _api.delete<T>(url, config).then(res => res.data),
+}
 
 export interface PaginatedResponse<T> {
   items: T[]

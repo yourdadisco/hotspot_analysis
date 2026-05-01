@@ -160,14 +160,14 @@ const Layout: React.FC = () => {
                 </div>
               </div>
 
-              {/* 使用教程 */}
+              {/* 使用教程 — 醒目标识 */}
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <button
                   onClick={() => setShowTutorial(true)}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors w-full"
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors w-full font-medium border border-blue-200"
                 >
-                  <BookOpen size={18} className="text-gray-400" />
-                  <span className="font-medium text-sm">使用教程</span>
+                  <BookOpen size={18} />
+                  <span>使用教程</span>
                 </button>
               </div>
             </nav>
