@@ -673,7 +673,6 @@ const Dashboard: React.FC = () => {
                             <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
                           )}
                         </div>
-                        )}
                       </div>
                       <div className="flex items-center space-x-4">
                         {hotspot.has_analysis && (
