@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, asc, func, and_, or_
+from sqlalchemy import select, desc, asc, func, and_, or_, case, nullslast
 from sqlalchemy.orm import selectinload
 import hashlib
 import json
@@ -88,11 +88,42 @@ class HotspotService:
                 pass
 
         # 排序
-        order_column = getattr(Hotspot, sort_by, Hotspot.collected_at)
-        if sort_order == "desc":
-            stmt = stmt.order_by(desc(order_column))
+        if sort_by == "relevance_score" and user_id:
+            # 按相关度排序：关联分析表，未分析的热点排在最后
+            analysis_alias = select(
+                HotspotAnalysis.hotspot_id,
+                HotspotAnalysis.relevance_score,
+            ).where(HotspotAnalysis.user_id == user_id).subquery()
+            stmt = stmt.outerjoin(analysis_alias, Hotspot.id == analysis_alias.c.hotspot_id)
+            if sort_order == "asc":
+                stmt = stmt.order_by(nullslast(asc(analysis_alias.c.relevance_score)))
+            else:
+                stmt = stmt.order_by(nullslast(desc(analysis_alias.c.relevance_score)))
+        elif sort_by == "importance_level" and user_id:
+            # 按重要度排序：关联分析表，自定义排序规则
+            analysis_alias = select(
+                HotspotAnalysis.hotspot_id,
+                HotspotAnalysis.importance_level,
+            ).where(HotspotAnalysis.user_id == user_id).subquery()
+            stmt = stmt.outerjoin(analysis_alias, Hotspot.id == analysis_alias.c.hotspot_id)
+            order = case(
+                (analysis_alias.c.importance_level == 'emergency', 1),
+                (analysis_alias.c.importance_level == 'high', 2),
+                (analysis_alias.c.importance_level == 'medium', 3),
+                (analysis_alias.c.importance_level == 'low', 4),
+                (analysis_alias.c.importance_level == 'watch', 5),
+                else_=99
+            )
+            if sort_order == "desc":
+                stmt = stmt.order_by(desc(order))
+            else:
+                stmt = stmt.order_by(order)
         else:
-            stmt = stmt.order_by(asc(order_column))
+            order_column = getattr(Hotspot, sort_by, Hotspot.publish_date)
+            if sort_order == "desc":
+                stmt = stmt.order_by(desc(order_column))
+            else:
+                stmt = stmt.order_by(asc(order_column))
 
         # 分页
         total_stmt = select(func.count()).select_from(stmt.subquery())

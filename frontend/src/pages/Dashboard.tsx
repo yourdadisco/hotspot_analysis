@@ -608,7 +608,8 @@ const Dashboard: React.FC = () => {
               className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
             >
               <option value="publish_date:desc">最新发布</option>
-              <option value="title:asc">标题排序</option>
+              <option value="relevance_score:desc">相关度最高</option>
+              <option value="importance_level:asc">重要度最高</option>
             </select>
           </div>
         </div>
