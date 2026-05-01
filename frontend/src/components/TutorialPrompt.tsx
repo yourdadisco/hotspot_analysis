@@ -39,7 +39,7 @@ const TutorialPrompt: React.FC<TutorialPromptProps> = ({ userId, onDismiss, onOp
   return (
     <div className="fixed inset-0 z-[100]">
       {/* 半透明遮罩 */}
-      <div className="absolute inset-0 bg-black/30" onClick={() => handleClose(false)} />
+      <div className="absolute inset-0 bg-black/30" onClick={() => handleClose(dontShowAgain)} />
 
       {/* 箭头 */}
       <div
@@ -80,7 +80,7 @@ const TutorialPrompt: React.FC<TutorialPromptProps> = ({ userId, onDismiss, onOp
 
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => handleClose(false)}
+              onClick={() => handleClose(dontShowAgain)}
               className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-50 transition-colors"
             >
               稍后
