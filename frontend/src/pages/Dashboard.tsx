@@ -654,24 +654,26 @@ const Dashboard: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex flex-wrap gap-2">
-                        {hotspot.tags.slice(0, 3).map((tag: string) => (
-                          <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
-                        ))}
-                        {hotspot.tags.length > 3 && (
-                          <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap gap-2">
+                          {hotspot.tags.slice(0, 3).map((tag: string) => (
+                            <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
+                          ))}
+                          {hotspot.tags.length > 3 && (
+                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
+                          )}
+                        </div>
+                        {!hotspot.has_analysis && (
+                          <button
+                            onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
+                            disabled={analyzingHotspots.has(hotspot.id)}
+                            className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors whitespace-nowrap"
+                          >
+                            {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析获取摘要'}
+                          </button>
                         )}
                       </div>
-                      {!hotspot.has_analysis && (
-                        <button
-                          onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
-                          disabled={analyzingHotspots.has(hotspot.id)}
-                          className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors whitespace-nowrap"
-                        >
-                          {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析获取摘要'}
-                        </button>
-                      )}
                       <div className="flex items-center space-x-4">
                         {hotspot.has_analysis && (
                           <span className="text-sm text-gray-500">
