@@ -52,7 +52,6 @@ const Dashboard: React.FC = () => {
     is_favorite: 'all',
   })
   const [showDismissDialog, setShowDismissDialog] = useState(false)
-  const [expandedSummaries, setExpandedSummaries] = useState<Set<string>>(new Set())
   const [analyzingHotspots, setAnalyzingHotspots] = useState<Set<string>>(new Set())
 
   // 收集进度
@@ -295,14 +294,6 @@ const Dashboard: React.FC = () => {
     advancedFilters.is_favorite !== 'all',
   ].filter(Boolean).length
 
-  const toggleSummary = (id: string) => {
-    setExpandedSummaries(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
 
   const handleQuickAnalyze = async (e: React.MouseEvent, hotspotId: string) => {
     e.stopPropagation()
@@ -648,20 +639,12 @@ const Dashboard: React.FC = () => {
                       {hotspot.title}
                     </h3>
 
-                    {/* 已分析：显示AI摘要，可展开 */}
+                    {/* 已分析：显示AI摘要 */}
                     {hotspot.has_analysis ? (
                       <div className="mb-4">
-                        <p className={`text-gray-600 overflow-hidden break-words ${!expandedSummaries.has(hotspot.id) ? 'line-clamp-2' : ''}`}>
+                        <p className="text-gray-600 overflow-hidden break-words">
                           {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
                         </p>
-                        {((hotspot.analysis_content_summary?.length ?? 0) > 100 || (hotspot.summary?.length ?? 0) > 150) && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); toggleSummary(hotspot.id) }}
-                            className="text-blue-600 text-sm hover:text-blue-800 mt-1"
-                          >
-                            {expandedSummaries.has(hotspot.id) ? '收起' : '展开全部'}
-                          </button>
-                        )}
                       </div>
                     ) : (
                       /* 未分析：显示立即分析按钮 + 原文缩略 */
