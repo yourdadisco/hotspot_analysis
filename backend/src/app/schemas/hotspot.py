@@ -145,4 +145,5 @@ class BatchDismissRequest(BaseModel):
     date_from: Optional[str] = None
     date_to: Optional[str] = None
     source_types: Optional[str] = None
+    source_names: Optional[str] = None
     is_favorite: Optional[bool] = None

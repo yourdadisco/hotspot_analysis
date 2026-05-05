@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
+import { hotspotsApi } from '../services/api'
 
 export interface AdvancedFilters {
   importance_levels: string[]
   date_from: string
   date_to: string
-  source_types: string
+  source_names: string
   is_favorite: string
 }
 
@@ -20,7 +22,7 @@ const defaultFilters: AdvancedFilters = {
   importance_levels: [],
   date_from: '',
   date_to: '',
-  source_types: '',
+  source_names: '',
   is_favorite: 'all',
 }
 
@@ -31,16 +33,8 @@ const importanceOptions = [
   { value: 'low', label: '低', color: 'bg-blue-500' },
 ]
 
-const sourceTypeOptions = [
-  { value: 'news', label: '新闻媒体' },
-  { value: 'tech_blog', label: '技术博客' },
-  { value: 'social_media', label: '社交媒体' },
-  { value: 'academic', label: '学术论文' },
-  { value: 'other', label: '其他' },
-]
-
 /** 将逗号分隔字符串解析为数组 */
-const parseSourceTypes = (val: string): string[] =>
+const parseCsv = (val: string): string[] =>
   val ? val.split(',').map((s) => s.trim()).filter(Boolean) : []
 
 const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
@@ -50,6 +44,14 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
   initialFilters,
 }) => {
   const [filters, setFilters] = useState<AdvancedFilters>(initialFilters || defaultFilters)
+
+  // 打开时获取真实来源名称列表
+  const { data: sourceNameOptions = [] } = useQuery({
+    queryKey: ['source-names'],
+    queryFn: () => hotspotsApi.getSourceNames(),
+    enabled: isOpen,
+    staleTime: 60000,
+  })
 
   useEffect(() => {
     if (initialFilters) {
@@ -66,17 +68,17 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
     }))
   }
 
-  const handleToggleSourceType = (value: string) => {
+  const handleToggleSourceName = (name: string) => {
     setFilters((prev) => {
-      const current = parseSourceTypes(prev.source_types)
-      const next = current.includes(value)
-        ? current.filter((v) => v !== value)
-        : [...current, value]
-      return { ...prev, source_types: next.join(',') }
+      const current = parseCsv(prev.source_names)
+      const next = current.includes(name)
+        ? current.filter((v) => v !== name)
+        : [...current, name]
+      return { ...prev, source_names: next.join(',') }
     })
   }
 
-  const selectedSources = parseSourceTypes(filters.source_types)
+  const selectedSourceNames = parseCsv(filters.source_names)
 
   const handleReset = () => {
     setFilters(defaultFilters)
@@ -139,20 +141,24 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
         </div>
 
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-3">信息源类型</label>
-          <div className="space-y-2">
-            {sourceTypeOptions.map((opt) => (
-              <label key={opt.value} className="flex items-center space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={selectedSources.includes(opt.value)}
-                  onChange={() => handleToggleSourceType(opt.value)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                />
-                <span className="text-sm text-gray-700">{opt.label}</span>
-              </label>
-            ))}
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">信息源</label>
+          {sourceNameOptions.length > 0 ? (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {sourceNameOptions.map((name) => (
+                <label key={name} className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedSourceNames.includes(name)}
+                    onChange={() => handleToggleSourceName(name)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                  />
+                  <span className="text-sm text-gray-700">{name}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">暂无数据</p>
+          )}
         </div>
 
         <div className="mb-6">

@@ -21,6 +21,7 @@ async def get_hotspots(
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
     importance_levels: Optional[str] = Query(None, description="重要性级别，逗号分隔"),
     source_types: Optional[str] = Query(None, description="来源类型，逗号分隔"),
+    source_names: Optional[str] = Query(None, description="来源名称，逗号分隔（如'量子位,新智元'）"),
     date_from: Optional[str] = Query(None, description="开始日期，格式: YYYY-MM-DD"),
     date_to: Optional[str] = Query(None, description="结束日期，格式: YYYY-MM-DD"),
     sort_by: str = Query("collected_at", description="排序字段"),
@@ -43,6 +44,7 @@ async def get_hotspots(
         limit=limit,
         importance_levels=importance_levels,
         source_types=source_types,
+        source_names=source_names,
         date_from=date_from,
         date_to=date_to,
         sort_by=sort_by,
@@ -70,6 +72,13 @@ async def get_hotspot_stats(
     传入 user_id 会排除当前用户已忽略的热点
     """
     return await HotspotService.get_hotspot_stats(db, user_id=user_id)
+
+@router.get("/hotspots/source-names")
+async def get_source_names(
+    db: AsyncSession = Depends(get_db)
+):
+    """获取所有去重的热点来源名称"""
+    return await HotspotService.get_source_names(db)
 
 @router.get("/hotspots/{hotspot_id}", response_model=HotspotWithAnalysisResponse)
 async def get_hotspot_detail(

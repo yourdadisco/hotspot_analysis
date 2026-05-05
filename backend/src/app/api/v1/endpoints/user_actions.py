@@ -102,6 +102,12 @@ async def batch_dismiss(
         if types:
             stmt = stmt.where(Hotspot.source_type.in_(types))
 
+    # 来源名称筛选
+    if hasattr(request, 'source_names') and request.source_names:
+        names = [n.strip() for n in request.source_names.split(",") if n.strip()]
+        if names:
+            stmt = stmt.where(Hotspot.source_name.in_(names))
+
     result = await db.execute(stmt)
     hotspot_ids = set(str(row.id) for row in result.all())
 

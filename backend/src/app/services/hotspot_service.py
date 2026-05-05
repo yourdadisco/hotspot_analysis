@@ -38,6 +38,7 @@ class HotspotService:
         limit: int = 20,
         importance_levels: Optional[str] = None,
         source_types: Optional[str] = None,
+        source_names: Optional[str] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         sort_by: str = "collected_at",
@@ -71,6 +72,12 @@ class HotspotService:
         if source_types:
             types = source_types.split(",")
             stmt = stmt.where(Hotspot.source_type.in_(types))
+
+        # 来源名称筛选
+        if source_names:
+            names = [n.strip() for n in source_names.split(",") if n.strip()]
+            if names:
+                stmt = stmt.where(Hotspot.source_name.in_(names))
 
         # 日期范围筛选
         if date_from:
@@ -224,6 +231,16 @@ class HotspotService:
             "limit": limit,
             "total_pages": total_pages
         }
+
+    @staticmethod
+    @cached(prefix="hotspot", expire=600)  # 10分钟缓存
+    async def get_source_names(db: AsyncSession):
+        """获取所有去重的来源名称列表"""
+        stmt = select(Hotspot.source_name).where(
+            Hotspot.source_name.isnot(None)
+        ).distinct().order_by(Hotspot.source_name)
+        result = await db.execute(stmt)
+        return [row[0] for row in result.all()]
 
     @staticmethod
     @cached(prefix="hotspot", expire=600)  # 10分钟缓存

@@ -48,7 +48,7 @@ const Dashboard: React.FC = () => {
     importance_levels: [],
     date_from: '',
     date_to: '',
-    source_types: '',
+    source_names: '',
     is_favorite: 'all',
   })
   const [showDismissDialog, setShowDismissDialog] = useState(false)
@@ -87,7 +87,7 @@ const Dashboard: React.FC = () => {
         is_dismissed: false,
         ...(advancedFilters.date_from && { date_from: advancedFilters.date_from }),
         ...(advancedFilters.date_to && { date_to: advancedFilters.date_to }),
-        ...(advancedFilters.source_types && { source_types: advancedFilters.source_types }),
+        ...(advancedFilters.source_names && { source_names: advancedFilters.source_names }),
         ...(advancedFilters.is_favorite !== 'all' && { is_favorite: advancedFilters.is_favorite === 'yes' }),
       })
       return response
@@ -275,7 +275,7 @@ const Dashboard: React.FC = () => {
       }
       if (advancedFilters.date_from) payload.date_from = advancedFilters.date_from
       if (advancedFilters.date_to) payload.date_to = advancedFilters.date_to
-      if (advancedFilters.source_types) payload.source_types = advancedFilters.source_types
+      if (advancedFilters.source_names) payload.source_names = advancedFilters.source_names
       if (advancedFilters.is_favorite !== 'all') {
         payload.is_favorite = advancedFilters.is_favorite === 'yes'
       }
@@ -291,7 +291,7 @@ const Dashboard: React.FC = () => {
   const activeFilterCount = [
     advancedFilters.importance_levels.length > 0,
     !!advancedFilters.date_from || !!advancedFilters.date_to,
-    !!advancedFilters.source_types,
+    !!advancedFilters.source_names,
     advancedFilters.is_favorite !== 'all',
   ].filter(Boolean).length
 

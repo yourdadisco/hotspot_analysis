@@ -155,6 +155,7 @@ export const hotspotsApi = {
     limit?: number
     importance_levels?: string
     source_types?: string
+    source_names?: string
     date_from?: string
     date_to?: string
     sort_by?: string
@@ -173,6 +174,8 @@ export const hotspotsApi = {
   refreshHotspots: () => api.post('/hotspots/refresh'),
 
   getStats: (userId?: string) => api.get('/hotspots/stats', { params: userId ? { user_id: userId } : undefined }),
+
+  getSourceNames: () => api.get<string[]>('/hotspots/source-names'),
 
   analyzeHotspot: (hotspotId: string, userId: string) =>
     api.post(`/hotspots/${hotspotId}/analyze`, null, { params: { user_id: userId } }),
