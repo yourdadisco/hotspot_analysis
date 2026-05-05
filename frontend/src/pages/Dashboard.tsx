@@ -704,13 +704,23 @@ const Dashboard: React.FC = () => {
           ) : (
             <div className="p-8 text-center">
               <p className="text-gray-500">暂无热点数据</p>
-              <button
-                onClick={handleRefresh}
-                disabled={isCollecting}
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isCollecting ? '更新中...' : '刷新热点'}
-              </button>
+              {activeFilterCount > 0 && (
+                <p className="text-sm text-gray-400 mt-1">当前有筛选条件或所有热点已被忽略</p>
+              )}
+              <div className="flex justify-center space-x-3 mt-4">
+                <button
+                  onClick={() => refetchHotspots()}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  刷新
+                </button>
+                <button
+                  onClick={handleRefresh}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  手动更新
+                </button>
+              </div>
             </div>
           )}
         </div>
