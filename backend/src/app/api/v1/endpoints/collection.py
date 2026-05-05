@@ -202,38 +202,19 @@ async def _run_manual_refresh_with_progress(
 ) -> None:
     """后台执行手动更新：收集 → 取消忽略 → 缓存失效"""
     try:
+        # 记录开始时间，用于识别本次收集的热点
+        collect_start = datetime.utcnow()
+
         # 1. 执行收集
         await collector_service.collect_all(progress_task_id=task_id)
 
-        # 2. 清除忽略状态
+        # 2. 清除本次收集到的热点中已忽略的状态
         async with AsyncSessionLocal() as db:
-            # 构建匹配日期范围的热点ID子查询
-            stmt = select(Hotspot.id).distinct()
-            if date_from:
-                try:
-                    dt_from = datetime.strptime(date_from, "%Y-%m-%d")
-                    stmt = stmt.where(Hotspot.publish_date >= dt_from)
-                except ValueError:
-                    pass
-            if date_to:
-                try:
-                    dt_to = datetime.strptime(date_to, "%Y-%m-%d").replace(
-                        hour=23, minute=59, second=59
-                    )
-                    stmt = stmt.where(Hotspot.publish_date <= dt_to)
-                except ValueError:
-                    pass
-            # 如果没有日期范围，清除本次所有已收集热点的忽略状态
-            if not date_from and not date_to:
-                # 用当前时间前推24小时作为默认范围
-                since = datetime.utcnow() - timedelta(hours=24)
-                stmt = stmt.where(Hotspot.collected_at >= since)
-
+            stmt = select(Hotspot.id).where(Hotspot.collected_at >= collect_start)
             result = await db.execute(stmt)
             hotspot_ids = [str(row[0]) for row in result.all()]
 
             if hotspot_ids:
-                # 查找这些热点中已被忽略的记录，取消忽略
                 dismiss_stmt = select(UserHotspotAction).where(
                     UserHotspotAction.hotspot_id.in_(hotspot_ids),
                     UserHotspotAction.is_dismissed == True,
