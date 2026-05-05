@@ -73,11 +73,26 @@ async def batch_dismiss(
 
     # 重要性级别筛选：子查询方式与 GET /hotspots 保持一致
     if request.importance_levels:
-        analysis_sub = select(HotspotAnalysis.hotspot_id).where(
-            HotspotAnalysis.user_id == request.user_id,
-            HotspotAnalysis.importance_level.in_(request.importance_levels)
-        )
-        stmt = stmt.where(Hotspot.id.in_(analysis_sub))
+        has_unanalyzed = "unanalyzed" in request.importance_levels
+        other_levels = [l for l in request.importance_levels if l != "unanalyzed"]
+        conditions = []
+
+        if other_levels:
+            analysis_sub = select(HotspotAnalysis.hotspot_id).where(
+                HotspotAnalysis.user_id == request.user_id,
+                HotspotAnalysis.importance_level.in_(other_levels)
+            )
+            conditions.append(Hotspot.id.in_(analysis_sub))
+
+        if has_unanalyzed:
+            no_analysis_sub = select(HotspotAnalysis.hotspot_id).where(
+                HotspotAnalysis.user_id == request.user_id
+            )
+            conditions.append(Hotspot.id.notin_(no_analysis_sub))
+
+        if conditions:
+            from sqlalchemy import or_
+            stmt = stmt.where(or_(*conditions))
 
     # 日期范围筛选
     date_conditions = []

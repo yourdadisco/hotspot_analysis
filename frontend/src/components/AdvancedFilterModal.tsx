@@ -31,6 +31,7 @@ const importanceOptions = [
   { value: 'high', label: '高', color: 'bg-orange-500' },
   { value: 'medium', label: '中', color: 'bg-yellow-500' },
   { value: 'low', label: '低', color: 'bg-blue-500' },
+  { value: 'unanalyzed', label: '未分析', color: 'bg-gray-500' },
 ]
 
 /** 将逗号分隔字符串解析为数组 */

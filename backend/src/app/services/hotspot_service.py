@@ -58,15 +58,30 @@ class HotspotService:
         # 重要性级别筛选：需要子查询 HotspotAnalysis 表
         if importance_levels:
             levels = importance_levels.split(",")
+            has_unanalyzed = "unanalyzed" in levels
+            other_levels = [l for l in levels if l != "unanalyzed"]
+
             if user_id:
-                analysis_sub = select(HotspotAnalysis.hotspot_id).where(
-                    HotspotAnalysis.user_id == user_id
-                )
-                if levels:
-                    analysis_sub = analysis_sub.where(
-                        HotspotAnalysis.importance_level.in_(levels)
+                from sqlalchemy import or_
+                conditions = []
+
+                if other_levels:
+                    # 按已分析的重要性级别筛选
+                    analysis_sub = select(HotspotAnalysis.hotspot_id).where(
+                        HotspotAnalysis.user_id == user_id,
+                        HotspotAnalysis.importance_level.in_(other_levels)
                     )
-                stmt = stmt.where(Hotspot.id.in_(analysis_sub))
+                    conditions.append(Hotspot.id.in_(analysis_sub))
+
+                if has_unanalyzed:
+                    # 不存在分析记录 = 未分析
+                    no_analysis_sub = select(HotspotAnalysis.hotspot_id).where(
+                        HotspotAnalysis.user_id == user_id
+                    )
+                    conditions.append(Hotspot.id.notin_(no_analysis_sub))
+
+                if conditions:
+                    stmt = stmt.where(or_(*conditions))
 
         # 来源类型筛选
         if source_types:
