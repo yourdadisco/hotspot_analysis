@@ -189,12 +189,12 @@ const Dashboard: React.FC = () => {
   // 分页处理
   const totalPages = hotspotsData?.total_pages || 1
 
-  // 如果当前页超出总页数，自动跳回第1页
+  // 如果当前页超出总页数，自动跳回第1页（仅在数据已加载时判断）
   useEffect(() => {
-    if (page > totalPages) {
+    if (hotspotsData && page > totalPages) {
       setPage(1)
     }
-  }, [page, totalPages])
+  }, [page, totalPages, hotspotsData])
 
   const handlePrevPage = () => {
     if (page > 1) {

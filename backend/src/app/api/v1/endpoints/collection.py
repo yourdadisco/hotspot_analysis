@@ -200,16 +200,33 @@ async def _run_manual_refresh_with_progress(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
 ) -> None:
-    """后台执行手动更新：收集 → 取消全部忽略 → 缓存失效"""
+    """后台执行手动更新：收集 → 取消忽略（按日期范围）→ 缓存失效"""
     try:
         # 1. 执行收集
         await collector_service.collect_all(progress_task_id=task_id)
 
-        # 2. 取消所有已忽略热点，让手动更新的内容全部可见
+        # 2. 取消已忽略热点（按发布日期区间过滤）
         async with AsyncSessionLocal() as db:
-            stmt = select(UserHotspotAction).where(
+            stmt = select(UserHotspotAction).join(
+                Hotspot, UserHotspotAction.hotspot_id == Hotspot.id
+            ).where(
                 UserHotspotAction.is_dismissed == True,
             )
+
+            # 按发布日期过滤
+            if date_from:
+                try:
+                    dt_from = datetime.strptime(date_from, "%Y-%m-%d")
+                    stmt = stmt.where(Hotspot.publish_date >= dt_from)
+                except ValueError:
+                    pass
+            if date_to:
+                try:
+                    dt_to = datetime.strptime(date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+                    stmt = stmt.where(Hotspot.publish_date <= dt_to)
+                except ValueError:
+                    pass
+
             result = await db.execute(stmt)
             actions = result.scalars().all()
             if actions:
