@@ -265,13 +265,23 @@ const Dashboard: React.FC = () => {
     setPage(1)
   }
 
+  const activeFilterCount = [
+    advancedFilters.importance_levels.length > 0,
+    !!advancedFilters.date_from || !!advancedFilters.date_to,
+    !!advancedFilters.source_types,
+    advancedFilters.is_favorite !== 'all',
+  ].filter(Boolean).length
+
   // 批量忽略确认
   const handleBatchDismiss = async () => {
     setShowDismissDialog(false)
     try {
       const payload: any = { user_id: userId }
+      // 优先使用高级筛选中的重要性级别，否则使用快捷筛选
       if (advancedFilters.importance_levels.length > 0) {
         payload.importance_levels = advancedFilters.importance_levels
+      } else if (selectedImportance !== 'all') {
+        payload.importance_levels = [selectedImportance]
       }
       if (advancedFilters.date_from) payload.date_from = advancedFilters.date_from
       if (advancedFilters.date_to) payload.date_to = advancedFilters.date_to
@@ -286,13 +296,6 @@ const Dashboard: React.FC = () => {
       addToast(`批量忽略失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
     }
   }
-
-  const activeFilterCount = [
-    advancedFilters.importance_levels.length > 0,
-    !!advancedFilters.date_from || !!advancedFilters.date_to,
-    !!advancedFilters.source_types,
-    advancedFilters.is_favorite !== 'all',
-  ].filter(Boolean).length
 
 
   const handleQuickAnalyze = async (e: React.MouseEvent, hotspotId: string) => {
@@ -509,6 +512,15 @@ const Dashboard: React.FC = () => {
                 </span>
               </button>
             ))}
+            {selectedImportance !== 'all' && (
+              <button
+                onClick={() => setShowDismissDialog(true)}
+                className="px-4 py-2 rounded-lg flex items-center space-x-2 text-red-600 hover:bg-red-50 border border-red-200"
+              >
+                <Trash2 size={16} />
+                <span>批量忽略</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -571,7 +583,10 @@ const Dashboard: React.FC = () => {
           <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
             <h3 className="text-xl font-bold text-gray-900 mb-2">确认批量忽略</h3>
             <p className="text-gray-600 mb-6">
-              将忽略当前筛选条件下的所有热点，忽略后热点将从列表中消失。确定要执行此操作吗？
+              {selectedImportance !== 'all'
+                ? `将忽略所有"${importanceLevels.find(l => l.id === selectedImportance)?.label || selectedImportance}"级别的热点，忽略后将从列表中消失。`
+                : '将忽略当前筛选条件下的所有热点，忽略后热点将从列表中消失。'}
+              确定要执行此操作吗？
             </p>
             <div className="flex justify-end space-x-3">
               <button

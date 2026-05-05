@@ -102,19 +102,15 @@ async def batch_dismiss(
             for row in result.all():
                 hotspot_ids.add(str(row.id))
 
-    # 如果没有筛选条件，不执行批量操作（防止误删全部）
-    if not hotspot_ids and not request.importance_levels and not request.date_from and not request.date_to and request.is_favorite is None:
-        return {"dismissed_count": 0, "message": "未指定筛选条件，不执行批量忽略"}
+    # 检查是否有任何筛选条件被指定
+    has_filter = bool(request.importance_levels or request.date_from or request.date_to or request.is_favorite is not None)
 
-    # 如果没有 importance_levels 也没有日期条件，则使用用户的所有分析热点
     if not hotspot_ids:
-        # 退回到当前用户所有分析过的热点
-        stmt = select(HotspotAnalysis.hotspot_id).where(
-            HotspotAnalysis.user_id == request.user_id
-        )
-        result = await db.execute(stmt)
-        for row in result.all():
-            hotspot_ids.add(str(row.hotspot_id))
+        if not has_filter:
+            # 完全没有筛选条件时的保护
+            return {"dismissed_count": 0, "message": "未指定筛选条件，不执行批量忽略"}
+        # 有筛选条件但无匹配结果
+        return {"dismissed_count": 0, "message": "未找到匹配筛选条件的热点"}
 
     # 根据收藏状态筛选
     if request.is_favorite is not None:
