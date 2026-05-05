@@ -189,6 +189,14 @@ export const collectionApi = {
   triggerAsync: () =>
     api.post<{ task_id: string; status: string }>('/collection/async'),
 
+  triggerManualRefresh: (date_from?: string, date_to?: string) =>
+    api.post<{ task_id: string; status: string }>('/collection/manual-refresh', null, {
+      params: { date_from, date_to }
+    }),
+
+  getLastUpdate: () =>
+    api.get<{ last_update: string | null }>('/collection/last-update'),
+
   getProgress: (taskId: string) =>
     api.get<{
       task_id: string

@@ -10,6 +10,7 @@ import AdvancedFilterModal, { type AdvancedFilters } from '../components/Advance
 import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
 import ProgressOverlay from '../components/ProgressOverlay'
+import ManualUpdateModal from '../components/ManualUpdateModal'
 import { renderSafeSummary } from '../utils/sanitize'
 import { useToastStore } from '../stores/toastStore'
 import { useProgressPolling } from '../hooks/useProgressPolling'
@@ -57,6 +58,7 @@ const Dashboard: React.FC = () => {
   // 收集进度
   const [collectTaskId, setCollectTaskId] = useState<string | null>(null)
   const [showCollectProgress, setShowCollectProgress] = useState(false)
+  const [showManualUpdate, setShowManualUpdate] = useState(false)
   const { state: collectProgress, isPolling: isCollecting, reset: resetCollectProgress } =
     useProgressPolling(collectTaskId, (tid) => collectionApi.getProgress(tid))
 
@@ -146,15 +148,15 @@ const Dashboard: React.FC = () => {
     navigate(`/hotspots/${hotspotId}`)
   }
 
-  // 处理手动更新（异步+进度）
-  const handleRefresh = async () => {
-    try {
-      const result: any = await collectionApi.triggerAsync()
-      setCollectTaskId(result.task_id)
-      setShowCollectProgress(true)
-    } catch {
-      addToast('启动更新失败，请稍后重试', 'error')
-    }
+  // 打开手动更新面板
+  const handleRefresh = () => {
+    setShowManualUpdate(true)
+  }
+
+  // 手动更新完成后的回调
+  const handleManualUpdateComplete = () => {
+    refetchHotspots()
+    refetchStats()
   }
 
   // 打开批量分析对话框
@@ -378,6 +380,13 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 手动更新面板 */}
+      <ManualUpdateModal
+        isOpen={showManualUpdate}
+        onClose={() => setShowManualUpdate(false)}
+        onComplete={handleManualUpdateComplete}
+      />
 
       {/* 进度覆盖层 */}
       {showCollectProgress && collectProgress && (
