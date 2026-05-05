@@ -101,6 +101,59 @@ async def get_hotspot_detail(
 
     return HotspotWithAnalysisResponse(**result)
 
+@router.get("/hotspots/debug")
+async def debug_hotspots(
+    db: AsyncSession = Depends(get_db)
+):
+    """调试端点：返回数据库原始状态"""
+    from app.models.user_action import UserHotspotAction
+    from sqlalchemy import func, select, and_, or_
+
+    # 1. 总热点数
+    total = (await db.execute(select(func.count()).select_from(Hotspot))).scalar()
+
+    # 2. 最近10条热点
+    recent = (await db.execute(
+        select(Hotspot.id, Hotspot.title, Hotspot.source_name, Hotspot.publish_date, Hotspot.collected_at)
+        .order_by(Hotspot.collected_at.desc())
+        .limit(10)
+    )).all()
+
+    # 3. UserHotspotAction 统计
+    action_count = (await db.execute(
+        select(func.count()).select_from(UserHotspotAction)
+    )).scalar()
+    dismissed_count = (await db.execute(
+        select(func.count()).select_from(UserHotspotAction)
+        .where(UserHotspotAction.is_dismissed == True)
+    )).scalar()
+    favorite_count = (await db.execute(
+        select(func.count()).select_from(UserHotspotAction)
+        .where(UserHotspotAction.is_favorite == True)
+    )).scalar()
+
+    # 4. 模拟列表查询（无用户筛选）
+    sample_query = (await db.execute(
+        select(Hotspot.id, Hotspot.title)
+        .order_by(Hotspot.publish_date.desc())
+        .limit(10)
+    )).all()
+
+    return {
+        "total_hotspots": total,
+        "recent_hotspots": [
+            {"id": str(r.id), "title": r.title, "source": r.source_name, "publish": str(r.publish_date)[:19] if r.publish_date else None, "collected": str(r.collected_at)[:19] if r.collected_at else None}
+            for r in recent
+        ],
+        "user_hotspot_actions": {
+            "total": action_count,
+            "dismissed": dismissed_count,
+            "favorited": favorite_count,
+        },
+        "sample_list_query": [{"id": str(r.id), "title": r.title} for r in sample_query],
+    }
+
+
 @router.post("/hotspots/refresh")
 async def refresh_hotspots(
     db: AsyncSession = Depends(get_db)

@@ -149,22 +149,16 @@ class HotspotService:
 
         # 忽略状态筛选（SQL级别，影响total计数）
         if user_id and is_dismissed is not None:
-            dismiss_alias = select(
-                UserHotspotAction.hotspot_id,
-                UserHotspotAction.is_dismissed,
-            ).where(
-                UserHotspotAction.user_id == user_id
-            ).subquery()
-            stmt = stmt.outerjoin(dismiss_alias, Hotspot.id == dismiss_alias.c.hotspot_id)
+            dismissed_sub = select(UserHotspotAction.hotspot_id).where(
+                UserHotspotAction.user_id == user_id,
+                UserHotspotAction.is_dismissed == True
+            )
             if is_dismissed is False:
-                stmt = stmt.where(
-                    or_(
-                        dismiss_alias.c.is_dismissed.is_(None),
-                        dismiss_alias.c.is_dismissed == False,
-                    )
-                )
+                # 排除已忽略的热点（与 get_hotspot_stats 的 exclude_dismissed 一致）
+                stmt = stmt.where(Hotspot.id.notin_(dismissed_sub))
             else:
-                stmt = stmt.where(dismiss_alias.c.is_dismissed == True)
+                # 只显示已忽略的热点
+                stmt = stmt.where(Hotspot.id.in_(dismissed_sub))
 
         # 分页
         total_stmt = select(func.count()).select_from(stmt.subquery())

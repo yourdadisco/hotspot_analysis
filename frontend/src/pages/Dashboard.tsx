@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Filter, Clock, TrendingUp, AlertTriangle,
   BarChart3, ChevronRight, RefreshCw, Target, Trash2
@@ -74,10 +74,12 @@ const Dashboard: React.FC = () => {
 
   // 获取用户ID
   const userId = localStorage.getItem('user_id') || ''
+  const queryClient = useQueryClient()
+  const [refreshCounter, setRefreshCounter] = useState(0)
 
   // 获取热点列表
   const { data: hotspotsData, isLoading: isLoadingHotspots, refetch: refetchHotspots } = useQuery<PaginatedResponse<Hotspot>>({
-    queryKey: ['hotspots', page, limit, selectedImportance, searchQuery, sortBy, sortOrder, advancedFilters],
+    queryKey: ['hotspots', page, limit, selectedImportance, searchQuery, sortBy, sortOrder, advancedFilters, refreshCounter],
     queryFn: async () => {
       const response = await hotspotsApi.getHotspots({
         page,
@@ -155,8 +157,10 @@ const Dashboard: React.FC = () => {
 
   // 手动更新完成后的回调
   const handleManualUpdateComplete = () => {
-    refetchHotspots()
-    refetchStats()
+    setPage(1)
+    setRefreshCounter(c => c + 1)
+    queryClient.invalidateQueries({ queryKey: ['hotspots'] })
+    queryClient.invalidateQueries({ queryKey: ['hotspots-stats'] })
   }
 
   // 打开批量分析对话框
@@ -184,6 +188,13 @@ const Dashboard: React.FC = () => {
 
   // 分页处理
   const totalPages = hotspotsData?.total_pages || 1
+
+  // 如果当前页超出总页数，自动跳回第1页
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(1)
+    }
+  }, [page, totalPages])
 
   const handlePrevPage = () => {
     if (page > 1) {
@@ -283,6 +294,7 @@ const Dashboard: React.FC = () => {
       }
       const result: any = await userActionsApi.batchDismiss(payload)
       addToast(`已忽略 ${result.dismissed_count} 个热点`, 'success')
+      setPage(1)
       refetchHotspots()
       refetchStats()
     } catch (error: any) {
