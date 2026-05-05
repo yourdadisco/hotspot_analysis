@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { X, Calendar, RefreshCw } from 'lucide-react'
+import { X, RefreshCw } from 'lucide-react'
 import { collectionApi } from '../services/api'
 import { useProgressPolling } from '../hooks/useProgressPolling'
 import ProgressOverlay from './ProgressOverlay'
@@ -27,11 +27,11 @@ const ManualUpdateModal: React.FC<ManualUpdateModalProps> = ({ isOpen, onClose, 
     (tid) => collectionApi.getProgress(tid)
   )
 
-  // 获取最近更新时间
+  // 获取最近更新时间，没有则默认7天前
   const { data: lastUpdateData } = useQuery({
     queryKey: ['last-update'],
     queryFn: () => collectionApi.getLastUpdate(),
-    enabled: isOpen && mode === 'last',
+    enabled: isOpen,
     staleTime: 30000,
   })
 
@@ -39,24 +39,29 @@ const ManualUpdateModal: React.FC<ManualUpdateModalProps> = ({ isOpen, onClose, 
   useEffect(() => {
     if (isOpen) {
       setMode('last')
-      setDateFrom('')
-      setDateTo('')
       setDateError('')
       setTaskId(null)
       setShowProgress(false)
+
+      const lastUpdate = lastUpdateData?.last_update
+      const from = lastUpdate
+        ? new Date(lastUpdate)
+        : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      setDateFrom(isNaN(from.getTime()) ? '' : from.toISOString().slice(0, 10))
+      setDateTo(new Date().toISOString().slice(0, 10))
     }
   }, [isOpen])
 
-  // 使用最近更新时间填充日期
+  // 外部数据加载后更新日期
   useEffect(() => {
-    if (mode === 'last' && lastUpdateData?.last_update) {
-      const d = new Date(lastUpdateData.last_update)
-      if (!isNaN(d.getTime())) {
-        setDateFrom(d.toISOString().slice(0, 10))
-        setDateTo(new Date().toISOString().slice(0, 10))
-      }
-    }
-  }, [mode, lastUpdateData])
+    if (!isOpen) return
+    const lastUpdate = lastUpdateData?.last_update
+    const from = lastUpdate
+      ? new Date(lastUpdate)
+      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+    setDateFrom(isNaN(from.getTime()) ? '' : from.toISOString().slice(0, 10))
+    setDateTo(new Date().toISOString().slice(0, 10))
+  }, [lastUpdateData, isOpen])
 
   // 进度完成/失败处理
   useEffect(() => {
@@ -137,9 +142,7 @@ const ManualUpdateModal: React.FC<ManualUpdateModalProps> = ({ isOpen, onClose, 
               <div>
                 <span className="text-sm font-medium text-gray-900">从最近更新开始</span>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {lastUpdateData?.last_update
-                    ? `最近更新: ${new Date(lastUpdateData.last_update).toLocaleString('zh-CN')}`
-                    : '获取中...'}
+                  {dateFrom ? `最近更新: ${dateFrom}` : ''}
                 </p>
               </div>
             </label>
@@ -181,16 +184,6 @@ const ManualUpdateModal: React.FC<ManualUpdateModalProps> = ({ isOpen, onClose, 
                   className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
-            </div>
-          )}
-
-          {/* 日期提示信息 */}
-          {mode === 'last' && (
-            <div className="mb-6 flex items-start space-x-2 p-3 bg-blue-50 rounded-lg">
-              <Calendar size={16} className="text-blue-500 mt-0.5" />
-              <p className="text-xs text-blue-700">
-                将从 {dateFrom || '...'} 至 {dateTo || '...'} 的已忽略热点重新纳入列表。
-              </p>
             </div>
           )}
 
