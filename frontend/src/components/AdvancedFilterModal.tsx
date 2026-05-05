@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { X, Calendar } from 'lucide-react'
+import { X } from 'lucide-react'
 import { hotspotsApi } from '../services/api'
 
 export interface AdvancedFilters {
@@ -124,31 +124,19 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">日期范围</label>
           <div className="flex items-center space-x-3">
-            <label className="relative flex-1 block cursor-pointer">
-              <input
-                type="date"
-                value={filters.date_from}
-                onChange={(e) => setFilters((prev) => ({ ...prev, date_from: e.target.value }))}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
-              <div className="flex items-center justify-between w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white hover:border-blue-400 transition-colors pointer-events-none">
-                <span className={filters.date_from ? 'text-gray-900' : 'text-gray-400'}>{filters.date_from || '选择日期'}</span>
-                <Calendar size={18} className="text-gray-400" />
-              </div>
-            </label>
-            <span className="text-gray-400 flex-shrink-0">至</span>
-            <label className="relative flex-1 block cursor-pointer">
-              <input
-                type="date"
-                value={filters.date_to}
-                onChange={(e) => setFilters((prev) => ({ ...prev, date_to: e.target.value }))}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              />
-              <div className="flex items-center justify-between w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white hover:border-blue-400 transition-colors pointer-events-none">
-                <span className={filters.date_to ? 'text-gray-900' : 'text-gray-400'}>{filters.date_to || '选择日期'}</span>
-                <Calendar size={18} className="text-gray-400" />
-              </div>
-            </label>
+            <input
+              type="date"
+              value={filters.date_from}
+              onChange={(e) => setFilters((prev) => ({ ...prev, date_from: e.target.value }))}
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
+            />
+            <span className="text-gray-400">至</span>
+            <input
+              type="date"
+              value={filters.date_to}
+              onChange={(e) => setFilters((prev) => ({ ...prev, date_to: e.target.value }))}
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
+            />
           </div>
         </div>
 
