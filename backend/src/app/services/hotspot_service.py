@@ -125,6 +125,25 @@ class HotspotService:
             else:
                 stmt = stmt.order_by(asc(order_column))
 
+        # 忽略状态筛选（SQL级别，影响total计数）
+        if user_id and is_dismissed is not None:
+            dismiss_alias = select(
+                UserHotspotAction.hotspot_id,
+                UserHotspotAction.is_dismissed,
+            ).where(
+                UserHotspotAction.user_id == user_id
+            ).subquery()
+            stmt = stmt.outerjoin(dismiss_alias, Hotspot.id == dismiss_alias.c.hotspot_id)
+            if is_dismissed is False:
+                stmt = stmt.where(
+                    or_(
+                        dismiss_alias.c.is_dismissed.is_(None),
+                        dismiss_alias.c.is_dismissed == False,
+                    )
+                )
+            else:
+                stmt = stmt.where(dismiss_alias.c.is_dismissed == True)
+
         # 分页
         total_stmt = select(func.count()).select_from(stmt.subquery())
         total_result = await db.execute(total_stmt)
@@ -190,7 +209,7 @@ class HotspotService:
             item['is_favorite'] = action.is_favorite if action else False
             item['is_dismissed'] = action.is_dismissed if action else False
 
-            # 应用收藏/忽略过滤（后过滤，因为缓存可能混入用户数据）
+            # 应用收藏过滤（后过滤，忽略状态已在SQL层处理）
             if is_favorite is not None and item['is_favorite'] != is_favorite:
                 continue
             if is_dismissed is False and item['is_dismissed']:
@@ -262,16 +281,33 @@ class HotspotService:
 
     @staticmethod
     @cached(prefix="hotspot", expire=300)  # 5分钟缓存
-    async def get_hotspot_stats(db: AsyncSession):
-        """获取热点统计信息（带缓存）"""
-        total_stmt = select(func.count()).select_from(Hotspot)
+    async def get_hotspot_stats(db: AsyncSession, user_id: Optional[str] = None):
+        """获取热点统计信息（带缓存），支持按用户排除已忽略热点"""
+        # 查询当前用户已忽略的热点ID集
+        dismissed_ids = set()
+        if user_id:
+            dismiss_stmt = select(UserHotspotAction.hotspot_id).where(
+                UserHotspotAction.user_id == user_id,
+                UserHotspotAction.is_dismissed == True
+            )
+            dismiss_result = await db.execute(dismiss_stmt)
+            dismissed_ids = set(str(row[0]) for row in dismiss_result.all())
+
+        def exclude_dismissed(stmt):
+            if dismissed_ids:
+                return stmt.where(Hotspot.id.notin_(dismissed_ids))
+            return stmt
+
+        total_stmt = exclude_dismissed(select(func.count()).select_from(Hotspot))
         total_result = await db.execute(total_stmt)
         total_hotspots = total_result.scalar()
 
         source_stmt = select(
             Hotspot.source_type,
             func.count().label("count")
-        ).group_by(Hotspot.source_type)
+        )
+        source_stmt = exclude_dismissed(source_stmt)
+        source_stmt = source_stmt.group_by(Hotspot.source_type)
         source_result = await db.execute(source_stmt)
         by_source = {row.source_type: row.count for row in source_result.all()}
 
@@ -285,6 +321,7 @@ class HotspotService:
         today_stmt = select(func.count()).where(
             func.date(Hotspot.collected_at) == func.date('now')
         )
+        today_stmt = exclude_dismissed(today_stmt)
         today_result = await db.execute(today_stmt)
         today_count = today_result.scalar() or 0
 
@@ -292,11 +329,13 @@ class HotspotService:
         last_update_result = await db.execute(last_update_stmt)
         last_update = last_update_result.scalar()
 
-        all_hotspots_stmt = select(Hotspot.id)
+        all_hotspots_stmt = exclude_dismissed(select(Hotspot.id))
         all_hotspots_result = await db.execute(all_hotspots_stmt)
         all_hotspot_ids = set(all_hotspots_result.scalars().all())
 
         analyzed_stmt = select(HotspotAnalysis.hotspot_id).distinct()
+        if user_id:
+            analyzed_stmt = analyzed_stmt.where(HotspotAnalysis.user_id == user_id)
         analyzed_result = await db.execute(analyzed_stmt)
         analyzed_hotspot_ids = set(analyzed_result.scalars().all())
 

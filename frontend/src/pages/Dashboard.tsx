@@ -99,7 +99,7 @@ const Dashboard: React.FC = () => {
   const { data: statsData, isLoading: isLoadingStats, refetch: refetchStats } = useQuery<Stats>({
     queryKey: ['hotspots-stats'],
     queryFn: async () => {
-      const response = await hotspotsApi.getStats()
+      const response = await hotspotsApi.getStats(userId)
       return response
     },
     enabled: !!userId,

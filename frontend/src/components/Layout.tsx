@@ -32,7 +32,7 @@ const Layout: React.FC = () => {
   const { data: statsData } = useQuery({
     queryKey: ['hotspots-stats'],
     queryFn: async () => {
-      const response = await hotspotsApi.getStats()
+      const response = await hotspotsApi.getStats(userId)
       return response as any
     },
     enabled: !!userId,

@@ -172,7 +172,7 @@ export const hotspotsApi = {
 
   refreshHotspots: () => api.post('/hotspots/refresh'),
 
-  getStats: () => api.get('/hotspots/stats'),
+  getStats: (userId?: string) => api.get('/hotspots/stats', { params: userId ? { user_id: userId } : undefined }),
 
   analyzeHotspot: (hotspotId: string, userId: string) =>
     api.post(`/hotspots/${hotspotId}/analyze`, null, { params: { user_id: userId } }),

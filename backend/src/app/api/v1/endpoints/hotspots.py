@@ -62,12 +62,14 @@ async def get_hotspots(
 
 @router.get("/hotspots/stats")
 async def get_hotspot_stats(
+    user_id: Optional[str] = Query(None, description="用户ID，传入后排除已忽略热点"),
     db: AsyncSession = Depends(get_db)
 ):
     """
     获取热点统计信息（带缓存）
+    传入 user_id 会排除当前用户已忽略的热点
     """
-    return await HotspotService.get_hotspot_stats(db)
+    return await HotspotService.get_hotspot_stats(db, user_id=user_id)
 
 @router.get("/hotspots/{hotspot_id}", response_model=HotspotWithAnalysisResponse)
 async def get_hotspot_detail(
