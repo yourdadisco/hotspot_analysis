@@ -31,6 +31,18 @@ const importanceOptions = [
   { value: 'low', label: '低', color: 'bg-blue-500' },
 ]
 
+const sourceTypeOptions = [
+  { value: 'news', label: '新闻媒体' },
+  { value: 'tech_blog', label: '技术博客' },
+  { value: 'social_media', label: '社交媒体' },
+  { value: 'academic', label: '学术论文' },
+  { value: 'other', label: '其他' },
+]
+
+/** 将逗号分隔字符串解析为数组 */
+const parseSourceTypes = (val: string): string[] =>
+  val ? val.split(',').map((s) => s.trim()).filter(Boolean) : []
+
 const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
   isOpen,
   onClose,
@@ -53,6 +65,18 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
         : [...prev.importance_levels, level],
     }))
   }
+
+  const handleToggleSourceType = (value: string) => {
+    setFilters((prev) => {
+      const current = parseSourceTypes(prev.source_types)
+      const next = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value]
+      return { ...prev, source_types: next.join(',') }
+    })
+  }
+
+  const selectedSources = parseSourceTypes(filters.source_types)
 
   const handleReset = () => {
     setFilters(defaultFilters)
@@ -116,13 +140,19 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">信息源类型</label>
-          <input
-            type="text"
-            value={filters.source_types}
-            onChange={(e) => setFilters((prev) => ({ ...prev, source_types: e.target.value }))}
-            placeholder="rss, website, api（用逗号分隔）"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
+          <div className="space-y-2">
+            {sourceTypeOptions.map((opt) => (
+              <label key={opt.value} className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSources.includes(opt.value)}
+                  onChange={() => handleToggleSourceType(opt.value)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">{opt.label}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="mb-6">
