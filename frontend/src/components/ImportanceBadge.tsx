@@ -1,7 +1,7 @@
 import React from 'react'
 
 interface ImportanceBadgeProps {
-  level: 'emergency' | 'high' | 'medium' | 'low' | 'watch' | string
+  level: 'emergency' | 'high' | 'medium' | 'low' | string
   size?: 'sm' | 'md' | 'lg'
 }
 
@@ -26,11 +26,6 @@ const ImportanceBadge: React.FC<ImportanceBadgeProps> = ({ level, size = 'md' })
       label: '低',
       className: 'bg-blue-100 text-blue-800 border-blue-200',
       dotColor: 'bg-blue-500'
-    },
-    watch: {
-      label: '关注',
-      className: 'bg-gray-100 text-gray-800 border-gray-200',
-      dotColor: 'bg-gray-500'
     }
   }
 

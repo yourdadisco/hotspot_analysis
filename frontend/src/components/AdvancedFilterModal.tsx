@@ -29,7 +29,6 @@ const importanceOptions = [
   { value: 'high', label: '高', color: 'bg-orange-500' },
   { value: 'medium', label: '中', color: 'bg-yellow-500' },
   { value: 'low', label: '低', color: 'bg-blue-500' },
-  { value: 'watch', label: '观察', color: 'bg-gray-500' },
 ]
 
 const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
