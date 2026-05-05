@@ -309,6 +309,7 @@ export const userActionsApi = {
     importance_levels?: string[]
     date_from?: string
     date_to?: string
+    source_types?: string
     is_favorite?: boolean | null
   }) => api.post<{ dismissed_count: number; message: string }>('/user-actions/batch-dismiss', data),
 

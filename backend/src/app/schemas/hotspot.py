@@ -144,4 +144,5 @@ class BatchDismissRequest(BaseModel):
     importance_levels: Optional[List[str]] = None
     date_from: Optional[str] = None
     date_to: Optional[str] = None
+    source_types: Optional[str] = None
     is_favorite: Optional[bool] = None

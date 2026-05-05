@@ -275,6 +275,7 @@ const Dashboard: React.FC = () => {
       }
       if (advancedFilters.date_from) payload.date_from = advancedFilters.date_from
       if (advancedFilters.date_to) payload.date_to = advancedFilters.date_to
+      if (advancedFilters.source_types) payload.source_types = advancedFilters.source_types
       if (advancedFilters.is_favorite !== 'all') {
         payload.is_favorite = advancedFilters.is_favorite === 'yes'
       }

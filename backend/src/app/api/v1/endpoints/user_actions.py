@@ -63,58 +63,50 @@ async def batch_dismiss(
     request: BatchDismissRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    """批量忽略热点"""
-    # 查询匹配条件的已分析热点
-    hotspot_ids = set()
-
-    # 有 importance_levels 时从 HotspotAnalysis 查询
-    if request.importance_levels:
-        stmt = select(HotspotAnalysis.hotspot_id).where(
-            HotspotAnalysis.user_id == request.user_id
-        )
-        if request.importance_levels:
-            stmt = stmt.where(
-                HotspotAnalysis.importance_level.in_(request.importance_levels)
-            )
-        result = await db.execute(stmt)
-        for row in result.all():
-            hotspot_ids.add(str(row.hotspot_id))
-
-    # 有日期范围时也从 Hotspot 查询
-    if request.date_from or request.date_to:
-        date_stmt = select(Hotspot.id)
-        conditions = []
-        if request.date_from:
-            try:
-                dt_from = datetime.strptime(request.date_from, "%Y-%m-%d")
-                conditions.append(Hotspot.collected_at >= dt_from)
-            except ValueError:
-                pass
-        if request.date_to:
-            try:
-                dt_to = datetime.strptime(request.date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
-                conditions.append(Hotspot.collected_at <= dt_to)
-            except ValueError:
-                pass
-        if conditions:
-            date_stmt = date_stmt.where(and_(*conditions))
-            result = await db.execute(date_stmt)
-            for row in result.all():
-                hotspot_ids.add(str(row.id))
-
-    # 如果没有筛选条件，不执行批量操作（防止误删全部）
-    if not hotspot_ids and not request.importance_levels and not request.date_from and not request.date_to and request.is_favorite is None:
+    """批量忽略热点（基于 Hotspot 主表查询，覆盖已分析和未分析热点）"""
+    has_criteria = bool(request.importance_levels or request.date_from or request.date_to or request.source_types or request.is_favorite is not None)
+    if not has_criteria:
         return {"dismissed_count": 0, "message": "未指定筛选条件，不执行批量忽略"}
 
-    # 如果没有 importance_levels 也没有日期条件，则使用用户的所有分析热点
-    if not hotspot_ids:
-        # 退回到当前用户所有分析过的热点
-        stmt = select(HotspotAnalysis.hotspot_id).where(
-            HotspotAnalysis.user_id == request.user_id
+    # 以 Hotspot 为主表查询（与列表查询一致，覆盖所有热点）
+    stmt = select(Hotspot.id).distinct()
+
+    # 重要性级别筛选：子查询方式与 GET /hotspots 保持一致
+    if request.importance_levels:
+        analysis_sub = select(HotspotAnalysis.hotspot_id).where(
+            HotspotAnalysis.user_id == request.user_id,
+            HotspotAnalysis.importance_level.in_(request.importance_levels)
         )
-        result = await db.execute(stmt)
-        for row in result.all():
-            hotspot_ids.add(str(row.hotspot_id))
+        stmt = stmt.where(Hotspot.id.in_(analysis_sub))
+
+    # 日期范围筛选
+    date_conditions = []
+    if request.date_from:
+        try:
+            dt_from = datetime.strptime(request.date_from, "%Y-%m-%d")
+            date_conditions.append(Hotspot.collected_at >= dt_from)
+        except ValueError:
+            pass
+    if request.date_to:
+        try:
+            dt_to = datetime.strptime(request.date_to, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+            date_conditions.append(Hotspot.collected_at <= dt_to)
+        except ValueError:
+            pass
+    if date_conditions:
+        stmt = stmt.where(and_(*date_conditions))
+
+    # 来源类型筛选
+    if request.source_types:
+        types = [s.strip() for s in request.source_types.split(",") if s.strip()]
+        if types:
+            stmt = stmt.where(Hotspot.source_type.in_(types))
+
+    result = await db.execute(stmt)
+    hotspot_ids = set(str(row.id) for row in result.all())
+
+    if not hotspot_ids:
+        return {"dismissed_count": 0, "message": "未找到匹配条件的热点"}
 
     # 根据收藏状态筛选
     if request.is_favorite is not None:
@@ -124,14 +116,12 @@ async def batch_dismiss(
             UserHotspotAction.hotspot_id.in_(list(hotspot_ids)),
             UserHotspotAction.is_favorite == request.is_favorite,
         )
-        result = await db.execute(fav_stmt)
-        for action in result.scalars().all():
+        fav_result = await db.execute(fav_stmt)
+        for action in fav_result.scalars().all():
             filtered_ids.add(str(action.hotspot_id))
-        # 如果是需要收藏的，没有记录的也视为未收藏
         if request.is_favorite:
             hotspot_ids = filtered_ids
         else:
-            # 非收藏：包括没有记录的和明确标记为非收藏的
             favorite_ids = set()
             fav_all = await db.execute(
                 select(UserHotspotAction).where(
@@ -143,6 +133,9 @@ async def batch_dismiss(
                 if a.is_favorite:
                     favorite_ids.add(str(a.hotspot_id))
             hotspot_ids = hotspot_ids - favorite_ids
+
+    if not hotspot_ids:
+        return {"dismissed_count": 0, "message": "未找到匹配条件的热点"}
 
     # 执行忽略（upsert）
     dismissed_count = 0
