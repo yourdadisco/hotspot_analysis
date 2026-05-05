@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { X, RefreshCw } from 'lucide-react'
+import { X, Calendar, RefreshCw } from 'lucide-react'
 import { collectionApi } from '../services/api'
 import { useProgressPolling } from '../hooks/useProgressPolling'
 import ProgressOverlay from './ProgressOverlay'
@@ -164,25 +164,37 @@ const ManualUpdateModal: React.FC<ManualUpdateModalProps> = ({ isOpen, onClose, 
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-3">发布日期区间（最多31天）</label>
               <div className="flex items-center space-x-3">
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => {
-                    setDateFrom(e.target.value)
-                    setDateError('')
-                  }}
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
-                />
-                <span className="text-gray-400">至</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => {
-                    setDateTo(e.target.value)
-                    setDateError('')
-                  }}
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
-                />
+                <label className="relative flex-1 block cursor-pointer">
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value)
+                      setDateError('')
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="flex items-center justify-between w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white hover:border-blue-400 transition-colors pointer-events-none">
+                    <span className={dateFrom ? 'text-gray-900' : 'text-gray-400'}>{dateFrom || '选择日期'}</span>
+                    <Calendar size={18} className="text-gray-400" />
+                  </div>
+                </label>
+                <span className="text-gray-400 flex-shrink-0">至</span>
+                <label className="relative flex-1 block cursor-pointer">
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => {
+                      setDateTo(e.target.value)
+                      setDateError('')
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="flex items-center justify-between w-full px-4 py-3 border border-gray-300 rounded-lg text-sm bg-white hover:border-blue-400 transition-colors pointer-events-none">
+                    <span className={dateTo ? 'text-gray-900' : 'text-gray-400'}>{dateTo || '选择日期'}</span>
+                    <Calendar size={18} className="text-gray-400" />
+                  </div>
+                </label>
               </div>
             </div>
           )}
