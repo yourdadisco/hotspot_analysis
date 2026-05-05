@@ -80,28 +80,7 @@ async def get_source_names(
     """获取所有去重的热点来源名称"""
     return await HotspotService.get_source_names(db)
 
-@router.get("/hotspots/{hotspot_id}", response_model=HotspotWithAnalysisResponse)
-async def get_hotspot_detail(
-    hotspot_id: str,
-    user_id: Optional[str] = Query(None, description="用户ID，用于获取个性化分析"),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    获取热点详情（带缓存）
-
-    如果提供user_id，则返回该用户的分析结果
-    """
-    result = await HotspotService.get_hotspot_detail(db, hotspot_id, user_id)
-
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="热点不存在"
-        )
-
-    return HotspotWithAnalysisResponse(**result)
-
-@router.get("/hotspots/debug")
+@router.get("/hotspots/_debug")
 async def debug_hotspots(
     db: AsyncSession = Depends(get_db)
 ):
@@ -152,6 +131,28 @@ async def debug_hotspots(
         },
         "sample_list_query": [{"id": str(r.id), "title": r.title} for r in sample_query],
     }
+
+
+@router.get("/hotspots/{hotspot_id}", response_model=HotspotWithAnalysisResponse)
+async def get_hotspot_detail(
+    hotspot_id: str,
+    user_id: Optional[str] = Query(None, description="用户ID，用于获取个性化分析"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    获取热点详情（带缓存）
+
+    如果提供user_id，则返回该用户的分析结果
+    """
+    result = await HotspotService.get_hotspot_detail(db, hotspot_id, user_id)
+
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="热点不存在"
+        )
+
+    return HotspotWithAnalysisResponse(**result)
 
 
 @router.post("/hotspots/refresh")
