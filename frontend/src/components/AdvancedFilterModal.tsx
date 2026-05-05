@@ -143,7 +143,7 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">信息源</label>
           {sourceNameOptions.length > 0 ? (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
               {sourceNameOptions.map((name) => (
                 <label key={name} className="flex items-center space-x-3 cursor-pointer">
                   <input
