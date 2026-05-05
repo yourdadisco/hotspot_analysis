@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException, status, BackgroundTasks, Query
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from datetime import datetime, timedelta

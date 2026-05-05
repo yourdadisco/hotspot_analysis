@@ -128,14 +128,14 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
               type="date"
               value={filters.date_from}
               onChange={(e) => setFilters((prev) => ({ ...prev, date_from: e.target.value }))}
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
             />
             <span className="text-gray-400">至</span>
             <input
               type="date"
               value={filters.date_to}
               onChange={(e) => setFilters((prev) => ({ ...prev, date_to: e.target.value }))}
-              className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
             />
           </div>
         </div>
