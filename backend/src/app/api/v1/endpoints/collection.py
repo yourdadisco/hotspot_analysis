@@ -200,35 +200,24 @@ async def _run_manual_refresh_with_progress(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
 ) -> None:
-    """后台执行手动更新：收集 → 取消忽略 → 缓存失效"""
+    """后台执行手动更新：收集 → 取消全部忽略 → 缓存失效"""
     try:
-        # 记录开始时间，用于识别本次收集的热点
-        collect_start = datetime.utcnow()
-
         # 1. 执行收集
         await collector_service.collect_all(progress_task_id=task_id)
 
-        # 2. 清除本次收集到的热点中已忽略的状态
+        # 2. 取消所有已忽略热点，让手动更新的内容全部可见
         async with AsyncSessionLocal() as db:
-            stmt = select(Hotspot.id).where(Hotspot.collected_at >= collect_start)
+            stmt = select(UserHotspotAction).where(
+                UserHotspotAction.is_dismissed == True,
+            )
             result = await db.execute(stmt)
-            hotspot_ids = [str(row[0]) for row in result.all()]
-
-            if hotspot_ids:
-                dismiss_stmt = select(UserHotspotAction).where(
-                    UserHotspotAction.hotspot_id.in_(hotspot_ids),
-                    UserHotspotAction.is_dismissed == True,
-                )
-                dismiss_result = await db.execute(dismiss_stmt)
-                undismissed = 0
-                for action in dismiss_result.scalars().all():
+            actions = result.scalars().all()
+            if actions:
+                for action in actions:
                     action.is_dismissed = False
                     action.updated_at = datetime.utcnow()
-                    undismissed += 1
-
-                if undismissed > 0:
-                    await db.commit()
-                    logger.info(f"手动更新取消 {undismissed} 个热点的忽略状态")
+                await db.commit()
+                logger.info(f"手动更新取消 {len(actions)} 个热点的忽略状态")
 
         # 3. 缓存失效
         await HotspotService.invalidate_hotspots_cache()
