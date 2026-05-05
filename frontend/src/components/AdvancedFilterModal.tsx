@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import { hotspotsApi } from '../services/api'
 
 export interface AdvancedFilters {
   importance_levels: string[]
@@ -34,6 +32,10 @@ const importanceOptions = [
   { value: 'unanalyzed', label: '未分析', color: 'bg-gray-500' },
 ]
 
+const sourceNameOptions = [
+  'AI科技评论', '量子位', '新智元', '钛媒体', '36氪', '虎嗅', 'OSCHINA',
+]
+
 /** 将逗号分隔字符串解析为数组 */
 const parseCsv = (val: string): string[] =>
   val ? val.split(',').map((s) => s.trim()).filter(Boolean) : []
@@ -45,14 +47,6 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
   initialFilters,
 }) => {
   const [filters, setFilters] = useState<AdvancedFilters>(initialFilters || defaultFilters)
-
-  // 打开时获取真实来源名称列表
-  const { data: sourceNameOptions = [] } = useQuery({
-    queryKey: ['source-names'],
-    queryFn: () => hotspotsApi.getSourceNames(),
-    enabled: isOpen,
-    staleTime: 60000,
-  })
 
   useEffect(() => {
     if (initialFilters) {
@@ -143,23 +137,19 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
 
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-3">信息源</label>
-          {sourceNameOptions.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-              {sourceNameOptions.map((name) => (
-                <label key={name} className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedSourceNames.includes(name)}
-                    onChange={() => handleToggleSourceName(name)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                  />
-                  <span className="text-sm text-gray-700">{name}</span>
-                </label>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400">暂无数据</p>
-          )}
+          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+            {sourceNameOptions.map((name) => (
+              <label key={name} className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedSourceNames.includes(name)}
+                  onChange={() => handleToggleSourceName(name)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700">{name}</span>
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="mb-6">
