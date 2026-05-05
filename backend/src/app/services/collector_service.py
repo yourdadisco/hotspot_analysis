@@ -392,6 +392,7 @@ class CollectorService:
                         existing.summary = processed["summary"]
                         existing.tags = processed["tags"]
                         existing.category = processed["category"]
+                        existing.collected_at = datetime.utcnow()
                         existing.updated_at = datetime.utcnow()
                     else:
                         # 创建新热点
