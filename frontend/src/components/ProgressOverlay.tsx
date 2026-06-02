@@ -29,9 +29,7 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
     } else {
       document.body.style.overflow = ''
     }
-    return () => {
-      document.body.style.overflow = ''
-    }
+    return () => { document.body.style.overflow = '' }
   }, [isOpen])
 
   if (!isOpen) return null
@@ -40,51 +38,48 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* 半透明遮罩 */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-      {/* 居中卡片 */}
-      <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
-        {/* 标题 */}
-        <div className="text-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(26, 35, 50, 0.5)' }} />
+      <div className="relative bg-white rounded-lg shadow-modal p-6 w-full max-w-sm mx-4"
+        style={{ border: '1px solid #D8D2C2' }}>
+        <div className="text-center mb-5">
+          <h3 className="text-base font-semibold" style={{ color: '#1B1B1A' }}>{title}</h3>
         </div>
 
-        {/* 进度条 */}
-        <div className="mb-6">
+        <div className="mb-5">
           <ProgressBar progress={progress} showLabel size="md" />
         </div>
 
         {/* 当前步骤 */}
-        <div className="flex items-center space-x-3 mb-6 p-3 bg-blue-50 rounded-lg">
-          <Loader2 size={20} className="text-blue-500 animate-spin" />
-          <span className="text-sm font-medium text-blue-700">{currentStep}</span>
+        <div className="flex items-center gap-3 mb-5 p-3 rounded-md"
+          style={{ backgroundColor: '#EBEFF6' }}>
+          <Loader2 size={16} className="animate-spin" style={{ color: '#3E5C9A' }} />
+          <span className="text-sm font-medium" style={{ color: '#3E5C9A' }}>{currentStep}</span>
         </div>
 
         {/* 步骤列表 */}
         {steps.length > 0 && (
-          <div className="space-y-2 mb-6">
+          <div className="space-y-2 mb-5">
             {steps.map((step, index) => {
               const isLast = index === steps.length - 1 && status === 'running'
               const isCompleted = index < steps.length - 1 || status === 'completed'
               const stepStatus = isCompleted ? 'completed' : isLast ? 'running' : 'pending'
               return (
-                <div key={index} className="flex items-center space-x-3">
+                <div key={index} className="flex items-center gap-3">
                   {stepStatus === 'completed' ? (
-                    <CheckCircle2 size={18} className="text-green-500 flex-shrink-0" />
+                    <CheckCircle2 size={16} color="#00B96B" className="shrink-0" />
                   ) : stepStatus === 'running' ? (
-                    <Loader2 size={18} className="text-blue-500 animate-spin flex-shrink-0" />
+                    <Loader2 size={16} className="animate-spin shrink-0" style={{ color: '#3E5C9A' }} />
                   ) : (
-                    <Circle size={18} className="text-gray-300 flex-shrink-0" />
+                    <Circle size={16} style={{ color: '#D8D2C2' }} className="shrink-0" />
                   )}
                   <span
-                    className={`text-sm ${
-                      stepStatus === 'completed'
-                        ? 'text-green-700 line-through'
-                        : stepStatus === 'running'
-                          ? 'text-blue-700 font-medium'
-                          : 'text-gray-400'
-                    }`}
+                    className="text-sm"
+                    style={{
+                      color: stepStatus === 'completed' ? '#008C4A'
+                        : stepStatus === 'running' ? '#3E5C9A'
+                        : '#8B95B0',
+                      textDecoration: stepStatus === 'completed' ? 'line-through' : 'none'
+                    }}
                   >
                     {step}
                   </span>
@@ -96,9 +91,10 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
 
         {/* 错误信息 */}
         {error && (
-          <div className="flex items-start space-x-2 p-3 bg-red-50 rounded-lg mb-4">
-            <XCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="flex items-start gap-2 p-3 rounded-md mb-4"
+            style={{ backgroundColor: '#FEF0F0' }}>
+            <XCircle size={16} color="#F23645" className="shrink-0 mt-0.5" />
+            <p className="text-sm" style={{ color: '#F23645' }}>{error}</p>
           </div>
         )}
 
@@ -107,16 +103,12 @@ const ProgressOverlay: React.FC<ProgressOverlayProps> = ({
           {isFinished ? (
             <button
               onClick={onClose}
-              className={`px-6 py-2.5 rounded-lg font-medium text-white transition-colors ${
-                status === 'completed'
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              }`}
+              className={status === 'completed' ? 'btn-primary text-sm' : 'btn-danger text-sm'}
             >
               {status === 'completed' ? '查看结果' : '关闭'}
             </button>
           ) : (
-            <p className="text-sm text-gray-500">请耐心等待，不要关闭页面...</p>
+            <p className="text-xs" style={{ color: '#8B95B0' }}>请耐心等待，不要关闭页面...</p>
           )}
         </div>
       </div>

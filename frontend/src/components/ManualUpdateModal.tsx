@@ -120,68 +120,76 @@ const ManualUpdateModal: React.FC<ManualUpdateModalProps> = ({ isOpen, onClose, 
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">手动更新热点</h3>
-            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
-              <X size={20} />
+        <div className="absolute inset-0" style={{ backgroundColor: 'rgba(26, 35, 50, 0.5)' }} onClick={onClose} />
+        <div className="relative bg-white rounded-lg shadow-modal p-5 w-full max-w-sm mx-4" style={{ border: '1px solid #D8D2C2' }}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold" style={{ color: '#1B1B1A' }}>手动更新热点</h3>
+            <button onClick={onClose} className="p-1 rounded-md transition-colors" style={{ color: '#5E6680' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F4F1EA'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <X size={18} />
             </button>
           </div>
 
           {/* 更新模式 */}
-          <div className="mb-6 space-y-3">
-            <label className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+          <div className="mb-4 space-y-2">
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-md transition-colors"
+              style={{
+                border: '1px solid #D8D2C2',
+                backgroundColor: mode === 'last' ? '#FEF7E6' : '#FFFFFF'
+              }}
+              onMouseEnter={(e) => { if (mode !== 'last') e.currentTarget.style.backgroundColor = '#F4F1EA' }}
+              onMouseLeave={(e) => { if (mode !== 'last') e.currentTarget.style.backgroundColor = '#FFFFFF' }}>
               <input
                 type="radio"
                 name="updateMode"
                 checked={mode === 'last'}
                 onChange={() => setMode('last')}
-                className="w-4 h-4 text-blue-600"
+                style={{ accentColor: '#F5A623' }}
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">从最近更新开始</span>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <span className="text-sm font-medium" style={{ color: '#1B1B1A' }}>从最近更新开始</span>
+                <p className="text-xs mt-0.5" style={{ color: '#8B95B0' }}>
                   {dateFrom ? `最近更新: ${dateFrom}` : ''}
                 </p>
               </div>
             </label>
 
-            <label className="flex items-center space-x-3 cursor-pointer p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+            <label className="flex items-center gap-3 cursor-pointer p-3 rounded-md transition-colors"
+              style={{
+                border: '1px solid #D8D2C2',
+                backgroundColor: mode === 'range' ? '#FEF7E6' : '#FFFFFF'
+              }}
+              onMouseEnter={(e) => { if (mode !== 'range') e.currentTarget.style.backgroundColor = '#F4F1EA' }}
+              onMouseLeave={(e) => { if (mode !== 'range') e.currentTarget.style.backgroundColor = '#FFFFFF' }}>
               <input
                 type="radio"
                 name="updateMode"
                 checked={mode === 'range'}
                 onChange={() => setMode('range')}
-                className="w-4 h-4 text-blue-600"
+                style={{ accentColor: '#F5A623' }}
               />
-              <span className="text-sm font-medium text-gray-900">指定日期区间</span>
+              <span className="text-sm font-medium" style={{ color: '#1B1B1A' }}>指定日期区间</span>
             </label>
           </div>
 
           {/* 日期选择 */}
           {mode === 'range' && (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">发布日期区间（最多31天）</label>
-              <div className="flex items-center space-x-3">
+            <div className="mb-4">
+              <label className="block text-xs font-semibold mb-2" style={{ color: '#5E6680' }}>发布日期区间（最多31天）</label>
+              <div className="flex items-center gap-3">
                 <input
                   type="date"
                   value={dateFrom}
-                  onChange={(e) => {
-                    setDateFrom(e.target.value)
-                    setDateError('')
-                  }}
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
+                  onChange={(e) => { setDateFrom(e.target.value); setDateError('') }}
+                  className="input flex-1 py-2"
                 />
-                <span className="text-gray-400">至</span>
+                <span className="text-xs" style={{ color: '#8B95B0' }}>至</span>
                 <input
                   type="date"
                   value={dateTo}
-                  onChange={(e) => {
-                    setDateTo(e.target.value)
-                    setDateError('')
-                  }}
-                  className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
+                  onChange={(e) => { setDateTo(e.target.value); setDateError('') }}
+                  className="input flex-1 py-2"
                 />
               </div>
             </div>
@@ -189,22 +197,16 @@ const ManualUpdateModal: React.FC<ManualUpdateModalProps> = ({ isOpen, onClose, 
 
           {/* 错误提示 */}
           {dateError && (
-            <p className="text-sm text-red-600 mb-4">{dateError}</p>
+            <p className="text-xs mb-3" style={{ color: '#F23645' }}>{dateError}</p>
           )}
 
           {/* 操作按钮 */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
+          <div className="flex justify-end gap-3 pt-4" style={{ borderTop: '1px solid #D8D2C2' }}>
+            <button onClick={onClose} className="btn-secondary text-sm">
               取消
             </button>
-            <button
-              onClick={handleStart}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-            >
-              <RefreshCw size={16} />
+            <button onClick={handleStart} className="btn-primary text-sm flex items-center gap-2">
+              <RefreshCw size={14} />
               <span>开始更新</span>
             </button>
           </div>
