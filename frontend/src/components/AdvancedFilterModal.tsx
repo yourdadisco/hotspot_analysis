@@ -85,118 +85,114 @@ const AdvancedFilterModal: React.FC<AdvancedFilterModalProps> = ({
 
   if (!isOpen) return null
 
-  const dotColors: Record<string, string> = {
-    emergency: '#F23645', high: '#F5A623', medium: '#3E5C9A', low: '#00B96B', unanalyzed: '#8B95B0',
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0" style={{ backgroundColor: 'rgba(26, 35, 50, 0.5)' }} onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-modal p-6 w-full max-w-md mx-4" style={{ border: '1px solid #D8D2C2' }}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-semibold" style={{ color: '#1B1B1A' }}>高级筛选</h3>
-          <button onClick={onClose} className="p-1 rounded-md transition-colors" style={{ color: '#5E6680' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F4F1EA'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-            <X size={18} />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-900">高级筛选</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
+            <X size={20} />
           </button>
         </div>
 
-        <div className="mb-5">
-          <label className="block text-xs font-semibold mb-2.5" style={{ color: '#5E6680' }}>重要性级别</label>
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">重要性级别</label>
           <div className="space-y-2">
             {importanceOptions.map((opt) => (
-              <label key={opt.value} className="flex items-center gap-3 cursor-pointer">
+              <label key={opt.value} className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={filters.importance_levels.includes(opt.value)}
                   onChange={() => handleToggleImportance(opt.value)}
-                  className="w-4 h-4 rounded"
-                  style={{ accentColor: '#F5A623' }}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
                 />
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColors[opt.value] || '#8B95B0' }} />
-                  <span className="text-sm" style={{ color: '#1B1B1A' }}>{opt.label}</span>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${opt.color}`} />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
                 </div>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="mb-5">
-          <label className="block text-xs font-semibold mb-2.5" style={{ color: '#5E6680' }}>日期范围</label>
-          <div className="flex items-center gap-3">
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">日期范围</label>
+          <div className="flex items-center space-x-3">
             <input
               type="date"
               value={filters.date_from}
               onChange={(e) => setFilters((prev) => ({ ...prev, date_from: e.target.value }))}
-              className="input flex-1 py-2"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
             />
-            <span className="text-xs" style={{ color: '#8B95B0' }}>至</span>
+            <span className="text-gray-400">至</span>
             <input
               type="date"
               value={filters.date_to}
               onChange={(e) => setFilters((prev) => ({ ...prev, date_to: e.target.value }))}
-              className="input flex-1 py-2"
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm cursor-pointer hover:border-blue-400 transition-colors"
             />
           </div>
         </div>
 
-        <div className="mb-5">
-          <label className="block text-xs font-semibold mb-2.5" style={{ color: '#5E6680' }}>信息源</label>
-          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto scrollbar-thin">
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">信息源</label>
+          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
             {sourceNameOptions.map((name) => (
-              <label key={name} className="flex items-center gap-2.5 cursor-pointer px-2 py-1.5 rounded-md transition-colors"
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F4F1EA'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <label key={name} className="flex items-center space-x-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={selectedSourceNames.includes(name)}
                   onChange={() => handleToggleSourceName(name)}
-                  className="w-4 h-4 rounded"
-                  style={{ accentColor: '#F5A623' }}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
                 />
-                <span className="text-sm" style={{ color: '#1B1B1A' }}>{name}</span>
+                <span className="text-sm text-gray-700">{name}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="mb-5">
-          <label className="block text-xs font-semibold mb-2.5" style={{ color: '#5E6680' }}>收藏状态</label>
-          <div className="flex gap-2">
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-3">收藏状态</label>
+          <div className="flex space-x-3">
             {[
               { value: 'all', label: '全部' },
               { value: 'yes', label: '已收藏' },
               { value: 'no', label: '未收藏' },
-            ].map((opt) => {
-              const isActive = filters.is_favorite === opt.value
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => setFilters((prev) => ({ ...prev, is_favorite: opt.value }))}
-                  className="px-3.5 py-2 text-xs font-medium rounded-md transition-all"
-                  style={isActive
-                    ? { backgroundColor: '#1A2332', color: '#E8ECF4' }
-                    : { backgroundColor: '#F4F1EA', color: '#5E6680' }
-                  }
-                >
-                  {opt.label}
-                </button>
-              )
-            })}
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFilters((prev) => ({ ...prev, is_favorite: opt.value }))}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filters.is_favorite === opt.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="flex justify-between pt-4" style={{ borderTop: '1px solid #D8D2C2' }}>
-          <button onClick={handleReset} className="btn-ghost text-sm">
+        <div className="flex justify-between pt-4 border-t border-gray-200">
+          <button
+            onClick={handleReset}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+          >
             重置
           </button>
-          <div className="flex gap-3">
-            <button onClick={onClose} className="btn-secondary text-sm">
+          <div className="flex space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            >
               取消
             </button>
-            <button onClick={handleApply} className="btn-primary text-sm">
+            <button
+              onClick={handleApply}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
               应用筛选
             </button>
           </div>

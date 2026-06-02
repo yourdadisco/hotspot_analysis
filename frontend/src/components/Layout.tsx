@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Heart, Settings, Briefcase, Cpu,
-  Bell, LogOut, User, BookOpen, BarChart3, Activity
-} from 'lucide-react'
+import { Brain, Home, Heart, Settings, Briefcase, Cpu, Bell, LogOut, User, BookOpen } from 'lucide-react'
 import { hotspotsApi } from '../services/api'
 import UsageGuideModal from './UsageGuideModal'
 import TutorialPrompt from './TutorialPrompt'
@@ -19,16 +16,19 @@ const Layout: React.FC = () => {
   const userMenuRef = useRef<HTMLDivElement>(null)
   const userId = localStorage.getItem('user_id') || ''
 
+  // 首次登录显示使用教程引导
   useEffect(() => {
     if (userId) {
       const dismissed = localStorage.getItem(`tutorial_dismissed_${userId}`)
       if (!dismissed) {
+        // 延迟显示，等页面渲染完成
         const timer = setTimeout(() => setShowTutorialPrompt(true), 500)
         return () => clearTimeout(timer)
       }
     }
   }, [userId])
 
+  // 获取统计信息（与Dashboard共享同一个queryKey，一方刷新另一方自动更新）
   const { data: statsData } = useQuery({
     queryKey: ['hotspots-stats'],
     queryFn: async () => {
@@ -36,7 +36,7 @@ const Layout: React.FC = () => {
       return response as any
     },
     enabled: !!userId,
-    refetchInterval: 60000,
+    refetchInterval: 60000, // 每分钟自动刷新
   })
 
   useEffect(() => {
@@ -46,14 +46,18 @@ const Layout: React.FC = () => {
     }
   }, [])
 
+  // 点击外部关闭用户菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowLogout(false)
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
   }, [])
 
   const handleLogout = () => {
@@ -65,158 +69,156 @@ const Layout: React.FC = () => {
   }
 
   const navItems = [
-    { path: '/dashboard', icon: <BarChart3 size={18} />, label: '热点看板' },
-    { path: '/favorites', icon: <Heart size={18} />, label: '我的收藏' },
-    { path: '/business', icon: <Briefcase size={18} />, label: '业务配置' },
-    { path: '/model-config', icon: <Cpu size={18} />, label: '模型配置' },
-    { path: '/settings', icon: <Settings size={18} />, label: '设置' },
+    { path: '/dashboard', icon: <Home size={20} />, label: '热点看板' },
+    { path: '/favorites', icon: <Heart size={20} />, label: '我的收藏' },
+    { path: '/business', icon: <Briefcase size={20} />, label: '业务配置' },
+    { path: '/model-config', icon: <Cpu size={20} />, label: '模型配置' },
+    { path: '/settings', icon: <Settings size={20} />, label: '设置' },
   ]
 
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: '#F4F1EA' }}>
-      {/* ===== 侧边栏 ===== */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-60 fixed inset-y-0 z-30"
-        style={{ backgroundColor: '#1A2332' }}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 h-16 shrink-0"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="w-8 h-8 rounded-md flex items-center justify-center"
-            style={{ backgroundColor: 'rgba(245, 166, 35, 0.15)' }}>
-            <Activity size={18} color="#F5A623" />
-          </div>
-          <div>
-            <h1 className="text-sm font-semibold" style={{ color: '#E8ECF4' }}>AI热点解析</h1>
-            <p className="text-[11px]" style={{ color: '#5E6680' }}>智能分析平台</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* 顶部导航栏 */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <Brain className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">AI热点解析助手</h1>
+                <p className="text-xs text-gray-500">智能追踪AI行业动态</p>
+              </div>
+            </div>
 
-        {/* 导航 */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                isActive ? 'nav-link-active' : 'nav-link'
-              }
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </NavLink>
-          ))}
+            {/* 用户信息 */}
+            <div className="flex items-center space-x-4">
+              <button className="p-2 rounded-full hover:bg-gray-100 relative">
+                <Bell size={20} />
+                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              </button>
+              <div className="relative" ref={userMenuRef}>
+                <button
+                  onClick={() => setShowLogout(!showLogout)}
+                  className="flex items-center space-x-3 hover:bg-gray-100 rounded-lg p-2 transition-colors"
+                >
+                  <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="text-blue-600" size={16} />
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium text-gray-900">{userEmail || '用户'}</p>
+                    <p className="text-xs text-gray-500">产品经理</p>
+                  </div>
+                </button>
 
-          {/* 快速统计 */}
-          <div className="pt-6 mt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            <h3 className="px-4 text-[11px] font-semibold uppercase tracking-wider mb-3"
-              style={{ color: '#5E6680' }}>
-              今日概览
-            </h3>
-            <div className="space-y-2 px-4">
-              {[
-                { label: '新热点', value: statsData?.today_count ?? '-', color: '#E8ECF4' },
-                { label: '待分析', value: statsData?.pending_analysis ?? '-', color: '#F5A623' },
-                { label: '紧急', value: statsData?.emergency_count ?? '-', color: '#F23645' },
-              ].map((item) => (
-                <div key={item.label} className="flex justify-between items-center">
-                  <span className="text-xs" style={{ color: '#8B95B0' }}>{item.label}</span>
-                  <span className="data-value font-semibold" style={{ color: item.color }}>{item.value}</span>
-                </div>
-              ))}
+                {showLogout && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-3"
+                    >
+                      <LogOut size={16} />
+                      <span>退出登录</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        </div>
+      </header>
 
-          {/* 使用教程 */}
-          <div className="pt-4 mt-2">
-            <button
-              onClick={() => setShowTutorial(true)}
-              className="nav-link w-full"
-            >
-              <BookOpen size={18} />
-              <span>使用教程</span>
-            </button>
-          </div>
-        </nav>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* 侧边栏 */}
+          <aside className="lg:w-64">
+            <nav className="bg-white rounded-lg shadow-sm p-4 sticky top-24">
+              <ul className="space-y-2">
+                {navItems.map((item) => (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      className={({ isActive }) =>
+                        `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`
+                      }
+                    >
+                      {item.icon}
+                      <span className="font-medium">{item.label}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
 
-        {/* 用户区域 */}
-        <div className="px-3 py-4 shrink-0"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="relative" ref={userMenuRef}>
-            <button
-              onClick={() => setShowLogout(!showLogout)}
-              className="nav-link w-full"
-            >
-              <div className="w-7 h-7 rounded-md flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(245, 166, 35, 0.15)' }}>
-                <User size={14} color="#F5A623" />
+              {/* 统计信息 */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  今日统计
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">新热点</span>
+                    <span className="font-semibold text-gray-900">{statsData?.today_count ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">待分析</span>
+                    <span className="font-semibold text-amber-600">{statsData?.pending_analysis ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">紧急事项</span>
+                    <span className="font-semibold text-red-600">{statsData?.emergency_count ?? '-'}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-sm truncate" style={{ color: '#E8ECF4' }}>
-                  {userEmail || '用户'}
-                </p>
-              </div>
-              <LogOut size={14} style={{ color: '#5E6680' }} />
-            </button>
 
-            {showLogout && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 rounded-md py-1 z-50"
-                style={{
-                  backgroundColor: '#232E45',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
-                }}>
+              {/* 使用教程 — 醒目标识 */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
                 <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors"
-                  style={{ color: '#E8ECF4' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(245, 166, 35, 0.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  id="tutorial-btn"
+                  onClick={() => setShowTutorial(true)}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors w-full font-medium border border-blue-200"
                 >
-                  <LogOut size={15} />
-                  <span>退出登录</span>
+                  <BookOpen size={18} />
+                  <span>使用教程</span>
                 </button>
               </div>
-            )}
-          </div>
+            </nav>
+          </aside>
+
+          {/* 主内容区 */}
+          <main className="flex-1">
+            <Outlet />
+          </main>
         </div>
-      </aside>
-
-      {/* ===== 主区域 ===== */}
-      <div className="flex-1 flex flex-col lg:ml-60 min-h-screen">
-        {/* 顶栏 */}
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md"
-          style={{ borderBottom: '2px solid #F5A623' }}>
-          <div className="flex items-center justify-between h-14 px-4 sm:px-6 lg:px-8">
-            {/* 移动端 Logo */}
-            <div className="flex items-center gap-3 lg:hidden">
-              <Activity size={20} color="#F5A623" />
-              <span className="text-sm font-semibold" style={{ color: '#1B1B1A' }}>AI热点解析</span>
-            </div>
-
-            <div className="flex items-center gap-3 ml-auto">
-              <button className="btn-ghost p-2 rounded-md relative">
-                <Bell size={17} />
-                <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: '#F23645' }}></span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* 内容 */}
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
-          <Outlet />
-        </main>
-
-        {/* 页脚 */}
-        <footer className="py-4 px-4 sm:px-6 lg:px-8 text-center"
-          style={{ borderTop: '1px solid #D8D2C2' }}>
-          <p className="text-xs" style={{ color: '#8B95B0' }}>
-            © 2024 AI超级热点解析助手
-          </p>
-        </footer>
       </div>
 
+      {/* 页脚 */}
+      <footer className="border-t border-gray-200 bg-white py-6 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-600 text-sm">
+              © 2024 AI超级热点解析助手. 保留所有权利.
+            </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm">
+                帮助中心
+              </a>
+              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm">
+                隐私政策
+              </a>
+              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm">
+                服务条款
+              </a>
+            </div>
+          </div>
+        </div>
+      </footer>
+
       <UsageGuideModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
+
       {showTutorialPrompt && (
         <TutorialPrompt
           userId={userId}
