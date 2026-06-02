@@ -7,34 +7,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        ground: '#0F0F11',
-        surface: '#16161A',
-        'surface-raised': '#1E1E24',
-        'surface-overlay': '#282830',
-        'ray-red': '#FF6363',
-        'ray-orange': '#FF9F4A',
-        'ray-lime': '#4ADE80',
-        'ray-cyan': '#22D3EE',
-        'ray-lavender': '#A78BFA',
-        'ray-pink': '#F472B6',
-        'text-primary': '#FFFFFF',
-        'text-secondary': '#B0B3B8',
-        'text-muted': '#6B7280',
-        'ray-hairline': 'rgba(255,255,255,0.10)',
-        importance: {
-          emergency: '#FF6363',
-          high: '#FF9F4A',
-          medium: '#A78BFA',
-          low: '#4ADE80',
-          unanalyzed: '#6B7280',
+        primary: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
         },
+        importance: {
+          emergency: '#ef4444',
+          high: '#f97316',
+          medium: '#eab308',
+          low: '#22c55e',
+          watch: '#8b5cf6',
+        }
       },
       fontFamily: {
-        display: ['"Inter Tight"', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', '"Fira Code"', 'monospace'],
-      },
-      boxShadow: {
-        'cushion': '0 16px 40px rgba(0,0,0,0.4)',
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

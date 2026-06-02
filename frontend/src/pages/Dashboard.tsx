@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Filter, Clock, TrendingUp, AlertTriangle,
-  BarChart3, RefreshCw, Target, Trash2
+  BarChart3, ChevronRight, RefreshCw, Target, Trash2
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { hotspotsApi, collectionApi, analysisApi, userActionsApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import AdvancedFilterModal, { type AdvancedFilters } from '../components/AdvancedFilterModal'
+import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
 import ProgressOverlay from '../components/ProgressOverlay'
 import ManualUpdateModal from '../components/ManualUpdateModal'
@@ -333,51 +334,60 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="inline-block w-8 h-8 rounded-full animate-spin"
-            style={{ border: '2px solid rgba(255,255,255,0.10)', borderTopColor: '#FF6363' }}></div>
-          <p className="mt-4 text-sm" style={{ color: '#6B7280' }}>加载热点数据...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">加载热点数据...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* 批量分析选择对话框 */}
       {showBatchDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 modal-overlay" onClick={() => setShowBatchDialog(false)} />
-          <div className="relative glass p-6 w-full max-w-md mx-4 shadow-cushion" style={{ borderRadius: '16px' }}>
-            <h3 className="text-base font-semibold text-white">批量AI分析</h3>
-            <p className="mt-1 text-sm" style={{ color: '#6B7280' }}>选择要分析的热点数量：</p>
-            <div className="flex flex-wrap gap-2 mt-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowBatchDialog(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">批量AI分析</h3>
+            <p className="text-gray-600 mb-6">选择要分析的热点数量：</p>
+            <div className="flex flex-wrap gap-3 mb-6">
               {[5, 10, 20, 50].map((n) => (
                 <button
                   key={n}
                   onClick={() => setBatchLimit(n)}
-                  className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-                  style={{
-                    backgroundColor: batchLimit === n && batchLimit !== 0 ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
-                    color: batchLimit === n && batchLimit !== 0 ? '#FFFFFF' : '#6B7280',
-                  }}
+                  className={`px-5 py-2.5 rounded-lg font-medium transition-colors ${
+                    batchLimit === n && batchLimit !== 0
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
                 >
                   {n} 个
                 </button>
               ))}
               <button
                 onClick={() => setBatchLimit(0)}
-                className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
-                style={{
-                  backgroundColor: batchLimit === 0 ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
-                  color: batchLimit === 0 ? '#FFFFFF' : '#6B7280',
-                }}
+                className={`px-5 py-2.5 rounded-lg font-medium transition-colors ${
+                  batchLimit === 0
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
               >
                 全部未分析 ({(statsData as any)?.pending_analysis || '?'})
               </button>
             </div>
-            <div className="flex justify-end gap-3 mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.10)' }}>
-              <button onClick={() => setShowBatchDialog(false)} className="btn-secondary text-sm">取消</button>
-              <button onClick={handleStartBatchAnalysis} className="btn-primary text-sm">开始分析</button>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowBatchDialog(false)}
+                className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleStartBatchAnalysis}
+                className="px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                开始分析
+              </button>
             </div>
           </div>
         </div>
@@ -427,26 +437,36 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* 标题和操作 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-semibold text-white" style={{ fontFamily: '"Inter Tight", Inter, sans-serif', letterSpacing: '-0.02em' }}>热点看板</h1>
-          <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>实时追踪AI行业动态，智能分析业务影响</p>
+          <h1 className="text-2xl font-bold text-gray-900">热点看板</h1>
+          <p className="text-gray-600 mt-1">实时追踪AI行业动态，智能分析业务影响</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleRefresh} disabled={isCollecting} className="btn-secondary text-xs px-3 py-1.5">
-            <RefreshCw size={14} className={isCollecting ? 'animate-spin' : ''} />
+        <div className="flex space-x-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isCollecting}
+            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center space-x-2"
+          >
+            <RefreshCw size={16} className={isCollecting ? 'animate-spin' : ''} />
             <span>{isCollecting ? '更新中...' : '手动更新'}</span>
           </button>
-          <button onClick={handleOpenBatchDialog} disabled={isBatchAnalyzing} className="btn-secondary text-xs px-3 py-1.5">
-            <Target size={14} />
+          <button
+            onClick={handleOpenBatchDialog}
+            disabled={isBatchAnalyzing}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
+          >
+            <Target size={16} />
             <span>{isBatchAnalyzing ? '分析中...' : '批量分析'}</span>
           </button>
-          <button onClick={() => setShowAdvancedFilter(true)} className="btn-primary text-xs px-3 py-1.5">
-            <Filter size={14} />
+          <button
+            onClick={() => setShowAdvancedFilter(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <Filter size={16} />
             <span>高级筛选</span>
             {activeFilterCount > 0 && (
-              <span className="inline-flex items-center justify-center w-5 h-5 text-[11px] font-bold rounded-lg"
-                style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+              <span className="bg-white text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
                 {activeFilterCount}
               </span>
             )}
@@ -455,96 +475,111 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <div key={stat.label} className="glass p-4 glass-hover">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium" style={{ color: '#6B7280' }}>{stat.label}</span>
-              <stat.icon size={14} style={{ color: stat.label === '紧急事项' ? '#FF6363' : '#6B7280' }} />
+          <div key={stat.label} className="bg-white rounded-xl shadow-sm p-6 min-h-[140px] flex flex-col justify-between">
+            <div className="flex-1 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">{stat.label}</p>
+                <div className="flex items-baseline mt-2">
+                  <span className="text-3xl font-bold text-gray-900">{stat.value}</span>
+                  <span className={`ml-2 text-sm font-medium ${stat.color}`}>
+                    {stat.change}
+                  </span>
+                </div>
+              </div>
+              <div className={`p-3 rounded-full ${stat.color.replace('text', 'bg')} bg-opacity-10`}>
+                <stat.icon className={stat.color} size={24} />
+              </div>
             </div>
-            <span className="data-value-lg font-semibold text-white">{stat.value}</span>
           </div>
         ))}
       </div>
 
-      {/* 搜索 + 重要性标签 */}
-      <div className="glass p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="relative flex-1">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#6B7280' }} />
-            <input
-              type="text"
-              placeholder="搜索热点..."
-              className="input pl-9 py-2 text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      {/* 筛选栏 */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="搜索热点标题、内容或标签..."
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {importanceLevels.map((level) => {
-              const isActive = selectedImportance === level.id
-              const dotColors: Record<string, string> = {
-                'bg-red-500': '#FF6363', 'bg-orange-500': '#FF9F4A',
-                'bg-yellow-500': '#A78BFA', 'bg-blue-500': '#22D3EE',
-              }
-              const dotColor = level.color ? dotColors[level.color] || '#6B7280' : '#6B7280'
-              return (
-                <button
-                  key={level.id}
-                  onClick={() => { setSelectedImportance(level.id); setPage(1) }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all"
-                  style={{
-                    backgroundColor: isActive ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.04)',
-                    color: isActive ? '#FFFFFF' : '#6B7280',
-                    border: isActive ? '1px solid rgba(255,255,255,0.15)' : '1px solid transparent',
-                  }}
-                >
-                  {level.color && <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: dotColor }} />}
-                  <span>{level.label}</span>
-                  <span className="ml-0.5 opacity-60">{level.count}</span>
-                </button>
-              )
-            })}
+          <div className="flex flex-wrap gap-2">
+            {importanceLevels.map((level) => (
+              <button
+                key={level.id}
+                onClick={() => { setSelectedImportance(level.id); setPage(1) }}
+                className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+                  selectedImportance === level.id
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {level.color && (
+                  <div className={`w-2 h-2 rounded-full ${level.color}`}></div>
+                )}
+                <span>{level.label}</span>
+                <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded">
+                  {level.count}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
       {/* 活动筛选条件 */}
       {activeFilterCount > 0 && (
-        <div className="glass p-3">
+        <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center flex-wrap gap-2">
-              <span className="text-xs" style={{ color: '#6B7280' }}>筛选中：</span>
+              <span className="text-sm text-gray-500">筛选中：</span>
               {advancedFilters.importance_levels.length > 0 && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg"
-                  style={{ backgroundColor: 'rgba(167,139,250,0.15)', color: '#A78BFA' }}>
+                <span className="inline-flex items-center space-x-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
                   <span>级别: {advancedFilters.importance_levels.join(', ')}</span>
-                  <button onClick={() => setAdvancedFilters((prev) => ({ ...prev, importance_levels: [] }))}>×</button>
+                  <button
+                    onClick={() => setAdvancedFilters((prev) => ({ ...prev, importance_levels: [] }))}
+                    className="ml-1 hover:text-blue-900"
+                  >
+                    ×
+                  </button>
                 </span>
               )}
               {(advancedFilters.date_from || advancedFilters.date_to) && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg"
-                  style={{ backgroundColor: 'rgba(255,159,74,0.15)', color: '#FF9F4A' }}>
+                <span className="inline-flex items-center space-x-1 px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm">
                   <span>日期: {advancedFilters.date_from || '不限'} ~ {advancedFilters.date_to || '不限'}</span>
-                  <button onClick={() => setAdvancedFilters((prev) => ({ ...prev, date_from: '', date_to: '' }))}>×</button>
+                  <button
+                    onClick={() => setAdvancedFilters((prev) => ({ ...prev, date_from: '', date_to: '' }))}
+                    className="ml-1 hover:text-green-900"
+                  >
+                    ×
+                  </button>
                 </span>
               )}
               {advancedFilters.is_favorite !== 'all' && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-lg"
-                  style={{ backgroundColor: 'rgba(255,99,99,0.15)', color: '#FF6363' }}>
+                <span className="inline-flex items-center space-x-1 px-3 py-1 bg-pink-50 text-pink-700 rounded-full text-sm">
                   <span>{advancedFilters.is_favorite === 'yes' ? '已收藏' : '未收藏'}</span>
-                  <button onClick={() => setAdvancedFilters((prev) => ({ ...prev, is_favorite: 'all' }))}>×</button>
+                  <button
+                    onClick={() => setAdvancedFilters((prev) => ({ ...prev, is_favorite: 'all' }))}
+                    className="ml-1 hover:text-pink-900"
+                  >
+                    ×
+                  </button>
                 </span>
               )}
             </div>
             <button
               onClick={() => setShowDismissDialog(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all"
-              style={{ color: '#6B7280' }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,99,99,0.10)'; e.currentTarget.style.color = '#FF6363' }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6B7280' }}
+              className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium"
             >
-              <Trash2 size={13} />
+              <Trash2 size={16} />
               <span>批量忽略</span>
             </button>
           </div>
@@ -554,26 +589,36 @@ const Dashboard: React.FC = () => {
       {/* 批量忽略确认对话框 */}
       {showDismissDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 modal-overlay" onClick={() => setShowDismissDialog(false)} />
-          <div className="relative glass p-6 w-full max-w-sm mx-4 shadow-cushion" style={{ borderRadius: '16px' }}>
-            <h3 className="text-base font-semibold text-white">确认批量忽略</h3>
-            <p className="mt-2 text-sm" style={{ color: '#6B7280' }}>
-              将忽略当前筛选条件下的所有热点，忽略后热点将从列表中消失。
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDismissDialog(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">确认批量忽略</h3>
+            <p className="text-gray-600 mb-6">
+              将忽略当前筛选条件下的所有热点，忽略后热点将从列表中消失。确定要执行此操作吗？
             </p>
-            <div className="flex justify-end gap-3 mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.10)' }}>
-              <button onClick={() => setShowDismissDialog(false)} className="btn-secondary text-sm">取消</button>
-              <button onClick={handleBatchDismiss} className="btn-danger text-sm">确认忽略</button>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowDismissDialog(false)}
+                className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleBatchDismiss}
+                className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                确认忽略
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {/* 热点列表 */}
-      <div className="glass overflow-hidden" style={{ borderRadius: '12px' }}>
-        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.10)' }}>
-          <h2 className="text-sm font-semibold text-white">最新热点</h2>
-          <div className="flex items-center gap-3">
-            <span className="text-xs" style={{ color: '#6B7280' }}>排序：</span>
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-gray-900">最新热点</h2>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">排序：</span>
             <select
               value={`${sortBy}:${sortOrder}`}
               onChange={(e) => {
@@ -582,8 +627,7 @@ const Dashboard: React.FC = () => {
                 setSortOrder(newSortOrder)
                 setPage(1)
               }}
-              className="text-xs rounded-lg px-2 py-1.5"
-              style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#B0B3B8' }}
+              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
             >
               <option value="publish_date:desc">最新发布</option>
               <option value="relevance_score:desc">相关度最高</option>
@@ -591,106 +635,78 @@ const Dashboard: React.FC = () => {
             </select>
           </div>
         </div>
-        <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+        <div className="divide-y divide-gray-200">
           {hotspotsData?.items && hotspotsData.items.length > 0 ? (
             hotspotsData.items.map((hotspot: Hotspot) => (
-              <div key={hotspot.id} className="glass-hover px-5 py-4 cursor-pointer" style={{ backgroundColor: 'transparent', border: 'none' }}
-                onClick={() => handleHotspotClick(hotspot.id)}>
-                <div className="flex items-start gap-4">
-                  {/* 重要性色条 */}
-                  <div className="shrink-0 w-0.5 self-stretch rounded-full" style={{
-                    backgroundColor: !hotspot.has_analysis ? 'rgba(255,255,255,0.10)'
-                      : hotspot.analysis_importance_level === 'emergency' ? '#FF6363'
-                      : hotspot.analysis_importance_level === 'high' ? '#FF9F4A'
-                      : hotspot.analysis_importance_level === 'medium' ? '#A78BFA'
-                      : hotspot.analysis_importance_level === 'low' ? '#4ADE80'
-                      : 'rgba(255,255,255,0.10)'
-                  }} />
-
+              <div key={hotspot.id} className="p-6 hover:bg-gray-50 transition-colors" onClick={() => handleHotspotClick(hotspot.id)}>
+                <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0">
-                    {/* 元信息 */}
-                    <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex items-center space-x-3 mb-2">
                       {hotspot.has_analysis ? (
-                        <span className="badge text-[11px]" style={{
-                          backgroundColor: hotspot.analysis_importance_level === 'emergency' ? 'rgba(255,99,99,0.15)'
-                            : hotspot.analysis_importance_level === 'high' ? 'rgba(255,159,74,0.15)'
-                            : hotspot.analysis_importance_level === 'medium' ? 'rgba(167,139,250,0.15)'
-                            : hotspot.analysis_importance_level === 'low' ? 'rgba(78,204,128,0.15)'
-                            : 'rgba(255,255,255,0.06)',
-                          color: hotspot.analysis_importance_level === 'emergency' ? '#FF6363'
-                            : hotspot.analysis_importance_level === 'high' ? '#FF9F4A'
-                            : hotspot.analysis_importance_level === 'medium' ? '#A78BFA'
-                            : hotspot.analysis_importance_level === 'low' ? '#4ADE80'
-                            : '#6B7280'
-                        }}>
-                          {hotspot.analysis_importance_level === 'emergency' ? '紧急'
-                            : hotspot.analysis_importance_level === 'high' ? '高'
-                            : hotspot.analysis_importance_level === 'medium' ? '中'
-                            : hotspot.analysis_importance_level === 'low' ? '低'
-                            : hotspot.analysis_importance_level}
-                        </span>
+                        <ImportanceBadge level={hotspot.analysis_importance_level || 'medium'} size="sm" />
                       ) : (
-                        <span className="badge text-[11px]" style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#6B7280' }}>未分析</span>
+                        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-200 text-gray-800">
+                          未分析
+                        </span>
                       )}
-                      <span className="text-[11px] font-medium" style={{ color: '#FF9F4A' }}>{hotspot.source_name || hotspot.source_type}</span>
-                      <span className="text-[11px]" style={{ color: '#6B7280' }}>{new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}</span>
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800">
+                        {hotspot.source_name || hotspot.source_type}
+                      </span>
+                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-500">
+                        {new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}
+                      </span>
                     </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 break-words line-clamp-1">
+                      {hotspot.title}
+                    </h3>
 
-                    {/* 标题 */}
-                    <h3 className="text-sm font-semibold mb-1.5 line-clamp-1 text-white">{hotspot.title}</h3>
-
-                    {/* 摘要 */}
+                    {/* 已分析：显示AI摘要 */}
                     {hotspot.has_analysis ? (
-                      <p className="text-xs leading-relaxed line-clamp-2" style={{ color: '#6B7280' }}>
-                        {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
-                      </p>
+                      <div className="mb-4">
+                        <p className="text-gray-600 overflow-hidden break-words">
+                          {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
+                        </p>
+                      </div>
                     ) : (
-                      <p className="text-xs leading-relaxed line-clamp-1 italic" style={{ color: '#6B7280' }}>
-                        {renderSafeSummary(hotspot.summary)?.slice(0, 80)}...
-                      </p>
+                      /* 未分析：显示原文缩略 */
+                      <div className="mb-4">
+                        <p className="text-gray-400 text-sm line-clamp-1 overflow-hidden break-words italic">
+                          {renderSafeSummary(hotspot.summary)?.slice(0, 80)}...
+                        </p>
+                      </div>
                     )}
 
-                    {/* 底部栏 */}
-                    <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
                         {!hotspot.has_analysis && (
                           <button
                             onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
                             disabled={analyzingHotspots.has(hotspot.id)}
-                            className="text-[11px] font-medium px-2.5 py-1 rounded-lg transition-all"
-                            style={{
-                              backgroundColor: 'rgba(255,255,255,0.06)',
-                              color: '#B0B3B8',
-                              border: '1px solid rgba(255,255,255,0.10)',
-                            }}
+                            className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors whitespace-nowrap"
                           >
-                            {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析'}
+                            {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析获取摘要'}
                           </button>
                         )}
-                        <div className="flex gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {hotspot.tags.slice(0, 3).map((tag: string) => (
-                            <span key={tag} className="text-[11px] px-2 py-0.5 rounded-lg"
-                              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#6B7280' }}>{tag}</span>
+                            <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
                           ))}
                           {hotspot.tags.length > 3 && (
-                            <span className="text-[11px] px-2 py-0.5 rounded-lg"
-                              style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: '#6B7280' }}>+{hotspot.tags.length - 3}</span>
+                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center space-x-4">
                         {hotspot.has_analysis && (
-                          <span className="text-xs data-value" style={{ color: '#6B7280' }}>
-                            相关度 <span className="font-semibold text-white">{hotspot.analysis_relevance_score ?? 0}%</span>
+                          <span className="text-sm text-gray-500">
+                            相关度: <strong className="text-gray-900">{hotspot.analysis_relevance_score ?? 0}%</strong>
                           </span>
                         )}
                         <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
-                        <span className="text-xs font-medium flex items-center gap-1" style={{ color: '#6B7280' }}>
-                          详情
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="9 18 15 12 9 6" />
-                          </svg>
-                        </span>
+                        <button className="text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+                          <span>查看详情</span>
+                          <ChevronRight size={16} />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -699,74 +715,84 @@ const Dashboard: React.FC = () => {
             ))
           ) : (
             <div className="p-8 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg mb-3"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                <BarChart3 size={20} style={{ color: '#6B7280' }} />
-              </div>
-              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>暂无热点数据</p>
+              <p className="text-gray-500">暂无热点数据</p>
               {activeFilterCount > 0 && (
-                <p className="text-xs mt-1" style={{ color: '#6B7280' }}>当前有筛选条件或所有热点已被忽略</p>
+                <p className="text-sm text-gray-400 mt-1">当前有筛选条件或所有热点已被忽略</p>
               )}
-              <div className="flex justify-center gap-3 mt-4">
-                <button onClick={() => refetchHotspots()} className="btn-secondary text-xs">刷新</button>
-                <button onClick={handleRefresh} className="btn-primary text-xs">手动更新</button>
+              <div className="flex justify-center space-x-3 mt-4">
+                <button
+                  onClick={() => refetchHotspots()}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  刷新
+                </button>
+                <button
+                  onClick={handleRefresh}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  手动更新
+                </button>
               </div>
             </div>
           )}
         </div>
-        {/* 分页 */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.10)' }}>
-          <p className="text-xs" style={{ color: '#6B7280' }}>
-            显示 {hotspotsData?.items?.length || 0} 个，共 {hotspotsData?.total || 0} 个
+        <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4">
+          <p className="text-sm text-gray-600">
+            显示 {hotspotsData?.items?.length || 0} 个热点，共 {hotspotsData?.total || 0} 个
           </p>
-          <div className="flex items-center gap-1">
-            <button onClick={handlePrevPage} disabled={page <= 1}
-              className="px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-30"
-              style={{
-                border: '1px solid rgba(255,255,255,0.10)',
-                color: page <= 1 ? 'rgba(255,255,255,0.20)' : '#B0B3B8',
-                backgroundColor: 'rgba(255,255,255,0.04)',
-              }}>
+          <div className="flex items-center space-x-1.5">
+            <button
+              onClick={handlePrevPage}
+              disabled={page <= 1}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
               上一页
             </button>
 
+            {/* 页码按钮 */}
             {getPageNumbers().map((p, idx) =>
               p === '...' ? (
-                <span key={`e${idx}`} className="px-1.5 text-xs" style={{ color: '#6B7280' }}>...</span>
+                <span key={`e${idx}`} className="px-1.5 text-gray-400 text-sm">...</span>
               ) : (
-                <button key={p} onClick={() => setPage(p)}
-                  className="min-w-[32px] h-8 text-xs font-medium rounded-lg transition-all"
-                  style={page === p
-                    ? { backgroundColor: '#FFFFFF', color: '#0F0F11' }
-                    : { backgroundColor: 'rgba(255,255,255,0.04)', color: '#6B7280', border: '1px solid transparent' }
-                  }>
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`min-w-[36px] h-9 rounded-lg text-sm font-medium transition-colors ${
+                    page === p
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-700 hover:bg-gray-100 border border-gray-300'
+                  }`}
+                >
                   {p}
                 </button>
               )
             )}
 
-            <button onClick={handleNextPage} disabled={page >= totalPages}
-              className="px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all disabled:opacity-30"
-              style={{
-                border: '1px solid rgba(255,255,255,0.10)',
-                color: page >= totalPages ? 'rgba(255,255,255,0.20)' : '#B0B3B8',
-                backgroundColor: 'rgba(255,255,255,0.04)',
-              }}>
+            <button
+              onClick={handleNextPage}
+              disabled={page >= totalPages}
+              className="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
               下一页
             </button>
 
-            <div className="flex items-center gap-1 ml-3">
-              <span className="text-xs" style={{ color: '#6B7280' }}>跳至</span>
-              <input type="number" min={1} max={totalPages} defaultValue={page}
+            {/* 跳转输入 */}
+            <div className="flex items-center space-x-1 ml-2">
+              <span className="text-sm text-gray-500">跳至</span>
+              <input
+                type="number"
+                min={1}
+                max={totalPages}
+                defaultValue={page}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const val = parseInt((e.target as HTMLInputElement).value, 10)
-                    if (val >= 1 && val <= totalPages) setPage(val)
+                    if (val >= 1 && val <= totalPages) {
+                      setPage(val)
+                    }
                   }
                 }}
-                className="w-14 px-2 py-1.5 text-xs text-center rounded-lg [appearance:textfield]"
-                style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: '#B0B3B8' }}
+                className="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
@@ -774,40 +800,33 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* 来源分布 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="glass p-5 lg:col-span-2">
-          <h3 className="text-sm font-semibold mb-4 text-white">热点来源分布</h3>
-          <div className="h-48 flex items-center justify-center rounded-lg"
-            style={{ backgroundColor: 'rgba(255,255,255,0.04)' }}>
-            <span className="text-xs" style={{ color: '#6B7280' }}>图表区域 · 来源分布图</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-6 lg:col-span-2">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">热点来源分布</h3>
+          <div className="h-64 flex items-center justify-center text-gray-500">
+            图表组件 - 来源分布图
           </div>
         </div>
-        <div className="glass p-5">
-          <h3 className="text-sm font-semibold mb-4 text-white">重要性分布</h3>
-          <div className="space-y-3">
-            {importanceLevels.slice(1).map((level) => {
-              const barColor = level.id === 'emergency' ? '#FF6363'
-                : level.id === 'high' ? '#FF9F4A'
-                : level.id === 'medium' ? '#A78BFA'
-                : level.id === 'low' ? '#4ADE80'
-                : '#6B7280'
-              const maxCount = Math.max(...importanceLevels.slice(1).map(l => l.count), 1)
-              return (
-                <div key={level.id}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: barColor }} />
-                      <span className="text-xs font-medium" style={{ color: '#B0B3B8' }}>{level.label}</span>
-                    </div>
-                    <span className="data-value font-semibold text-white">{level.count}</span>
-                  </div>
-                  <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}>
-                    <div className="h-full rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(100, (level.count / maxCount) * 100)}%`, backgroundColor: barColor }} />
-                  </div>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">重要性分布</h3>
+          <div className="space-y-4">
+            {importanceLevels.slice(1).map((level) => (
+              <div key={level.id} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${level.color}`}></div>
+                  <span className="text-gray-700">{level.label}</span>
                 </div>
-              )
-            })}
+                <div className="flex items-center space-x-4">
+                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${level.color}`}
+                      style={{ width: `${(level.count / 24) * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{level.count}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

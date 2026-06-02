@@ -1,26 +1,49 @@
 import React from 'react'
 
-interface Props {
-  level: string
+interface ImportanceBadgeProps {
+  level: 'emergency' | 'high' | 'medium' | 'low' | string
   size?: 'sm' | 'md' | 'lg'
 }
 
-const colors: Record<string, { label: string; bg: string; text: string; dot: string }> = {
-  emergency: { label: '紧急', bg: 'rgba(255,99,99,0.15)', text: '#FF6363', dot: '#FF6363' },
-  high:      { label: '高',   bg: 'rgba(255,159,74,0.15)', text: '#FF9F4A', dot: '#FF9F4A' },
-  medium:    { label: '中',   bg: 'rgba(167,139,250,0.15)', text: '#A78BFA', dot: '#A78BFA' },
-  low:       { label: '低',   bg: 'rgba(78,204,128,0.15)', text: '#4ADE80', dot: '#4ADE80' },
-}
+const ImportanceBadge: React.FC<ImportanceBadgeProps> = ({ level, size = 'md' }) => {
+  const config = {
+    emergency: {
+      label: '紧急',
+      className: 'bg-red-100 text-red-800 border-red-200',
+      dotColor: 'bg-red-500'
+    },
+    high: {
+      label: '高',
+      className: 'bg-orange-100 text-orange-800 border-orange-200',
+      dotColor: 'bg-orange-500'
+    },
+    medium: {
+      label: '中',
+      className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      dotColor: 'bg-yellow-500'
+    },
+    low: {
+      label: '低',
+      className: 'bg-blue-100 text-blue-800 border-blue-200',
+      dotColor: 'bg-blue-500'
+    }
+  }
 
-const ImportanceBadge: React.FC<Props> = ({ level, size = 'md' }) => {
-  const c = colors[level] || { label: level || '未知', bg: 'rgba(255,255,255,0.06)', text: '#6B7280', dot: '#6B7280' }
-  const s = size === 'sm' ? 'px-2 py-0.5 text-[11px]' : size === 'lg' ? 'px-3 py-1 text-sm' : 'px-2.5 py-1 text-xs'
+  const levelConfig = config[level as keyof typeof config] || config.medium
+
+  const sizeClasses = {
+    sm: 'px-2 py-0.5 text-xs',
+    md: 'px-3 py-1 text-sm',
+    lg: 'px-4 py-1.5 text-base'
+  }
+
   return (
-    <span className={`inline-flex items-center gap-1.5 font-medium rounded-lg ${s}`}
-      style={{ backgroundColor: c.bg, color: c.text }}>
-      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: c.dot }} />
-      <span>{c.label}</span>
-    </span>
+    <div
+      className={`inline-flex items-center space-x-1.5 rounded-full border ${levelConfig.className} ${sizeClasses[size]} font-medium`}
+    >
+      <div className={`w-2 h-2 rounded-full ${levelConfig.dotColor}`}></div>
+      <span>{levelConfig.label}</span>
+    </div>
   )
 }
 
