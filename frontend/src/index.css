@@ -4,48 +4,171 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply antialiased;
+    background-color: #0F0F11;
+    color: #FFFFFF;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  ::selection {
+    background-color: rgba(255, 99, 99, 0.3);
+    color: #FFFFFF;
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.10);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255,255,255,0.20);
   }
 }
 
 @layer components {
-  .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200;
+  /* === Glass card === */
+  .glass {
+    background-color: rgba(22, 22, 26, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 12px;
+  }
+  .glass-hover {
+    @apply transition-all duration-150 ease-out;
+  }
+  .glass-hover:hover {
+    background-color: rgba(30, 30, 36, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
 
-  .card-hover {
-    @apply transition-shadow duration-200 hover:shadow-md;
+  /* === Buttons === */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           rounded-lg transition-all duration-150 ease-out
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
-
   .btn-primary {
-    @apply px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply btn;
+    background-color: #FFFFFF;
+    color: #0F0F11;
   }
-
+  .btn-primary:hover {
+    background-color: #E8E8E8;
+  }
+  .btn-primary:focus {
+    --tw-ring-color: #FFFFFF;
+  }
   .btn-secondary {
-    @apply px-4 py-2 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    @apply btn;
+    background-color: rgba(255,255,255,0.06);
+    color: #B0B3B8;
+    border: 1px solid rgba(255,255,255,0.10);
   }
-}
-
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
+  .btn-secondary:hover {
+    background-color: rgba(255,255,255,0.12);
+    color: #FFFFFF;
+  }
+  .btn-ghost {
+    @apply btn;
+    background-color: transparent;
+    color: #6B7280;
+  }
+  .btn-ghost:hover {
+    background-color: rgba(255,255,255,0.06);
+    color: #B0B3B8;
+  }
+  .btn-danger {
+    @apply btn;
+    background-color: #FF6363;
+    color: #FFFFFF;
+  }
+  .btn-danger:hover {
+    background-color: #E55555;
   }
 
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* === Inputs === */
+  .input {
+    @apply w-full px-3 py-2 text-sm rounded-lg transition-all duration-150 ease-out
+           focus:outline-none focus:ring-2;
+    background-color: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: #FFFFFF;
+  }
+  .input:focus {
+    border-color: rgba(255,255,255,0.20);
+    --tw-ring-color: rgba(255,255,255,0.15);
+  }
+  .input::placeholder {
+    color: #6B7280;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-gray-100;
+  /* === Badge === */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-lg;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 rounded-full;
+  /* === Modal overlay === */
+  .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500;
+  /* === Nav link === */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg
+           transition-all duration-150 ease-out;
+    color: #6B7280;
+  }
+  .nav-link:hover {
+    background-color: rgba(255,255,255,0.06);
+    color: #B0B3B8;
+  }
+  .nav-link-active {
+    background-color: rgba(255,255,255,0.10);
+    color: #FFFFFF;
+  }
+
+  /* === Data numbers === */
+  .data-value {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .data-value-lg {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 28px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  /* === Color backdrop for glass === */
+  .glass-backdrop {
+    position: relative;
+    overflow: hidden;
+  }
+  .glass-backdrop::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at 80% 0%, rgba(255,99,99,0.08) 0%, rgba(167,139,250,0.05) 40%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glass-backdrop > * {
+    position: relative;
+    z-index: 1;
   }
 }
