@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogIn, Mail, Building, Users } from 'lucide-react'
+import { LogIn, Mail, Building, Users, Activity } from 'lucide-react'
 import { authApi } from '../services/api'
 
 const Login: React.FC = () => {
@@ -37,12 +37,62 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center p-4">
+      <style>{`
+        @keyframes logo-breath {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.05); opacity: 0.85; }
+        }
+        @keyframes logo-ring {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes logo-dot {
+          0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
+          25% { opacity: 1; transform: translateY(-20px) scale(1); }
+          50% { opacity: 1; transform: translateY(-30px) scale(0.8); }
+          75% { opacity: 0.5; transform: translateY(-15px) scale(0.6); }
+        }
+        @keyframes logo-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.2), 0 0 40px rgba(139,92,246,0.1); }
+          50% { box-shadow: 0 0 30px rgba(59,130,246,0.4), 0 0 60px rgba(139,92,246,0.2); }
+        }
+        .huashu-logo {
+          animation: logo-breath 3s ease-in-out infinite, logo-glow 3s ease-in-out infinite;
+          position: relative;
+        }
+        .huashu-ring {
+          position: absolute;
+          inset: -6px;
+          border-radius: 18px;
+          border: 2px solid transparent;
+          background: conic-gradient(from 0deg, transparent, rgba(59,130,246,0.4), rgba(139,92,246,0.4), transparent) border-box;
+          -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          animation: logo-ring 4s linear infinite;
+        }
+        .huashu-dot {
+          position: absolute;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #3b82f6;
+          opacity: 0;
+        }
+        .huashu-dot:nth-child(1) { top: -12px; left: 50%; margin-left: -3px; animation: logo-dot 2.5s ease-in-out infinite 0s; }
+        .huashu-dot:nth-child(2) { top: 50%; right: -16px; margin-top: -3px; animation: logo-dot 2.5s ease-in-out infinite 0.8s; background: #8b5cf6; }
+        .huashu-dot:nth-child(3) { bottom: -12px; left: 50%; margin-left: -3px; animation: logo-dot 2.5s ease-in-out infinite 1.6s; }
+      `}</style>
       <div className="w-full max-w-md">
         {/* Logo和标题 */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center">
-              <Users className="text-white" size={32} />
+            <div className="huashu-logo w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center relative">
+              <div className="huashu-ring" />
+              <div className="huashu-dot" />
+              <div className="huashu-dot" />
+              <div className="huashu-dot" />
+              <Activity className="text-white" size={32} />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">AI热点解析助手</h1>
