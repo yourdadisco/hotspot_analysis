@@ -9,6 +9,7 @@ import {
 import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
 import { hotspotsApi, analysisApi } from '../services/api'
+import { exportAsMarkdown, exportAsJson, downloadFile } from '../utils/export'
 import ProgressOverlay from '../components/ProgressOverlay'
 import { stripHtmlTags } from '../utils/sanitize'
 import { useToastStore } from '../stores/toastStore'
@@ -151,10 +152,28 @@ const HotspotDetail: React.FC = () => {
         </Link>
         <div className="flex items-center space-x-3">
           <FavoriteButton hotspotId={id || ''} isFavorite={hotspotData?.is_favorite || false} size="md" />
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
-            <Download size={16} />
-            <span>导出分析</span>
-          </button>
+          <div className="relative group">
+            <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center space-x-2">
+              <Download size={16} />
+              <span>导出</span>
+            </button>
+            <div className="absolute right-0 mt-1 w-36 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 hidden group-hover:block">
+              <button
+                onClick={() => {
+                  const md = exportAsMarkdown(hotspotData, analysis)
+                  downloadFile(md, `${hotspotData?.title?.slice(0, 20) || '热点'}.md`, 'text/markdown')
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+              >Markdown</button>
+              <button
+                onClick={() => {
+                  const json = exportAsJson(hotspotData, analysis)
+                  downloadFile(json, `${hotspotData?.id || '热点'}.json`, 'application/json')
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+              >JSON</button>
+            </div>
+          </div>
           <button
             onClick={handleRefreshAnalysis}
             disabled={isAnalyzing}
