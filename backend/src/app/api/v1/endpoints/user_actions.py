@@ -192,6 +192,34 @@ async def batch_dismiss(
     }
 
 
+@router.post("/user-actions/undismiss")
+async def undismiss_hotspot(
+    user_id: str = Query(..., description="用户ID"),
+    hotspot_id: str = Query(..., description="热点ID"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    恢复单个被忽略的热点
+    """
+    stmt = select(UserHotspotAction).where(
+        UserHotspotAction.user_id == user_id,
+        UserHotspotAction.hotspot_id == hotspot_id,
+        UserHotspotAction.is_dismissed == True,
+    )
+    result = await db.execute(stmt)
+    action = result.scalar_one_or_none()
+
+    if not action:
+        raise HTTPException(status_code=404, detail="未找到已忽略的记录")
+
+    action.is_dismissed = False
+    action.updated_at = datetime.utcnow()
+    await db.commit()
+    await HotspotService.invalidate_hotspots_cache()
+
+    return {"success": True, "message": "已恢复该热点"}
+
+
 @router.get("/user-actions/favorites")
 async def get_favorites(
     user_id: str = Query(..., description="用户ID"),

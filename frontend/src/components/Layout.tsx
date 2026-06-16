@@ -36,7 +36,6 @@ const Layout: React.FC = () => {
       return response as any
     },
     enabled: !!userId,
-    refetchInterval: 60000, // 每分钟自动刷新
   })
 
   useEffect(() => {
@@ -203,15 +202,9 @@ const Layout: React.FC = () => {
               © 2024 AI超级热点解析助手. 保留所有权利.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm">
-                帮助中心
-              </a>
-              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm">
-                隐私政策
-              </a>
-              <a href="#" className="text-gray-500 hover:text-gray-700 text-sm">
-                服务条款
-              </a>
+              <span className="text-gray-400 text-sm">帮助中心</span>
+              <span className="text-gray-400 text-sm">隐私政策</span>
+              <span className="text-gray-400 text-sm">服务条款</span>
             </div>
           </div>
         </div>

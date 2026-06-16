@@ -324,6 +324,11 @@ export const userActionsApi = {
     is_favorite?: boolean | null
   }) => api.post<{ dismissed_count: number; message: string }>('/user-actions/batch-dismiss', data),
 
+  undismiss: (userId: string, hotspotId: string) =>
+    api.post<{ success: boolean; message: string }>('/user-actions/undismiss', null, {
+      params: { user_id: userId, hotspot_id: hotspotId }
+    }),
+
   getFavorites: (params: {
     user_id: string
     page?: number
