@@ -168,7 +168,7 @@ const Settings: React.FC = () => {
             </div>
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                设置热点信息的自动更新频率。更频繁的更新意味着更及时的信息，但也会消耗更多API资源。
+                设置热点信息的自动更新频率。自动更新会在后台调用 RSS 采集 + AI 分析（消耗 API），用于铃铛通知推送；手动更新则完全不消耗额外 API。
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {updateSchedules.map((schedule) => (
