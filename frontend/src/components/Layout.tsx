@@ -5,11 +5,13 @@ import { Brain, Home, Heart, Settings, Briefcase, Cpu, Bell, LogOut, User, BookO
 import { hotspotsApi } from '../services/api'
 import UsageGuideModal from './UsageGuideModal'
 import TutorialPrompt from './TutorialPrompt'
+import NotificationPanel from './NotificationPanel'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
   const [userEmail, setUserEmail] = useState('')
   const [showLogout, setShowLogout] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false)
 
@@ -93,10 +95,15 @@ const Layout: React.FC = () => {
 
             {/* 用户信息 */}
             <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-full hover:bg-gray-100 relative">
-                <Bell size={20} />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </button>
+              <div className="relative">
+                <button onClick={() => setShowNotifications(!showNotifications)} className="p-2 rounded-full hover:bg-gray-100 relative">
+                  <Bell size={20} />
+                  <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                </button>
+                {showNotifications && (
+                  <NotificationPanel userId={userId} onClose={() => setShowNotifications(false)} />
+                )}
+              </div>
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setShowLogout(!showLogout)}
