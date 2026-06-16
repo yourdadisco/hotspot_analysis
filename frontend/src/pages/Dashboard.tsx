@@ -342,7 +342,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* 批量分析选择对话框 */}
       {showBatchDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -474,61 +474,48 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* 统计卡片 — 紧凑版 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl shadow-sm p-6 min-h-[140px] flex flex-col justify-between">
-            <div className="flex-1 flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">{stat.label}</p>
-                <div className="flex items-baseline mt-2">
-                  <span className="text-3xl font-bold text-gray-900">{stat.value}</span>
-                  <span className={`ml-2 text-sm font-medium ${stat.color}`}>
-                    {stat.change}
-                  </span>
-                </div>
-              </div>
-              <div className={`p-3 rounded-full ${stat.color.replace('text', 'bg')} bg-opacity-10`}>
-                <stat.icon className={stat.color} size={24} />
-              </div>
+          <div key={stat.label} className="bg-white rounded-xl shadow-sm px-5 py-4 flex items-center justify-between min-h-0">
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-0.5">{stat.label}</p>
+              <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
+            </div>
+            <div className={`p-2.5 rounded-lg ${stat.color.replace('text', 'bg')} bg-opacity-10`}>
+              <stat.icon className={stat.color} size={20} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* 筛选栏 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="搜索热点标题、内容或标签..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+      {/* 筛选栏 — 紧凑版 */}
+      <div className="bg-white rounded-xl shadow-sm px-5 py-3">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="搜索热点..."
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {importanceLevels.map((level) => (
               <button
                 key={level.id}
                 onClick={() => { setSelectedImportance(level.id); setPage(1) }}
-                className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+                className={`px-2.5 py-1.5 text-xs font-medium rounded-md flex items-center gap-1.5 transition-colors ${
                   selectedImportance === level.id
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                    : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
               >
-                {level.color && (
-                  <div className={`w-2 h-2 rounded-full ${level.color}`}></div>
-                )}
+                {level.color && <div className={`w-1.5 h-1.5 rounded-full ${level.color}`} />}
                 <span>{level.label}</span>
-                <span className="text-xs bg-gray-200 px-1.5 py-0.5 rounded">
-                  {level.count}
-                </span>
+                <span className="text-[11px] text-gray-400 ml-0.5">{level.count}</span>
               </button>
             ))}
           </div>
@@ -638,75 +625,58 @@ const Dashboard: React.FC = () => {
         <div className="divide-y divide-gray-200">
           {hotspotsData?.items && hotspotsData.items.length > 0 ? (
             hotspotsData.items.map((hotspot: Hotspot) => (
-              <div key={hotspot.id} className="p-6 hover:bg-gray-50 transition-colors" onClick={() => handleHotspotClick(hotspot.id)}>
+              <div key={hotspot.id} className="px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleHotspotClick(hotspot.id)}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3 mb-2">
+                    <div className="flex items-center gap-2 mb-1.5">
                       {hotspot.has_analysis ? (
                         <ImportanceBadge level={hotspot.analysis_importance_level || 'medium'} size="sm" />
                       ) : (
-                        <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-200 text-gray-800">
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
                           未分析
                         </span>
                       )}
-                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800">
-                        {hotspot.source_name || hotspot.source_type}
-                      </span>
-                      <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-50 text-gray-500">
-                        {new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}
-                      </span>
+                      <span className="text-[11px] font-medium text-gray-500">{hotspot.source_name || hotspot.source_type}</span>
+                      <span className="text-[11px] text-gray-400">{new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}</span>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 break-words line-clamp-1">
-                      {hotspot.title}
-                    </h3>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-1">{hotspot.title}</h3>
 
-                    {/* 已分析：显示AI摘要 */}
                     {hotspot.has_analysis ? (
-                      <div className="mb-4">
-                        <p className="text-gray-600 overflow-hidden break-words">
-                          {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
-                        </p>
-                      </div>
+                      <p className="text-xs text-gray-500 line-clamp-2 mb-2 leading-relaxed">
+                        {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
+                      </p>
                     ) : (
-                      /* 未分析：显示原文缩略 */
-                      <div className="mb-4">
-                        <p className="text-gray-400 text-sm line-clamp-1 overflow-hidden break-words italic">
-                          {renderSafeSummary(hotspot.summary)?.slice(0, 80)}...
-                        </p>
-                      </div>
+                      <p className="text-xs text-gray-400 italic line-clamp-1 mb-2">
+                        {renderSafeSummary(hotspot.summary)?.slice(0, 80)}...
+                      </p>
                     )}
 
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center gap-2">
                         {!hotspot.has_analysis && (
                           <button
                             onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
                             disabled={analyzingHotspots.has(hotspot.id)}
-                            className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors whitespace-nowrap"
+                            className="text-[11px] px-2.5 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium whitespace-nowrap"
                           >
-                            {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析获取摘要'}
+                            {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析'}
                           </button>
                         )}
-                        <div className="flex flex-wrap gap-2">
-                          {hotspot.tags.slice(0, 3).map((tag: string) => (
-                            <span key={tag} className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full">{tag}</span>
+                        <div className="flex gap-1.5">
+                          {hotspot.tags.slice(0, 2).map((tag: string) => (
+                            <span key={tag} className="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full">{tag}</span>
                           ))}
-                          {hotspot.tags.length > 3 && (
-                            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">+{hotspot.tags.length - 3}</span>
+                          {hotspot.tags.length > 2 && (
+                            <span className="text-[11px] px-1.5 py-0.5 text-gray-400">+{hotspot.tags.length - 2}</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
+                      <div className="flex items-center gap-3">
                         {hotspot.has_analysis && (
-                          <span className="text-sm text-gray-500">
-                            相关度: <strong className="text-gray-900">{hotspot.analysis_relevance_score ?? 0}%</strong>
-                          </span>
+                          <span className="text-[11px] text-gray-400">相关度 <strong className="text-gray-700">{hotspot.analysis_relevance_score ?? 0}%</strong></span>
                         )}
                         <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
-                        <button className="text-blue-600 hover:text-blue-800 flex items-center space-x-1">
-                          <span>查看详情</span>
-                          <ChevronRight size={16} />
-                        </button>
+                        <ChevronRight size={14} className="text-gray-300" />
                       </div>
                     </div>
                   </div>
@@ -736,63 +706,46 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
-        <div className="px-6 py-4 border-t border-gray-200 flex flex-wrap justify-between items-center gap-4">
-          <p className="text-sm text-gray-600">
-            显示 {hotspotsData?.items?.length || 0} 个热点，共 {hotspotsData?.total || 0} 个
+        <div className="px-6 py-3 border-t border-gray-200 flex flex-wrap justify-between items-center gap-3">
+          <p className="text-xs text-gray-500">
+            共 {hotspotsData?.total || 0} 个热点
           </p>
-          <div className="flex items-center space-x-1.5">
-            <button
-              onClick={handlePrevPage}
-              disabled={page <= 1}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
+          <div className="flex items-center gap-1">
+            <button onClick={handlePrevPage} disabled={page <= 1}
+              className="px-2.5 py-1.5 text-xs font-medium border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
               上一页
             </button>
 
-            {/* 页码按钮 */}
             {getPageNumbers().map((p, idx) =>
               p === '...' ? (
-                <span key={`e${idx}`} className="px-1.5 text-gray-400 text-sm">...</span>
+                <span key={`e${idx}`} className="px-1 text-xs text-gray-400">...</span>
               ) : (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`min-w-[36px] h-9 rounded-lg text-sm font-medium transition-colors ${
+                <button key={p} onClick={() => setPage(p)}
+                  className={`min-w-[32px] h-8 text-xs font-medium rounded-md transition-colors ${
                     page === p
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-100 border border-gray-300'
+                  }`}>
                   {p}
                 </button>
               )
             )}
 
-            <button
-              onClick={handleNextPage}
-              disabled={page >= totalPages}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-            >
+            <button onClick={handleNextPage} disabled={page >= totalPages}
+              className="px-2.5 py-1.5 text-xs font-medium border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
               下一页
             </button>
 
-            {/* 跳转输入 */}
-            <div className="flex items-center space-x-1 ml-2">
-              <span className="text-sm text-gray-500">跳至</span>
-              <input
-                type="number"
-                min={1}
-                max={totalPages}
-                defaultValue={page}
+            <div className="flex items-center gap-1 ml-2">
+              <span className="text-xs text-gray-400">跳至</span>
+              <input type="number" min={1} max={totalPages} defaultValue={page}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const val = parseInt((e.target as HTMLInputElement).value, 10)
-                    if (val >= 1 && val <= totalPages) {
-                      setPage(val)
-                    }
+                    if (val >= 1 && val <= totalPages) setPage(val)
                   }
                 }}
-                className="w-16 px-2 py-1.5 border border-gray-300 rounded-lg text-sm text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-14 px-2 py-1.5 text-xs text-center border border-gray-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           </div>
