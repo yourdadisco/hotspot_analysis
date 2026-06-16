@@ -102,11 +102,11 @@ const Dashboard: React.FC = () => {
       const response = await hotspotsApi.getHotspots({
         page,
         limit,
-        importance_levels: selectedImportance !== 'all' ? selectedImportance : advancedFilters.importance_levels.length > 0 ? advancedFilters.importance_levels.join(',') : undefined,
+        importance_levels: !isShowingDismissed && selectedImportance !== 'all' ? selectedImportance : advancedFilters.importance_levels.length > 0 ? advancedFilters.importance_levels.join(',') : undefined,
         sort_by: sortBy,
         sort_order: sortOrder,
         user_id: userId,
-        is_dismissed: false,
+        is_dismissed: isShowingDismissed ? true : false,
         ...(advancedFilters.date_from && { date_from: advancedFilters.date_from }),
         ...(advancedFilters.date_to && { date_to: advancedFilters.date_to }),
         ...(advancedFilters.source_names && { source_names: advancedFilters.source_names }),
@@ -273,13 +273,15 @@ const Dashboard: React.FC = () => {
     },
   ]
 
-  // 重要性级别筛选
+  // 重要性级别筛选 + 已忽略
+  const isShowingDismissed = selectedImportance === 'dismissed'
   const importanceLevels = [
     { id: 'all', label: '全部', count: hotspotsData?.total || 0 },
     { id: 'emergency', label: '紧急', count: statsData?.emergency_count || 0, color: 'bg-red-500' },
     { id: 'high', label: '高', count: statsData?.high_count || 0, color: 'bg-orange-500' },
     { id: 'medium', label: '中', count: statsData?.medium_count || 0, color: 'bg-yellow-500' },
     { id: 'low', label: '低', count: statsData?.low_count || 0, color: 'bg-blue-500' },
+    { id: 'dismissed', label: '已忽略', count: 0, color: 'bg-gray-400' },
   ]
 
   // 如果未登录，重定向到登录页
@@ -671,7 +673,22 @@ const Dashboard: React.FC = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        {!hotspot.has_analysis && (
+                        {isShowingDismissed ? (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              try {
+                                await userActionsApi.undismiss(userId, hotspot.id)
+                                addToast('已恢复该热点', 'success')
+                                refetchHotspots()
+                                refetchStats()
+                              } catch { addToast('恢复失败', 'error') }
+                            }}
+                            className="text-[11px] px-2.5 py-1 bg-green-100 text-green-800 rounded-md hover:bg-green-200 font-medium whitespace-nowrap"
+                          >
+                            恢复
+                          </button>
+                        ) : !hotspot.has_analysis && (
                           <button
                             onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
                             disabled={analyzingHotspots.has(hotspot.id)}
