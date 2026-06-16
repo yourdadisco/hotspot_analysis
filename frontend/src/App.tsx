@@ -8,6 +8,7 @@ import ModelConfig from './pages/ModelConfig'
 import HotspotDetail from './pages/HotspotDetail'
 import Settings from './pages/Settings'
 import Favorites from './pages/Favorites'
+import ApiUsage from './pages/ApiUsage'
 import ToastContainer from './components/ToastContainer'
 
 // 私有路由组件
@@ -41,6 +42,7 @@ function App() {
             <Route path="hotspots/:id" element={<HotspotDetail />} />
             <Route path="favorites" element={<Favorites />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="api-usage" element={<ApiUsage />} />
           </Route>
         </Routes>
       </Router>
