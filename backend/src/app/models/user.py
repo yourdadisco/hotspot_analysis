@@ -33,7 +33,7 @@ class UserSettings(Base, TimestampMixin):
     user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
 
     # 更新计划配置
-    update_schedule = Column(String(50), default="daily_2am")  # daily_2am, weekly_monday, manual
+    update_schedule = Column(String(50), default="manual")  # daily_2am, weekly_monday, manual
 
     # 通知偏好
     notify_on_emergency = Column(String(1), default="Y")  # Y/N

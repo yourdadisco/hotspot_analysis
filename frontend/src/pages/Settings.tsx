@@ -8,7 +8,7 @@ const Settings: React.FC = () => {
   const userId = localStorage.getItem('user_id') || ''
   const addToast = useToastStore((s) => s.addToast)
   const [settings, setSettings] = useState({
-    updateSchedule: 'daily_2am',
+    updateSchedule: 'manual',
     notifyOnEmergency: 'Y',
     notifyOnHigh: 'Y',
     notifyOnMedium: 'N',
@@ -208,7 +208,7 @@ const Settings: React.FC = () => {
             </div>
             <div className="space-y-6">
               <p className="text-sm text-gray-600">
-                设置不同重要性级别的热点通知偏好。紧急通知会通过邮件和站内信发送，其他级别仅站内通知。
+                设置不同重要性级别的热点通知偏好。点击顶栏铃铛按钮可查看通知，仅显示当前开启级别的热点。
               </p>
               <div className="space-y-4">
                 {importanceLevels.map((level) => (

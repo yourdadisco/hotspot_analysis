@@ -36,7 +36,7 @@ class UserResponse(UserInDB):
 
 class UserSettingsBase(BaseModel):
     """用户设置基础信息"""
-    update_schedule: str = "daily_2am"
+    update_schedule: str = "manual"
     notify_on_emergency: str = "Y"
     notify_on_high: str = "Y"
     notify_on_medium: str = "N"
