@@ -10,7 +10,8 @@ import logging
 from app.services.collector_service import collector_service
 from app.services.progress_tracker import progress_tracker
 from app.services.hotspot_service import HotspotService
-from app.models.hotspot import Hotspot
+from app.services.notification_service import push_emergency_notifications
+from app.models.hotspot import Hotspot, HotspotAnalysis
 from app.models.user_action import UserHotspotAction
 from app.core.database import get_db, AsyncSessionLocal
 
@@ -238,6 +239,10 @@ async def _run_manual_refresh_with_progress(
 
         # 3. 缓存失效
         await HotspotService.invalidate_hotspots_cache()
+
+        # 4. 推送紧急通知到在线用户
+        await push_emergency_notifications()
+
         progress_tracker.update_progress(task_id, progress=100, current_step="更新完成")
         progress_tracker.complete_task(task_id)
         logger.info(f"手动更新任务 {task_id} 完成")

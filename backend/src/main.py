@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.core.database import engine, Base
 from app.core.cache import cache
 from app.api.v1.api import api_router
+from app.api.v1.endpoints.ws import router as ws_router
 from app.services.scheduler_service import init_scheduler, shutdown_scheduler
 
 # Configure logging
@@ -69,6 +70,8 @@ app.add_middleware(
 
 # Include API routes
 app.include_router(api_router, prefix="/api/v1")
+# WebSocket route (no prefix)
+app.include_router(ws_router)
 
 @app.get("/")
 async def root():
