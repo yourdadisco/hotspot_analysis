@@ -5,7 +5,7 @@ import {
   BarChart3, ChevronRight, RefreshCw, Target, Trash2
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { hotspotsApi, collectionApi, analysisApi, userActionsApi, type PaginatedResponse, type Hotspot } from '../services/api'
+import { hotspotsApi, collectionApi, analysisApi, userActionsApi, userSettingsApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import AdvancedFilterModal, { type AdvancedFilters } from '../components/AdvancedFilterModal'
 import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
@@ -39,10 +39,6 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     try { sessionStorage.setItem('hotspot_page', String(page)) } catch {}
   }, [page])
-  const [limit] = useState(10)
-  const [sortBy, setSortBy] = useState('publish_date')
-  const [sortOrder, setSortOrder] = useState('desc')
-
   // 高级筛选
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false)
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
@@ -76,6 +72,28 @@ const Dashboard: React.FC = () => {
   const userId = localStorage.getItem('user_id') || ''
   const queryClient = useQueryClient()
   const [refreshCounter, setRefreshCounter] = useState(0)
+
+  // 获取用户设置（用于默认值）
+  const { data: userSettings } = useQuery({
+    queryKey: ['user-settings', userId],
+    queryFn: async () => {
+      try {
+        const res = await userSettingsApi.getSettings(userId)
+        return res as any
+      } catch { return null }
+    },
+    enabled: !!userId,
+    staleTime: 300000,
+  })
+
+  // 用设置值覆盖硬编码默认值
+  const limit = parseInt(userSettings?.items_per_page || '10', 10)
+  const defaultSortMap: Record<string, string> = { relevance: 'relevance_score', importance: 'importance_level', date: 'publish_date' }
+  const defaultSort = userSettings?.default_sort ? (defaultSortMap[userSettings.default_sort] || 'publish_date') : 'publish_date'
+  const [sortBy, setSortBy] = useState(defaultSort)
+  const [sortOrder, setSortOrder] = useState('desc')
+  // 当设置加载后同步 sortBy
+  useEffect(() => { setSortBy(defaultSort) }, [userSettings?.default_sort])
 
   // 获取热点列表
   const { data: hotspotsData, isLoading: isLoadingHotspots, refetch: refetchHotspots } = useQuery<PaginatedResponse<Hotspot>>({
