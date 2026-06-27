@@ -665,7 +665,7 @@ const Dashboard: React.FC = () => {
                   {/* 顶部：重要性 + 来源 + 日期 */}
                   <div className="flex items-center gap-2 mb-3 shrink-0">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${
-                      !hotspot.has_analysis ? 'bg-gray-100 text-gray-500'
+                      !hotspot.has_analysis ? 'bg-gray-50 text-gray-500 border border-dashed border-gray-300'
                       : hotspot.analysis_importance_level === 'emergency' ? 'bg-red-50 text-red-700'
                       : hotspot.analysis_importance_level === 'high' ? 'bg-orange-50 text-orange-700'
                       : hotspot.analysis_importance_level === 'medium' ? 'bg-indigo-50 text-indigo-700'
@@ -713,12 +713,23 @@ const Dashboard: React.FC = () => {
                         )}
                       </>
                     ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-center px-2">
-                        <p className="text-sm text-gray-400 line-clamp-3 mb-4">{renderSafeSummary(hotspot.summary)?.slice(0, 120)}...</p>
-                        <button onClick={() => setShowQuickAnalysis(true)}
-                          className="px-5 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm rounded-lg hover:from-indigo-600 hover:to-purple-600 font-medium shadow-sm shadow-indigo-500/20">
-                          一键更新解析
-                        </button>
+                      <div className="flex flex-col h-full">
+                        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+                          <p className="text-sm text-gray-500 leading-relaxed">{renderSafeSummary(hotspot.summary)?.slice(0, 200)}...</p>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-dashed border-gray-200 text-center">
+                          <span className="text-xs text-gray-400 mb-2 block">尚未进行 AI 分析</span>
+                          <div className="flex gap-2 justify-center">
+                            <button onClick={() => setShowQuickAnalysis(true)}
+                              className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs rounded-lg hover:from-indigo-600 hover:to-purple-600 font-medium shadow-sm shadow-indigo-500/20">
+                              一键更新解析
+                            </button>
+                            <button onClick={e => handleQuickAnalyze(e, hotspot.id)} disabled={analyzingHotspots.has(hotspot.id)}
+                              className="px-4 py-2 border border-indigo-300 text-indigo-600 text-xs rounded-lg hover:bg-indigo-50 font-medium disabled:opacity-50">
+                              {analyzingHotspots.has(hotspot.id) ? '分析中' : '单条分析'}
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
