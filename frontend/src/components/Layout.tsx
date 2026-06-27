@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Brain, Bell, LogOut, User, Settings as SettingsIcon,
-  Briefcase, Cpu, BarChart3, ChevronRight
-} from 'lucide-react'
-import { modelConfigApi, apiUsageApi } from '../services/api'
+import { Brain, Home, Heart, Settings, Briefcase, Cpu, Bell, LogOut, User, BookOpen, BarChart3 } from 'lucide-react'
+import { hotspotsApi } from '../services/api'
+import UsageGuideModal from './UsageGuideModal'
+import TutorialPrompt from './TutorialPrompt'
 import NotificationPanel from './NotificationPanel'
 import { useWebSocket } from '../hooks/useWebSocket'
-
-type DropdownKey = 'business' | 'model' | 'api' | null
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
@@ -17,30 +14,60 @@ const Layout: React.FC = () => {
   const [showLogout, setShowLogout] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [hasUnread, setHasUnread] = useState(false)
-  const [activeDropdown, setActiveDropdown] = useState<DropdownKey>(null)
-  const dropdownTimer = useRef<ReturnType<typeof setTimeout>>()
-  const userMenuRef = useRef<HTMLDivElement>(null)
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [showTutorialPrompt, setShowTutorialPrompt] = useState(false)
 
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const userId = localStorage.getItem('user_id') || ''
 
-  // WebSocket 通知
+  // 首次登录显示使用教程引导
+  useEffect(() => {
+    if (userId) {
+      const dismissed = localStorage.getItem(`tutorial_dismissed_${userId}`)
+      if (!dismissed) {
+        // 延迟显示，等页面渲染完成
+        const timer = setTimeout(() => setShowTutorialPrompt(true), 500)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [userId])
+
+  // 获取统计信息（与Dashboard共享同一个queryKey，一方刷新另一方自动更新）
+  const { data: statsData } = useQuery({
+    queryKey: ['hotspots-stats'],
+    queryFn: async () => {
+      const response = await hotspotsApi.getStats(userId)
+      return response as any
+    },
+    enabled: !!userId,
+  })
+
+  // WebSocket 实时通知
   useWebSocket(userId || null, (data) => {
-    if (data?.type === 'notification') setHasUnread(true)
+    if (data?.type === 'notification') {
+      setHasUnread(true)
+    }
   })
 
   useEffect(() => {
     const email = localStorage.getItem('user_email')
-    if (email) setUserEmail(email)
+    if (email) {
+      setUserEmail(email)
+    }
   }, [])
 
+  // 点击外部关闭用户菜单
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowLogout(false)
       }
     }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
   }, [])
 
   const handleLogout = () => {
@@ -51,238 +78,164 @@ const Layout: React.FC = () => {
     navigate('/login')
   }
 
-  // 下拉预览数据
-  const { data: userData } = useQuery({
-    queryKey: ['user-profile'],
-    queryFn: async () => {
-      const res = await import('../services/api').then(m => m.authApi.getUser(userId))
-      return res
-    },
-    enabled: activeDropdown === 'business' && !!userId,
-  } as any)
-
-  const { data: modelData } = useQuery({
-    queryKey: ['model-dropdown'],
-    queryFn: () => modelConfigApi.getConfig(userId),
-    enabled: activeDropdown === 'model' && !!userId,
-  })
-
-  const { data: apiData } = useQuery({
-    queryKey: ['api-dropdown'],
-    queryFn: () => apiUsageApi.getSummary(1) as Promise<any>,
-    enabled: activeDropdown === 'api' && !!userId,
-  })
-
-  const user: any = userData || {}
-  const model: any = modelData || {}
-  const api: any = apiData || {}
-
-  const navItems: {
-    key: DropdownKey
-    label: string
-    path: string
-    icon: React.ReactNode
-    preview: React.ReactNode
-  }[] = [
-    {
-      key: 'business', label: '业务配置', path: '/business',
-      icon: <Briefcase size={16} />,
-      preview: (
-        <div className="p-4 min-w-[220px]">
-          <p className="text-sm font-medium text-gray-900">{user.company_name || '未设置'}</p>
-          <p className="text-xs text-gray-500 mt-0.5">{user.industry || '未选择行业'}</p>
-          <div className="mt-3 flex items-center gap-2">
-            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-green-500 rounded-full"
-                style={{ width: `${user.company_name && user.industry && user.business_description ? 100 : user.company_name ? 40 : 0}%` }} />
-            </div>
-            <span className="text-xs text-gray-500">
-              {user.company_name && user.industry && user.business_description ? '100%' : user.company_name ? '40%' : '0%'}
-            </span>
-          </div>
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <span className="text-xs text-blue-600 font-medium flex items-center gap-1">
-              进入配置 <ChevronRight size={12} />
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'model', label: '模型配置', path: '/model-config',
-      icon: <Cpu size={16} />,
-      preview: (
-        <div className="p-4 min-w-[220px]">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-medium text-gray-500">供应商</span>
-            <span className="text-sm font-semibold text-gray-900">{model.provider || '未配置'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-500">模型</span>
-            <span className="text-sm font-semibold text-gray-900">{model.model_name || '-'}</span>
-          </div>
-          {model.is_active === 'Y' && (
-            <div className="mt-2">
-              <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-medium">已激活</span>
-            </div>
-          )}
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <span className="text-xs text-blue-600 font-medium flex items-center gap-1">
-              进入配置 <ChevronRight size={12} />
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'api', label: 'API 用量', path: '/api-usage',
-      icon: <BarChart3 size={16} />,
-      preview: (
-        <div className="p-4 min-w-[220px]">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-[11px] text-gray-500">今日请求</p>
-              <p className="text-lg font-bold text-gray-900">{api.total_requests ?? '-'}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-gray-500">成功</p>
-              <p className="text-lg font-bold text-green-600">{api.successful_requests ?? '-'}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-gray-500">Token</p>
-              <p className="text-lg font-bold text-gray-900">{(api.total_tokens ?? 0).toLocaleString()}</p>
-            </div>
-            <div>
-              <p className="text-[11px] text-gray-500">失败</p>
-              <p className="text-lg font-bold text-red-500">{api.failed_requests ?? '-'}</p>
-            </div>
-          </div>
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <span className="text-xs text-blue-600 font-medium flex items-center gap-1">
-              查看详情 <ChevronRight size={12} />
-            </span>
-          </div>
-        </div>
-      ),
-    },
+  const navItems = [
+    { path: '/dashboard', icon: <Home size={20} />, label: '热点看板' },
+    { path: '/favorites', icon: <Heart size={20} />, label: '我的收藏' },
+    { path: '/business', icon: <Briefcase size={20} />, label: '业务配置' },
+    { path: '/model-config', icon: <Cpu size={20} />, label: '模型配置' },
+    { path: '/api-usage', icon: <BarChart3 size={20} />, label: 'API 用量' },
+    { path: '/settings', icon: <Settings size={20} />, label: '设置' },
   ]
 
-  const handleDropdownEnter = (key: DropdownKey) => {
-    clearTimeout(dropdownTimer.current)
-    setActiveDropdown(key)
-  }
-
-  const handleDropdownLeave = () => {
-    dropdownTimer.current = setTimeout(() => setActiveDropdown(null), 150)
-  }
-
-  const handleDropdownClick = (path: string) => {
-    setActiveDropdown(null)
-    navigate(path)
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* 顶栏 */}
-      <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="flex items-center h-14 px-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5 mr-8 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-              <Brain size={18} className="text-white" />
+    <div className="min-h-screen bg-gray-50">
+      {/* 顶部导航栏 */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <Brain className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">AI热点解析助手</h1>
+                <p className="text-xs text-gray-500">智能追踪AI行业动态</p>
+              </div>
             </div>
-            <span className="text-sm font-bold text-gray-900 hidden sm:block">AI热点解析</span>
-          </div>
 
-          {/* 导航项 */}
-          <nav className="flex items-center gap-1 flex-1">
-            {navItems.map(item => (
-              <div key={item.key} className="relative"
-                onMouseEnter={() => handleDropdownEnter(item.key)}
-                onMouseLeave={handleDropdownLeave}>
+            {/* 用户信息 */}
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <button onClick={() => { setShowNotifications(!showNotifications); setHasUnread(false) }} className="p-2 rounded-full hover:bg-gray-100 relative">
+                  <Bell size={20} />
+                  {hasUnread && <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />}
+                </button>
+                {showNotifications && (
+                  <NotificationPanel userId={userId} onClose={() => setShowNotifications(false)} />
+                )}
+              </div>
+              <div className="relative" ref={userMenuRef}>
                 <button
-                  onClick={() => handleDropdownClick(item.path)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
+                  onClick={() => setShowLogout(!showLogout)}
+                  className="flex items-center space-x-3 hover:bg-gray-100 rounded-lg p-2 transition-colors"
                 >
-                  {item.icon}
-                  <span className="hidden md:inline">{item.label}</span>
+                  <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="text-blue-600" size={16} />
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium text-gray-900">{userEmail || '用户'}</p>
+                    <p className="text-xs text-gray-500">产品经理</p>
+                  </div>
                 </button>
 
-                {/* 下拉预览 */}
-                {activeDropdown === item.key && (
-                  <div
-                    onMouseEnter={() => handleDropdownEnter(item.key)}
-                    onMouseLeave={handleDropdownLeave}
-                    onClick={() => handleDropdownClick(item.path)}
-                    className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 cursor-pointer"
-                  >
-                    {item.preview}
+                {showLogout && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-3"
+                    >
+                      <LogOut size={16} />
+                      <span>退出登录</span>
+                    </button>
                   </div>
                 )}
               </div>
-            ))}
-          </nav>
-
-          {/* 右侧操作 */}
-          <div className="flex items-center gap-2">
-            {/* 设置快捷入口 */}
-            <button
-              onClick={() => navigate('/settings')}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="设置"
-            >
-              <SettingsIcon size={18} className="text-gray-500" />
-            </button>
-
-            {/* 通知 */}
-            <div className="relative">
-              <button
-                onClick={() => { setShowNotifications(!showNotifications); setHasUnread(false) }}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-              >
-                <Bell size={18} className="text-gray-500" />
-                {hasUnread && <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full" />}
-              </button>
-              {showNotifications && (
-                <NotificationPanel userId={userId} onClose={() => setShowNotifications(false)} />
-              )}
-            </div>
-
-            {/* 用户 */}
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={() => setShowLogout(!showLogout)}
-                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
-                  <User size={14} className="text-blue-600" />
-                </div>
-                <span className="text-sm font-medium text-gray-700 hidden md:block max-w-[100px] truncate">
-                  {userEmail || '用户'}
-                </span>
-              </button>
-
-              {showLogout && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900 truncate">{userEmail || '用户'}</p>
-                  </div>
-                  <button onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                    <LogOut size={15} />
-                    <span>退出登录</span>
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* 主内容 */}
-      <main className="flex-1">
-        <Outlet />
-      </main>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* 侧边栏 */}
+          <aside className="lg:w-64">
+            <nav className="bg-white rounded-lg shadow-sm p-4 sticky top-24">
+              <ul className="space-y-2">
+                {navItems.map((item) => (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      className={({ isActive }) =>
+                        `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`
+                      }
+                    >
+                      {item.icon}
+                      <span className="font-medium">{item.label}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+
+              {/* 统计信息 */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  今日统计
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">新热点</span>
+                    <span className="font-semibold text-gray-900">{statsData?.today_count ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">待分析</span>
+                    <span className="font-semibold text-amber-600">{statsData?.pending_analysis ?? '-'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">紧急事项</span>
+                    <span className="font-semibold text-red-600">{statsData?.emergency_count ?? '-'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 使用教程 — 醒目标识 */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <button
+                  id="tutorial-btn"
+                  onClick={() => setShowTutorial(true)}
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors w-full font-medium border border-blue-200"
+                >
+                  <BookOpen size={18} />
+                  <span>使用教程</span>
+                </button>
+              </div>
+            </nav>
+          </aside>
+
+          {/* 主内容区 */}
+          <main className="flex-1">
+            <Outlet />
+          </main>
+        </div>
+      </div>
+
+      {/* 页脚 */}
+      <footer className="border-t border-gray-200 bg-white py-6 mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-600 text-sm">
+              © 2024 AI超级热点解析助手. 保留所有权利.
+            </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <span className="text-gray-400 text-sm">帮助中心</span>
+              <span className="text-gray-400 text-sm">隐私政策</span>
+              <span className="text-gray-400 text-sm">服务条款</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      <UsageGuideModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
+
+      {showTutorialPrompt && (
+        <TutorialPrompt
+          userId={userId}
+          onDismiss={() => setShowTutorialPrompt(false)}
+          onOpenTutorial={() => setShowTutorial(true)}
+        />
+      )}
     </div>
   )
 }
