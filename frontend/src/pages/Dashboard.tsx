@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { hotspotsApi, collectionApi, analysisApi, userActionsApi, userSettingsApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import AdvancedFilterModal, { type AdvancedFilters } from '../components/AdvancedFilterModal'
+import QuickAnalysisPanel from '../components/QuickAnalysisPanel'
 import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
 import ProgressOverlay from '../components/ProgressOverlay'
@@ -872,6 +873,14 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* 快速分析面板 */}
+      <div className="w-full max-w-sm">
+        <QuickAnalysisPanel userId={userId} onAnalysisComplete={() => {
+          refetchHotspots()
+          refetchStats()
+        }} />
+      </div>
+
       {/* 高级筛选模态框 */}
       <AdvancedFilterModal
         isOpen={showAdvancedFilter}
