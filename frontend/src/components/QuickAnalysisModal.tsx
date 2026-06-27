@@ -25,7 +25,8 @@ const providers = Object.keys(PROVIDER_CONFIGS)
 
 const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComplete }) => {
   const addToast = useToastStore(s => s.addToast)
-  const [mode, setMode] = useState<'last' | 'range'>('last')
+  const [mode, setMode] = useState<'last' | 'range' | 'ndays'>('last')
+  const [ndays, setNdays] = useState(7)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [loading, setLoading] = useState(false)
@@ -138,8 +139,12 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
     setLoading(true)
     setError('')
     try {
-      const df = mode === 'last' ? defaultFrom : (dateFrom || defaultFrom)
-      const dt = mode === 'last' ? defaultTo : (dateTo || defaultTo)
+      let df = defaultFrom, dt = defaultTo
+      if (mode === 'range') { df = dateFrom || defaultFrom; dt = dateTo || defaultTo }
+      if (mode === 'ndays') {
+        const d = new Date(); d.setDate(d.getDate() - ndays)
+        df = d.toISOString().slice(0, 10); dt = defaultTo
+      }
       await collectionApi.triggerManualRefresh(df, dt)
       setDone(true)
       onComplete()
@@ -288,9 +293,18 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
                 <span className="text-sm font-semibold text-gray-800">3. 日期范围</span>
               </div>
               <div className="flex items-center gap-2 mb-3">
-                <button onClick={() => setMode('last')} className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${mode === 'last' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>从最近更新</button>
-                <button onClick={() => setMode('range')} className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${mode === 'range' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>自定义区间</button>
+                <button onClick={() => setMode('last')} className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${mode === 'last' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>最近更新</button>
+                <button onClick={() => setMode('ndays')} className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${mode === 'ndays' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>最近N天</button>
+                <button onClick={() => setMode('range')} className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${mode === 'range' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>自定义</button>
               </div>
+              {mode === 'ndays' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">最近</span>
+                  <input type="number" min={1} max={365} value={ndays} onChange={e => setNdays(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-20 px-3 py-2 text-sm border border-gray-300 rounded-lg text-center" />
+                  <span className="text-sm text-gray-600">天</span>
+                </div>
+              )}
               {mode === 'range' && (
                 <div className="flex items-center gap-2">
                   <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
