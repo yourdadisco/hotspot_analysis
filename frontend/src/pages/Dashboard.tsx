@@ -632,168 +632,121 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 热点列表 */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      {/* 热点列表 — 三列卡片 */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900">最新热点</h2>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">排序：</span>
-            <select
-              value={`${sortBy}:${sortOrder}`}
-              onChange={(e) => {
-                const [newSortBy, newSortOrder] = e.target.value.split(':')
-                setSortBy(newSortBy)
-                setSortOrder(newSortOrder)
-                setPage(1)
-              }}
-              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500"
-            >
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">排序：</span>
+            <select value={`${sortBy}:${sortOrder}`}
+              onChange={(e) => { const [ns, no] = e.target.value.split(':'); setSortBy(ns); setSortOrder(no); setPage(1) }}
+              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-indigo-500">
               <option value="publish_date:desc">最新发布</option>
               <option value="relevance_score:desc">相关度最高</option>
               <option value="importance_level:asc">重要度最高</option>
             </select>
           </div>
         </div>
-        <div className="divide-y divide-gray-200">
-          {hotspotsData?.items && hotspotsData.items.length > 0 ? (
-            hotspotsData.items.map((hotspot: Hotspot) => (
-              <div key={hotspot.id} className="px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleHotspotClick(hotspot.id)}>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      {hotspot.has_analysis ? (
-                        <ImportanceBadge level={hotspot.analysis_importance_level || 'medium'} size="sm" />
-                      ) : (
-                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
-                          未分析
-                        </span>
-                      )}
-                      <span className="text-[11px] font-medium text-gray-500">{hotspot.source_name || hotspot.source_type}</span>
-                      <span className="text-[11px] text-gray-400">{new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}</span>
-                    </div>
-                    <h3 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-1">{hotspot.title}</h3>
 
+        {hotspotsData?.items && hotspotsData.items.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {hotspotsData.items.map((hotspot: Hotspot) => (
+              <div key={hotspot.id} onClick={() => handleHotspotClick(hotspot.id)}
+                className="card card-hover flex flex-col cursor-pointer overflow-hidden"
+                style={{ height: '50vh', minHeight: '320px', maxHeight: '480px' }}>
+                {/* 顶部色条 */}
+                <div className="h-1 shrink-0" style={{
+                  backgroundColor: !hotspot.has_analysis ? '#E5E7EB'
+                    : hotspot.analysis_importance_level === 'emergency' ? '#EF4444'
+                    : hotspot.analysis_importance_level === 'high' ? '#F97316'
+                    : hotspot.analysis_importance_level === 'medium' ? '#6366F1'
+                    : hotspot.analysis_importance_level === 'low' ? '#22C55E' : '#E5E7EB'
+                }} />
+                <div className="p-5 flex-1 flex flex-col">
+                  {/* 元信息 */}
+                  <div className="flex items-center gap-2 mb-3">
                     {hotspot.has_analysis ? (
-                      <p className="text-xs text-gray-500 line-clamp-2 mb-2 leading-relaxed">
-                        {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
-                      </p>
+                      <ImportanceBadge level={hotspot.analysis_importance_level || 'medium'} size="sm" />
                     ) : (
-                      <p className="text-xs text-gray-400 italic line-clamp-1 mb-2">
-                        {renderSafeSummary(hotspot.summary)?.slice(0, 80)}...
-                      </p>
+                      <span className="text-[11px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 font-medium">未分析</span>
                     )}
+                    <span className="text-xs text-gray-500">{hotspot.source_name || hotspot.source_type}</span>
+                    <span className="text-xs text-gray-400 ml-auto">{new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}</span>
+                  </div>
 
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {isShowingDismissed ? (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              try {
-                                await userActionsApi.undismiss(userId, hotspot.id)
-                                addToast('已恢复该热点', 'success')
-                                refetchHotspots()
-                                refetchStats()
-                              } catch { addToast('恢复失败', 'error') }
-                            }}
-                            className="text-[11px] px-2.5 py-1 bg-green-100 text-green-800 rounded-md hover:bg-green-200 font-medium whitespace-nowrap"
-                          >
-                            恢复
-                          </button>
-                        ) : !hotspot.has_analysis && (
-                          <button
-                            onClick={(e) => handleQuickAnalyze(e, hotspot.id)}
-                            disabled={analyzingHotspots.has(hotspot.id)}
-                            className="text-[11px] px-2.5 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium whitespace-nowrap"
-                          >
-                            {analyzingHotspots.has(hotspot.id) ? '分析中...' : 'AI分析'}
-                          </button>
-                        )}
-                        <div className="flex gap-1.5">
-                          {hotspot.tags.slice(0, 2).map((tag: string) => (
-                            <span key={tag} className="text-[11px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full">{tag}</span>
-                          ))}
-                          {hotspot.tags.length > 2 && (
-                            <span className="text-[11px] px-1.5 py-0.5 text-gray-400">+{hotspot.tags.length - 2}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {hotspot.has_analysis && (
-                          <span className="text-[11px] text-gray-400">相关度 <strong className="text-gray-700">{hotspot.analysis_relevance_score ?? 0}%</strong></span>
-                        )}
-                        <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
-                        <ChevronRight size={14} className="text-gray-300" />
-                      </div>
+                  {/* 标题 */}
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 leading-snug">{hotspot.title}</h3>
+
+                  {/* 摘要 */}
+                  <div className="flex-1 min-h-0">
+                    {hotspot.has_analysis ? (
+                      <p className="text-xs text-gray-500 line-clamp-4 leading-relaxed">{hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}</p>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic line-clamp-3 leading-relaxed">{renderSafeSummary(hotspot.summary)?.slice(0, 120)}...</p>
+                    )}
+                  </div>
+
+                  {/* 标签 */}
+                  {hotspot.tags.length > 0 && (
+                    <div className="flex gap-1.5 mt-3 flex-wrap">
+                      {hotspot.tags.slice(0, 3).map(tag => (
+                        <span key={tag} className="text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600">{tag}</span>
+                      ))}
+                      {hotspot.tags.length > 3 && <span className="text-[11px] px-1.5 py-0.5 text-gray-400">+{hotspot.tags.length - 3}</span>}
+                    </div>
+                  )}
+
+                  {/* 底部 */}
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-2">
+                      {isShowingDismissed ? (
+                        <button onClick={e => { e.stopPropagation(); userActionsApi.undismiss(userId, hotspot.id).then(() => { addToast('已恢复', 'success'); refetchHotspots(); refetchStats() }).catch(() => addToast('恢复失败', 'error')) }}
+                          className="text-[11px] px-2.5 py-1 rounded-md bg-green-100 text-green-700 hover:bg-green-200 font-medium">恢复</button>
+                      ) : !hotspot.has_analysis ? (
+                        <button onClick={e => handleQuickAnalyze(e, hotspot.id)} disabled={analyzingHotspots.has(hotspot.id)}
+                          className="text-[11px] px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-600 hover:bg-indigo-200 font-medium disabled:opacity-50">
+                          {analyzingHotspots.has(hotspot.id) ? '分析中' : 'AI分析'}</button>
+                      ) : null}
+                      <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {hotspot.has_analysis && <span className="text-[11px] font-medium text-indigo-500">{hotspot.analysis_relevance_score ?? 0}%</span>}
+                      <ChevronRight size={14} className="text-gray-300" />
                     </div>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="p-8 text-center">
-              <p className="text-gray-500">暂无热点数据</p>
-              {activeFilterCount > 0 && (
-                <p className="text-sm text-gray-400 mt-1">当前有筛选条件或所有热点已被忽略</p>
-              )}
-              <div className="flex justify-center space-x-3 mt-4">
-                <button
-                  onClick={() => refetchHotspots()}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-                >
-                  刷新
-                </button>
-                <button
-                  onClick={handleRefresh}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  手动更新
-                </button>
-              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card p-8 text-center">
+            <p className="text-gray-500">暂无热点数据</p>
+            {activeFilterCount > 0 && <p className="text-sm text-gray-400 mt-1">当前有筛选条件或所有热点已被忽略</p>}
+            <div className="flex justify-center gap-3 mt-4">
+              <button onClick={() => refetchHotspots()} className="btn-secondary text-sm">刷新</button>
+              <button onClick={handleRefresh} className="btn-primary text-sm">手动更新</button>
             </div>
-          )}
-        </div>
-        <div className="px-6 py-3 border-t border-gray-200 flex flex-wrap justify-between items-center gap-3">
-          <p className="text-xs text-gray-500">
-            共 {hotspotsData?.total || 0} 个热点
-          </p>
+          </div>
+        )}
+
+        {/* 分页 */}
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-xs text-gray-500">共 {hotspotsData?.total || 0} 个热点</p>
           <div className="flex items-center gap-1">
             <button onClick={handlePrevPage} disabled={page <= 1}
-              className="px-2.5 py-1.5 text-xs font-medium border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
-              上一页
-            </button>
-
+              className="px-2.5 py-1.5 text-xs font-medium border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-30">上一页</button>
             {getPageNumbers().map((p, idx) =>
-              p === '...' ? (
-                <span key={`e${idx}`} className="px-1 text-xs text-gray-400">...</span>
-              ) : (
-                <button key={p} onClick={() => setPage(p)}
-                  className={`min-w-[32px] h-8 text-xs font-medium rounded-md transition-colors ${
-                    page === p
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100 border border-gray-300'
-                  }`}>
-                  {p}
-                </button>
-              )
+              p === '...' ? <span key={`e${idx}`} className="px-1 text-xs text-gray-400">...</span>
+                : <button key={p} onClick={() => setPage(p)}
+                    className={`min-w-[32px] h-8 text-xs font-medium rounded-md transition-colors ${page === p ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100 border border-gray-300'}`}>{p}</button>
             )}
-
             <button onClick={handleNextPage} disabled={page >= totalPages}
-              className="px-2.5 py-1.5 text-xs font-medium border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
-              下一页
-            </button>
-
+              className="px-2.5 py-1.5 text-xs font-medium border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-30">下一页</button>
             <div className="flex items-center gap-1 ml-2">
               <span className="text-xs text-gray-400">跳至</span>
               <input type="number" min={1} max={totalPages} defaultValue={page}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const val = parseInt((e.target as HTMLInputElement).value, 10)
-                    if (val >= 1 && val <= totalPages) setPage(val)
-                  }
-                }}
-                className="w-14 px-2 py-1.5 text-xs text-center border border-gray-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
+                onKeyDown={e => { if (e.key === 'Enter') { const v = parseInt((e.target as HTMLInputElement).value, 10); if (v >= 1 && v <= totalPages) setPage(v) } }}
+                className="w-14 px-2 py-1.5 text-xs text-center border border-gray-300 rounded-md [appearance:textfield]" />
             </div>
           </div>
         </div>

@@ -91,7 +91,7 @@ const Layout: React.FC = () => {
     <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F5F3FF 100%)' }}>
       {/* 顶部导航栏 */}
       <header className="header sticky top-0 z-50">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
@@ -146,7 +146,7 @@ const Layout: React.FC = () => {
         </div>
       </header>
 
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 侧边栏 */}
           <aside className="lg:w-72">
@@ -215,7 +215,7 @@ const Layout: React.FC = () => {
 
       {/* 页脚 */}
       <footer className="border-t border-gray-200 bg-white py-6 mt-12">
-        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-600 text-sm">
               © 2024 AI超级热点解析助手. 保留所有权利.
