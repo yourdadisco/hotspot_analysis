@@ -486,10 +486,10 @@ const Dashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setShowQuickAnalysis(true)}
-            className="px-5 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-semibold flex items-center space-x-2 shadow-sm"
+            className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 font-bold flex items-center space-x-2 shadow-lg shadow-amber-500/30 animate-pulse"
           >
-            <Zap size={18} />
-            <span>一键分析</span>
+            <Zap size={20} />
+            <span className="text-base">一键分析</span>
           </button>
           <button
             onClick={() => setShowAdvancedFilter(true)}
