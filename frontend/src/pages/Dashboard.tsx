@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Filter, Clock, TrendingUp, AlertTriangle,
-  BarChart3, ChevronRight, RefreshCw, Target, Trash2, Zap
+  BarChart3, RefreshCw, Target, Trash2, Zap
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { hotspotsApi, collectionApi, analysisApi, userActionsApi, userSettingsApi, type PaginatedResponse, type Hotspot } from '../services/api'
@@ -760,17 +760,17 @@ const Dashboard: React.FC = () => {
                   {/* 操作栏 */}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 shrink-0">
                     <div className="flex items-center gap-2">
-                      {isShowingDismissed ? (
+                      {isShowingDismissed && (
                         <button onClick={e => { e.stopPropagation(); userActionsApi.undismiss(userId, hotspot.id).then(() => { addToast('已恢复', 'success'); refetchHotspots(); refetchStats() }).catch(() => addToast('恢复失败', 'error')) }}
                           className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-600 hover:bg-green-100 font-medium">恢复</button>
-                      ) : !hotspot.has_analysis ? (
-                        <button onClick={e => handleQuickAnalyze(e, hotspot.id)} disabled={analyzingHotspots.has(hotspot.id)}
-                          className="text-xs px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium disabled:opacity-50">
-                          {analyzingHotspots.has(hotspot.id) ? '分析中' : 'AI分析'}</button>
-                      ) : null}
+                      )}
                       <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
                     </div>
-                    <ChevronRight size={16} className="text-gray-300" />
+                    <div className="flex items-center gap-3 text-gray-400">
+                      <button className="hover:text-indigo-500 transition-colors" title="赞同"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>
+                      <button className="hover:text-red-400 transition-colors" title="反对"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg></button>
+                      <button className="hover:text-blue-400 transition-colors" title="评论"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>
+                    </div>
                   </div>
                 </div>
               </div>
