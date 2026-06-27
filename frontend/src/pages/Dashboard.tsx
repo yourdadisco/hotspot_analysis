@@ -469,9 +469,16 @@ const Dashboard: React.FC = () => {
         </div>
         <div className="flex space-x-3">
           <button
+            onClick={() => setShowQuickAnalysis(true)}
+            className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 font-bold flex items-center space-x-2 shadow-lg shadow-indigo-500/30"
+          >
+            <Zap size={20} />
+            <span className="text-base">一键更新解析热点</span>
+          </button>
+          <button
             onClick={handleRefresh}
             disabled={isCollecting}
-            className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center space-x-2"
+            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 flex items-center space-x-2 shadow-sm shadow-amber-500/20"
           >
             <RefreshCw size={16} className={isCollecting ? 'animate-spin' : ''} />
             <span>{isCollecting ? '更新中...' : '手动更新'}</span>
@@ -479,26 +486,19 @@ const Dashboard: React.FC = () => {
           <button
             onClick={handleOpenBatchDialog}
             disabled={isBatchAnalyzing}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center space-x-2"
+            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-lg hover:from-cyan-600 hover:to-teal-600 disabled:opacity-50 flex items-center space-x-2 shadow-sm shadow-cyan-500/20"
           >
             <Target size={16} />
             <span>{isBatchAnalyzing ? '分析中...' : '批量分析'}</span>
           </button>
           <button
-            onClick={() => setShowQuickAnalysis(true)}
-            className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 font-bold flex items-center space-x-2 shadow-lg shadow-amber-500/30 animate-pulse"
-          >
-            <Zap size={20} />
-            <span className="text-base">一键分析</span>
-          </button>
-          <button
             onClick={() => setShowAdvancedFilter(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 flex items-center space-x-2 shadow-sm shadow-blue-500/20"
           >
             <Filter size={16} />
             <span>高级筛选</span>
             {activeFilterCount > 0 && (
-              <span className="bg-white text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+              <span className="bg-white/20 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
                 {activeFilterCount}
               </span>
             )}
