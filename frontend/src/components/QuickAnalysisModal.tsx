@@ -13,13 +13,13 @@ interface Props {
 
 const industries = ['科技/互联网', '金融/保险', '医疗/健康', '教育/培训', '制造业', '零售/电商', '媒体/娱乐', '其他']
 const PROVIDER_CONFIGS: Record<string, { base: string; models: string[] }> = {
-  'DeepSeek': { base: 'https://api.deepseek.com', models: ['deepseek-chat', 'deepseek-reasoner'] },
-  'OpenAI': { base: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
-  'Groq': { base: 'https://api.groq.com/openai/v1', models: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'llama-3.1-8b-instant'] },
-  '硅基流动': { base: 'https://api.siliconflow.cn/v1', models: ['deepseek-ai/DeepSeek-V3', 'Qwen/Qwen2.5-72B-Instruct', 'THUDM/glm-4-9b-chat'] },
-  '月之暗面': { base: 'https://api.moonshot.cn/v1', models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'] },
-  '阿里通义': { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', models: ['qwen-plus', 'qwen-turbo', 'qwen-max'] },
-  '智谱': { base: 'https://open.bigmodel.cn/api/paas/v4', models: ['glm-4-plus', 'glm-4v-plus', 'glm-4-flash'] },
+  'OpenAI': { base: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'o3', 'o4-mini'] },
+  'Anthropic': { base: 'https://api.anthropic.com/v1', models: ['claude-sonnet-4-20250514', 'claude-haiku-3-5-sonnet-20241022', 'claude-opus-4-20250514'] },
+  'DeepSeek': { base: 'https://api.deepseek.com', models: ['deepseek-chat', 'deepseek-reasoner', 'deepseek-chat-v3'] },
+  'Kimi': { base: 'https://api.moonshot.cn/v1', models: ['moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-8k'] },
+  'MiniMax': { base: 'https://api.minimax.chat/v1', models: ['MiniMax-Text-01', 'MiniMax-VL-01', 'abab6.5s', 'abab5.5s'] },
+  'Mimo': { base: 'https://api.mimo.com/v1', models: ['mimo-chat', 'mimo-chat-mini'] },
+  '豆包': { base: 'https://ark.cn-beijing.volces.com/api/v3', models: ['doubao-pro-32k', 'doubao-pro-128k', 'doubao-lite-32k', 'doubao-lite-128k'] },
 }
 const providers = Object.keys(PROVIDER_CONFIGS)
 
@@ -266,7 +266,7 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">API Key</label>
                   <div className="relative">
-                    <input type={showKey ? 'text' : 'password'} placeholder={provider === 'DeepSeek' ? 'sk-...' : provider === 'OpenAI' ? 'sk-proj-...' : '输入你的 API Key'} value={apiKey}
+                    <input type={showKey ? 'text' : 'password'} placeholder={({DeepSeek: 'sk-...', OpenAI: 'sk-proj-...', Anthropic: 'sk-ant-...', Kimi: 'sk-...', MiniMax: 'sk-...', Mimo: '输入 API Key', 豆包: '输入 API Key'})[provider] || '输入 API Key'} value={apiKey}
                       onChange={e => setApiKey(e.target.value)}
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 pr-10 font-mono" />
                     <button onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
