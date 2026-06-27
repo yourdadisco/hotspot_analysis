@@ -4,48 +4,136 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F5F3FF 100%);
+    color: #1E293B;
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background-color: rgba(99, 102, 241, 0.2);
+    color: #1E293B;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200;
+    @apply bg-white rounded-xl border-0 shadow-tech;
   }
-
   .card-hover {
-    @apply transition-shadow duration-200 hover:shadow-md;
+    @apply transition-all duration-200 ease-out;
+  }
+  .card-hover:hover {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1), 0 2px 4px rgba(99, 102, 241, 0.06);
+    transform: translateY(-1px);
   }
 
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           rounded-lg transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
   .btn-primary {
-    @apply px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    @apply btn;
+    background: linear-gradient(135deg, #6366F1, #4F46E5);
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  }
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #4F46E5, #4338CA);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    transform: translateY(-1px);
+  }
+  .btn-secondary {
+    @apply btn;
+    background-color: #FFFFFF;
+    color: #475569;
+    border: 1px solid #E2E8F0;
+  }
+  .btn-secondary:hover {
+    background-color: #F8FAFC;
+    border-color: #CBD5E1;
+  }
+  .btn-ghost {
+    @apply btn;
+    background-color: transparent;
+    color: #64748B;
+  }
+  .btn-ghost:hover {
+    background-color: rgba(99, 102, 241, 0.06);
+    color: #4F46E5;
   }
 
-  .btn-secondary {
-    @apply px-4 py-2 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+  .input {
+    @apply w-full px-3 py-2 text-sm rounded-lg transition-all duration-200 ease-out
+           focus:outline-none focus:ring-2;
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    color: #1E293B;
+  }
+  .input:focus {
+    border-color: #818CF8;
+    --tw-ring-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+  .input::placeholder {
+    color: #94A3B8;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-md;
+  }
+
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-2.5 text-sm font-medium rounded-lg
+           transition-all duration-200 ease-out;
+    color: #64748B;
+  }
+  .nav-link:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.06));
+    color: #4F46E5;
+  }
+  .nav-link-active {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    color: #4F46E5;
+    font-weight: 600;
+  }
+
+  .modal-overlay {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+  }
+
+  .sidebar {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%);
+    border-right: 1px solid #E2E8F0;
+  }
+
+  .header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   }
 }
 
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
+    scrollbar-color: #CBD5E1 transparent;
   }
-
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-gray-100;
-  }
-
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 rounded-full;
+    background-color: #CBD5E1;
+    border-radius: 3px;
   }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: #94A3B8; }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500;
+  .gradient-text {
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

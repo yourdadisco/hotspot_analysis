@@ -88,16 +88,18 @@ const Layout: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F5F3FF 100%)' }}>
       {/* 顶部导航栏 */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="header sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <Brain className="h-8 w-8 text-blue-600" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
+                <Brain size={18} className="text-white" />
+              </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">AI热点解析助手</h1>
+                <h1 className="text-xl font-bold gradient-text">AI热点解析助手</h1>
                 <p className="text-xs text-gray-500">智能追踪AI行业动态</p>
               </div>
             </div>
@@ -148,7 +150,7 @@ const Layout: React.FC = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 侧边栏 */}
           <aside className="lg:w-64">
-            <nav className="bg-white rounded-lg shadow-sm p-4 sticky top-24">
+            <nav className="card p-4 sticky top-24">
               <ul className="space-y-2">
                 {navItems.map((item) => (
                   <li key={item.path}>
@@ -157,8 +159,8 @@ const Layout: React.FC = () => {
                       className={({ isActive }) =>
                         `flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            ? 'nav-link-active'
+                            : 'text-gray-600 hover:bg-gray-100'
                         }`
                       }
                     >
