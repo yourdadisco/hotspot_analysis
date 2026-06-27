@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 
 from app.core.database import AsyncSessionLocal
 from app.core.ai_analysis import ai_analyzer  # 使用新的AI分析器
+from app.core.config import settings
 from app.models.hotspot import Hotspot, HotspotAnalysis, ImportanceLevel
 from app.models.user import User
 from app.models.model_config import UserModelConfig
@@ -163,6 +164,19 @@ async def batch_analyze_hotspots_async(user_id: str, limit: int = 10, progress_t
     """
     async with AsyncSessionLocal() as db:
         try:
+            # 检查是否配置了API密钥
+            from app.models.model_config import UserModelConfig
+            cfg_stmt = select(UserModelConfig).where(
+                UserModelConfig.user_id == user_id,
+                UserModelConfig.is_active == "Y"
+            )
+            cfg_result = await db.execute(cfg_stmt)
+            cfg = cfg_result.scalar_one_or_none()
+            has_api_key = bool(cfg and cfg.api_key)
+
+            if not has_api_key and not settings.LLM_MOCK_MODE and not settings.LLM_API_KEY:
+                return {"success": False, "error": "请先在「模型配置」中设置 API Key，或开启 LLM_MOCK_MODE 使用模拟分析"}
+
             # 获取用户
             stmt = select(User).where(User.id == user_id)
             result = await db.execute(stmt)
@@ -193,17 +207,14 @@ async def batch_analyze_hotspots_async(user_id: str, limit: int = 10, progress_t
             total = len(hotspots)
             if progress_task_id:
                 progress_tracker.append_step(progress_task_id, f"准备批量分析 {total} 个热点")
-                progress_tracker.update_progress(progress_task_id, progress=5, current_step=f"准备批量分析 {total} 个热点")
+                progress_tracker.update_progress(progress_task_id, progress=5, current_step=f"正在分析 0/{total}")
 
-            # 逐个分析
+            # 逐个分析（进度只汇报计数，不列每个标题）
             analyzed_count = 0
             for i, hotspot in enumerate(hotspots):
-                step_name = f"正在分析热点 {i+1}/{total}: {hotspot.title[:30]}..."
-                logger.info(f"批量分析进度: {step_name}")
                 if progress_task_id:
-                    pct = int(((i + 1) / total) * 90) + 5  # 5% ~ 95%
-                    progress_tracker.update_progress(progress_task_id, progress=pct, current_step=step_name)
-                    progress_tracker.append_step(progress_task_id, step_name)
+                    pct = int(((i + 1) / total) * 90) + 5
+                    progress_tracker.update_progress(progress_task_id, progress=pct, current_step=f"正在分析 {i+1}/{total}")
 
                 try:
                     await analyze_hotspot_for_user_async(str(hotspot.id), user_id)
@@ -212,7 +223,9 @@ async def batch_analyze_hotspots_async(user_id: str, limit: int = 10, progress_t
                     logger.error(f"批量分析失败: {hotspot.id} - {e}")
 
             if progress_task_id:
-                progress_tracker.update_progress(progress_task_id, progress=100, current_step="批量分析完成")
+                msg = f"批量分析完成: 成功 {analyzed_count}/{total}"
+                progress_tracker.update_progress(progress_task_id, progress=100, current_step=msg)
+                progress_tracker.append_step(progress_task_id, msg)
 
             return {
                 "success": True,
