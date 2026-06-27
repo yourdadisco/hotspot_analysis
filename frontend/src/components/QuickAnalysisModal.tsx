@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { X, Zap, Settings, Cpu, Calendar, RefreshCw, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react'
+import { X, Zap, Settings, Cpu, Calendar, RefreshCw, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { collectionApi, modelConfigApi } from '../services/api'
+import { useToastStore } from '../stores/toastStore'
 
 interface Props {
   userId: string
@@ -10,60 +11,129 @@ interface Props {
   onComplete: () => void
 }
 
+const industries = ['科技/互联网', '金融/保险', '医疗/健康', '教育/培训', '制造业', '零售/电商', '媒体/娱乐', '其他']
+const providers = ['DeepSeek', 'OpenAI', 'OpenAI兼容']
+
 const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComplete }) => {
+  const addToast = useToastStore(s => s.addToast)
   const [mode, setMode] = useState<'last' | 'range'>('last')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [showKey, setShowKey] = useState(false)
 
-  const { data: userData } = useQuery({
-    queryKey: ['q-profile'],
+  // 业务配置表单
+  const [companyName, setCompanyName] = useState('')
+  const [industry, setIndustry] = useState('')
+  const [businessDesc, setBusinessDesc] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // 模型配置表单
+  const [provider, setProvider] = useState('DeepSeek')
+  const [apiKey, setApiKey] = useState('')
+  const [apiBase, setApiBase] = useState('https://api.deepseek.com')
+  const [modelName, setModelName] = useState('deepseek-chat')
+  const [savingModel, setSavingModel] = useState(false)
+
+  // 获取当前数据
+  const { data: userData, refetch: refetchUser } = useQuery({
+    queryKey: ['qa-profile', userId],
     queryFn: async () => {
-      const { authApi } = await import('../services/api')
-      return authApi.getUser(userId) as any
+      try {
+        const { authApi } = await import('../services/api')
+        return await authApi.getUser(userId) as any
+      } catch { return null }
     },
     enabled: isOpen,
   })
-  const { data: modelData } = useQuery({
-    queryKey: ['q-model'],
+
+  const { data: modelData, refetch: refetchModel } = useQuery({
+    queryKey: ['qa-model', userId],
     queryFn: () => modelConfigApi.getConfig(userId) as Promise<any>,
     enabled: isOpen,
   })
+
   const { data: lastUpdateData } = useQuery({
-    queryKey: ['q-last-update'],
+    queryKey: ['qa-last'],
     queryFn: () => collectionApi.getLastUpdate(),
     enabled: isOpen,
   })
 
-  const user: any = userData || {}
-  const model: any = modelData || {}
+  // 加载现有配置
+  useEffect(() => {
+    if (isOpen) {
+      const user: any = userData || {}
+      const model: any = modelData || {}
+      setCompanyName(user.company_name || '')
+      setIndustry(user.industry || '')
+      setBusinessDesc(user.business_description || '')
+      setProvider(model.provider || 'DeepSeek')
+      setApiKey(model.api_key || '')
+      setApiBase(model.api_base_url || 'https://api.deepseek.com')
+      setModelName(model.model_name || 'deepseek-chat')
+      setDateFrom('')
+      setDateTo('')
+      setError('')
+      setDone(false)
+    }
+  }, [isOpen, userData, modelData])
+
   const lastUpdate = lastUpdateData?.last_update
   const defaultFrom = lastUpdate
     ? new Date(lastUpdate).toISOString().slice(0, 10)
     : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   const defaultTo = new Date().toISOString().slice(0, 10)
-
-  const hasBusiness = !!(user.company_name && user.business_description)
-  const hasApiKey = !!(model.api_key)
+  const hasApiKey = !!apiKey
+  const hasBusiness = !!(companyName && businessDesc)
   const allReady = hasBusiness && hasApiKey
+
+  // 保存业务配置
+  const saveBusiness = async () => {
+    setSaving(true)
+    try {
+      const { authApi } = await import('../services/api')
+      await authApi.updateUserBusiness(userId, {
+        company_name: companyName,
+        industry,
+        business_description: businessDesc,
+      })
+      addToast('业务配置已保存', 'success')
+      refetchUser()
+    } catch { addToast('保存失败', 'error') }
+    finally { setSaving(false) }
+  }
+
+  // 保存模型配置
+  const saveModel = async () => {
+    setSavingModel(true)
+    try {
+      await modelConfigApi.updateConfig(userId, {
+        provider,
+        api_key: apiKey,
+        api_base_url: apiBase,
+        model_name: modelName,
+        is_active: 'Y',
+      })
+      addToast('模型配置已保存', 'success')
+      refetchModel()
+    } catch { addToast('保存失败', 'error') }
+    finally { setSavingModel(false) }
+  }
 
   const handleStart = async () => {
     if (!allReady) return
     setLoading(true)
     setError('')
     try {
-      const df = mode === 'last' ? defaultFrom : dateFrom
-      const dt = mode === 'last' ? defaultTo : dateTo
-      await collectionApi.triggerManualRefresh(df || undefined, dt || undefined)
+      const df = mode === 'last' ? defaultFrom : (dateFrom || defaultFrom)
+      const dt = mode === 'last' ? defaultTo : (dateTo || defaultTo)
+      await collectionApi.triggerManualRefresh(df, dt)
       setDone(true)
       onComplete()
-    } catch {
-      setError('启动分析失败')
-    } finally {
-      setLoading(false)
-    }
+    } catch { setError('启动分析失败') }
+    finally { setLoading(false) }
   }
 
   if (!isOpen) return null
@@ -71,9 +141,8 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
+      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
 
-        {/* 状态：完成 */}
         {done ? (
           <div className="text-center py-6">
             <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
@@ -93,7 +162,7 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-900">一键分析</h3>
-                  <p className="text-xs text-gray-500">采集 + AI 分析一气呵成</p>
+                  <p className="text-xs text-gray-500">业务配置 → 模型配置 → 选择日期 → 开始分析</p>
                 </div>
               </div>
               <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
@@ -101,35 +170,89 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
               </button>
             </div>
 
-            {/* 状态检查 */}
-            <div className="space-y-2.5 mb-5">
-              <div className={`flex items-center justify-between p-3 rounded-xl border ${hasBusiness ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                <div className="flex items-center gap-3">
-                  <Settings size={18} className={hasBusiness ? 'text-green-500' : 'text-gray-300'} />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">业务配置</p>
-                    <p className="text-xs text-gray-500">{hasBusiness ? user.company_name : '未配置'}</p>
-                  </div>
-                </div>
-                {hasBusiness ? <CheckCircle2 size={18} className="text-green-500" /> : <a href="/business" className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-0.5">去配置<ExternalLink size={12} /></a>}
+            {/* 步骤1: 业务配置 */}
+            <div className="mb-5 p-4 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Settings size={16} className="text-gray-500" />
+                <span className="text-sm font-semibold text-gray-800">1. 业务配置</span>
+                {hasBusiness && <CheckCircle2 size={14} className="text-green-500 ml-auto" />}
               </div>
-              <div className={`flex items-center justify-between p-3 rounded-xl border ${hasApiKey ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                <div className="flex items-center gap-3">
-                  <Cpu size={18} className={hasApiKey ? 'text-green-500' : 'text-gray-300'} />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">模型配置</p>
-                    <p className="text-xs text-gray-500">{hasApiKey ? model.provider || '已配置' : '未配置'}</p>
-                  </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">公司名称</label>
+                  <input type="text" placeholder="例如：某某科技有限公司" value={companyName}
+                    onChange={e => setCompanyName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
                 </div>
-                {hasApiKey ? <CheckCircle2 size={18} className="text-green-500" /> : <a href="/model-config" className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-0.5">去配置<ExternalLink size={12} /></a>}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">所属行业</label>
+                  <select value={industry} onChange={e => setIndustry(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">请选择</option>
+                    {industries.map(i => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">业务描述</label>
+                  <textarea placeholder="例如：我们是一家人工智能公司，主要从事大模型研发和应用..." value={businessDesc}
+                    onChange={e => setBusinessDesc(e.target.value)} rows={2}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none" />
+                </div>
+                <button onClick={saveBusiness} disabled={saving || !companyName}
+                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+                  {saving ? '保存中...' : '保存'}
+                </button>
               </div>
             </div>
 
-            {/* 日期选择 */}
-            <div className="mb-5">
+            {/* 步骤2: 模型配置 */}
+            <div className="mb-5 p-4 rounded-xl border border-gray-200">
               <div className="flex items-center gap-2 mb-3">
-                <Calendar size={15} className="text-gray-400" />
-                <span className="text-sm font-medium text-gray-700">日期范围</span>
+                <Cpu size={16} className="text-gray-500" />
+                <span className="text-sm font-semibold text-gray-800">2. 模型配置</span>
+                {hasApiKey && <CheckCircle2 size={14} className="text-green-500 ml-auto" />}
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">供应商</label>
+                  <select value={provider} onChange={e => setProvider(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    {providers.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">API Key</label>
+                  <div className="relative">
+                    <input type={showKey ? 'text' : 'password'} placeholder="sk-..." value={apiKey}
+                      onChange={e => setApiKey(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 pr-10" />
+                    <button onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+                      {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">API Base URL</label>
+                  <input type="text" value={apiBase} onChange={e => setApiBase(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">模型名称</label>
+                  <input type="text" value={modelName} onChange={e => setModelName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <button onClick={saveModel} disabled={savingModel || !apiKey}
+                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+                  {savingModel ? '保存中...' : '保存'}
+                </button>
+              </div>
+            </div>
+
+            {/* 步骤3: 日期选择 */}
+            <div className="mb-5 p-4 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar size={16} className="text-gray-500" />
+                <span className="text-sm font-semibold text-gray-800">3. 日期范围</span>
               </div>
               <div className="flex items-center gap-2 mb-3">
                 <button onClick={() => setMode('last')} className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${mode === 'last' ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>从最近更新</button>
@@ -137,19 +260,18 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
               </div>
               {mode === 'range' && (
                 <div className="flex items-center gap-2">
-                  <input type="date" value={dateFrom || defaultFrom} onChange={e => setDateFrom(e.target.value)} className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                  <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
                   <span className="text-gray-400">~</span>
-                  <input type="date" value={dateTo || defaultTo} onChange={e => setDateTo(e.target.value)} className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
+                  <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg" />
                 </div>
               )}
-              {lastUpdate && <p className="text-xs text-gray-400 mt-2">最近更新: {new Date(lastUpdate).toLocaleString('zh-CN')}</p>}
+              {lastUpdate && <p className="text-xs text-gray-400 mt-2">最近采集: {new Date(lastUpdate).toLocaleString('zh-CN')}</p>}
             </div>
 
             {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-
             {!allReady && (
               <p className="text-xs text-amber-600 mb-4 flex items-center gap-1">
-                <AlertCircle size={13} /> 请先完成业务配置和模型配置
+                <AlertCircle size={13} /> 请先完成业务配置和模型配置并点击保存
               </p>
             )}
 
