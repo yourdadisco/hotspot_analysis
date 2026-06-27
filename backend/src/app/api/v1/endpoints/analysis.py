@@ -11,8 +11,24 @@ logger = logging.getLogger(__name__)
 
 from app.core.database import get_db
 from app.models.hotspot import Hotspot, HotspotAnalysis
-from app.models.user import User
+from app.models.user import User, UserSettings as UserSettingsModel
 from app.tasks.analysis_tasks import analyze_hotspot_for_user_async, batch_analyze_hotspots_async
+
+
+async def _ensure_user(db: AsyncSession, user_id: str) -> User:
+    """确保用户存在，不存在则自动创建（兼容新旧数据库切换）"""
+    stmt = select(User).where(User.id == user_id)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
+        user = User(id=user_id, email=f"{user_id[:8]}@auto")
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+        settings = UserSettingsModel(user_id=user.id)
+        db.add(settings)
+        await db.commit()
+    return user
 from app.schemas.hotspot import HotspotAnalysisResponse
 from app.services.hotspot_service import HotspotService
 from app.services.progress_tracker import progress_tracker
@@ -45,16 +61,8 @@ async def trigger_hotspot_analysis(
             detail="热点不存在"
         )
 
-    # 验证用户存在
-    stmt = select(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
+    # 验证用户存在（不存在则自动创建）
+    user = await _ensure_user(db, user_id)
 
     # 检查是否已有分析记录
     stmt = select(HotspotAnalysis).where(
@@ -143,16 +151,8 @@ async def analyze_latest_hotspots(
     """
     批量分析用户的最新热点
     """
-    # 验证用户存在
-    stmt = select(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
+    # 验证用户存在（不存在则自动创建）
+    user = await _ensure_user(db, user_id)
 
     # 调用批量分析异步函数
     try:
@@ -190,16 +190,8 @@ async def analyze_latest_hotspots_async(
     """
     异步批量分析最新热点，返回 task_id，前端轮询进度
     """
-    # 验证用户存在
-    stmt = select(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
+    # 验证用户存在（不存在则自动创建）
+    user = await _ensure_user(db, user_id)
 
     task_id = str(uuid.uuid4())
     progress_tracker.create_task(
@@ -251,16 +243,8 @@ async def trigger_hotspot_analysis_async(
             detail="热点不存在"
         )
 
-    # 验证用户存在
-    stmt = select(User).where(User.id == user_id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
+    # 验证用户存在（不存在则自动创建）
+    user = await _ensure_user(db, user_id)
 
     # 处理 force=True：先删除旧分析记录
     if force:
