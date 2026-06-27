@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom'
 import { hotspotsApi, collectionApi, analysisApi, userActionsApi, userSettingsApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import AdvancedFilterModal, { type AdvancedFilters } from '../components/AdvancedFilterModal'
 import QuickAnalysisModal from '../components/QuickAnalysisModal'
-import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
 import ProgressOverlay from '../components/ProgressOverlay'
 import ManualUpdateModal from '../components/ManualUpdateModal'
@@ -663,76 +662,104 @@ const Dashboard: React.FC = () => {
                     : hotspot.analysis_importance_level === 'low' ? '#22C55E' : '#E5E7EB'
                 }} />
                 <div className="p-5 flex-1 flex flex-col">
-                  {/* 元信息 */}
-                  <div className="flex items-center gap-2 mb-3">
-                    {hotspot.has_analysis ? (
-                      <ImportanceBadge level={hotspot.analysis_importance_level || 'medium'} size="sm" />
-                    ) : (
-                      <span className="text-xs px-2.5 py-1 rounded-md bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-500 font-medium border border-indigo-200">待分析 · 点一键更新</span>
-                    )}
-                    <span className="text-sm text-gray-500">{hotspot.source_name || hotspot.source_type}</span>
-                    <span className="text-sm text-gray-400 ml-auto">{new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}</span>
+                  {/* 顶部：重要性 + 来源 + 日期 */}
+                  <div className="flex items-center gap-2 mb-3 shrink-0">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md ${
+                      !hotspot.has_analysis ? 'bg-gray-100 text-gray-500'
+                      : hotspot.analysis_importance_level === 'emergency' ? 'bg-red-50 text-red-700'
+                      : hotspot.analysis_importance_level === 'high' ? 'bg-orange-50 text-orange-700'
+                      : hotspot.analysis_importance_level === 'medium' ? 'bg-indigo-50 text-indigo-700'
+                      : hotspot.analysis_importance_level === 'low' ? 'bg-green-50 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        !hotspot.has_analysis ? 'bg-gray-400'
+                        : hotspot.analysis_importance_level === 'emergency' ? 'bg-red-500'
+                        : hotspot.analysis_importance_level === 'high' ? 'bg-orange-500'
+                        : hotspot.analysis_importance_level === 'medium' ? 'bg-indigo-500'
+                        : hotspot.analysis_importance_level === 'low' ? 'bg-green-500'
+                        : 'bg-gray-400'
+                      }`} />
+                      {!hotspot.has_analysis ? '未分析'
+                        : hotspot.analysis_importance_level === 'emergency' ? '紧急'
+                        : hotspot.analysis_importance_level === 'high' ? '高'
+                        : hotspot.analysis_importance_level === 'medium' ? '中'
+                        : hotspot.analysis_importance_level === 'low' ? '低'
+                        : hotspot.analysis_importance_level}
+                    </span>
+                    <span className="text-xs text-gray-500 font-medium">{hotspot.source_name || hotspot.source_type}</span>
+                    <span className="text-xs text-gray-400 ml-auto">{new Date(hotspot.publish_date).toLocaleDateString('zh-CN')}</span>
                   </div>
 
                   {/* 标题 */}
-                  <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 leading-snug">{hotspot.title}</h3>
+                  <h3 className="text-base font-bold text-gray-900 mb-3 leading-snug line-clamp-2">{hotspot.title}</h3>
 
-                  {/* AI分析内容 / 摘要 */}
-                  <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+                  {/* 内容区 */}
+                  <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin space-y-3">
                     {hotspot.has_analysis ? (
-                      <div className="space-y-3">
-                        <p className="text-sm text-gray-600 leading-relaxed">{hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}</p>
+                      <>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          {hotspot.analysis_content_summary || renderSafeSummary(hotspot.summary)}
+                        </p>
                         {(hotspot as any).analysis?.business_impact && (
-                          <div className="bg-indigo-50 rounded-lg p-3">
-                            <p className="text-xs font-semibold text-indigo-700 mb-1">业务影响</p>
-                            <p className="text-sm text-indigo-900">{(hotspot as any).analysis.business_impact}</p>
-                          </div>
+                          <p className="text-sm text-gray-500 leading-relaxed border-l-2 border-indigo-300 pl-3">
+                            <span className="font-medium text-indigo-600">影响：</span>{(hotspot as any).analysis.business_impact}
+                          </p>
                         )}
                         {(hotspot as any).analysis?.action_suggestions && (
-                          <div className="bg-amber-50 rounded-lg p-3">
-                            <p className="text-xs font-semibold text-amber-700 mb-1">行动建议</p>
-                            <p className="text-sm text-amber-900">{(hotspot as any).analysis.action_suggestions}</p>
-                          </div>
+                          <p className="text-sm text-gray-500 leading-relaxed border-l-2 border-amber-300 pl-3">
+                            <span className="font-medium text-amber-600">建议：</span>{(hotspot as any).analysis.action_suggestions}
+                          </p>
                         )}
-                      </div>
+                      </>
                     ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                        <p className="text-sm text-gray-400 italic mb-3">{renderSafeSummary(hotspot.summary)?.slice(0, 100)}...</p>
+                      <div className="flex flex-col items-center justify-center h-full text-center px-2">
+                        <p className="text-sm text-gray-400 line-clamp-3 mb-4">{renderSafeSummary(hotspot.summary)?.slice(0, 120)}...</p>
                         <button onClick={() => setShowQuickAnalysis(true)}
-                          className="mt-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm rounded-lg hover:from-indigo-600 hover:to-purple-600 font-medium shadow-sm shadow-indigo-500/20">
-                          ⚡ 一键更新解析
+                          className="px-5 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm rounded-lg hover:from-indigo-600 hover:to-purple-600 font-medium shadow-sm shadow-indigo-500/20">
+                          一键更新解析
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* 标签 */}
-                  {hotspot.tags.length > 0 && (
-                    <div className="flex gap-1.5 mt-3 flex-wrap shrink-0">
-                      {hotspot.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="text-xs px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600">{tag}</span>
-                      ))}
-                      {hotspot.tags.length > 3 && <span className="text-xs px-1.5 py-0.5 text-gray-400">+{hotspot.tags.length - 3}</span>}
-                    </div>
-                  )}
+                  {/* 标签 + 相关度条 */}
+                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-2.5 shrink-0">
+                    {hotspot.tags.length > 0 && (
+                      <div className="flex gap-1.5 flex-wrap">
+                        {hotspot.tags.slice(0, 3).map(tag => (
+                          <span key={tag} className="text-[11px] px-2 py-0.5 rounded-md bg-gray-100 text-gray-600">{tag}</span>
+                        ))}
+                        {hotspot.tags.length > 3 && <span className="text-[11px] px-1.5 py-0.5 text-gray-400">+{hotspot.tags.length - 3}</span>}
+                      </div>
+                    )}
+                    {hotspot.has_analysis && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{
+                            width: `${hotspot.analysis_relevance_score ?? 0}%`,
+                            background: 'linear-gradient(90deg, #6366F1, #8B5CF6)'
+                          }} />
+                        </div>
+                        <span className="text-xs font-semibold text-indigo-500">{hotspot.analysis_relevance_score ?? 0}%</span>
+                      </div>
+                    )}
+                  </div>
 
-                  {/* 底部 */}
+                  {/* 操作栏 */}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 shrink-0">
                     <div className="flex items-center gap-2">
                       {isShowingDismissed ? (
                         <button onClick={e => { e.stopPropagation(); userActionsApi.undismiss(userId, hotspot.id).then(() => { addToast('已恢复', 'success'); refetchHotspots(); refetchStats() }).catch(() => addToast('恢复失败', 'error')) }}
-                          className="text-xs px-3 py-1.5 rounded-md bg-green-100 text-green-700 hover:bg-green-200 font-medium">恢复</button>
+                          className="text-xs px-3 py-1.5 rounded-md bg-green-50 text-green-600 hover:bg-green-100 font-medium">恢复</button>
                       ) : !hotspot.has_analysis ? (
                         <button onClick={e => handleQuickAnalyze(e, hotspot.id)} disabled={analyzingHotspots.has(hotspot.id)}
-                          className="text-xs px-3 py-1.5 rounded-md bg-indigo-100 text-indigo-600 hover:bg-indigo-200 font-medium disabled:opacity-50">
+                          className="text-xs px-3 py-1.5 rounded-md bg-indigo-50 text-indigo-600 hover:bg-indigo-100 font-medium disabled:opacity-50">
                           {analyzingHotspots.has(hotspot.id) ? '分析中' : 'AI分析'}</button>
                       ) : null}
                       <FavoriteButton hotspotId={hotspot.id} isFavorite={hotspot.is_favorite || false} size="sm" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      {hotspot.has_analysis && <span className="text-sm font-semibold text-indigo-500">{hotspot.analysis_relevance_score ?? 0}%</span>}
-                      <ChevronRight size={16} className="text-gray-300" />
-                    </div>
+                    <ChevronRight size={16} className="text-gray-300" />
                   </div>
                 </div>
               </div>
