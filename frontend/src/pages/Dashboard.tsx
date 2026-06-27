@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Search, Filter, Clock, TrendingUp, AlertTriangle,
-  BarChart3, ChevronRight, RefreshCw, Target, Trash2
+  BarChart3, ChevronRight, RefreshCw, Target, Trash2, Zap
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { hotspotsApi, collectionApi, analysisApi, userActionsApi, userSettingsApi, type PaginatedResponse, type Hotspot } from '../services/api'
 import AdvancedFilterModal, { type AdvancedFilters } from '../components/AdvancedFilterModal'
-import QuickAnalysisPanel from '../components/QuickAnalysisPanel'
+import QuickAnalysisModal from '../components/QuickAnalysisModal'
 import ImportanceBadge from '../components/ImportanceBadge'
 import FavoriteButton from '../components/FavoriteButton'
 import ProgressOverlay from '../components/ProgressOverlay'
@@ -52,6 +52,9 @@ const Dashboard: React.FC = () => {
   })
   const [showDismissDialog, setShowDismissDialog] = useState(false)
   const [analyzingHotspots, setAnalyzingHotspots] = useState<Set<string>>(new Set())
+
+  // 一键分析
+  const [showQuickAnalysis, setShowQuickAnalysis] = useState(false)
 
   // 收集进度
   const [collectTaskId, setCollectTaskId] = useState<string | null>(null)
@@ -482,6 +485,13 @@ const Dashboard: React.FC = () => {
             <span>{isBatchAnalyzing ? '分析中...' : '批量分析'}</span>
           </button>
           <button
+            onClick={() => setShowQuickAnalysis(true)}
+            className="px-5 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-semibold flex items-center space-x-2 shadow-sm"
+          >
+            <Zap size={18} />
+            <span>一键分析</span>
+          </button>
+          <button
             onClick={() => setShowAdvancedFilter(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
           >
@@ -873,13 +883,16 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* 快速分析面板 */}
-      <div className="w-full max-w-sm">
-        <QuickAnalysisPanel userId={userId} onAnalysisComplete={() => {
+      {/* 一键分析模态框 */}
+      <QuickAnalysisModal
+        userId={userId}
+        isOpen={showQuickAnalysis}
+        onClose={() => setShowQuickAnalysis(false)}
+        onComplete={() => {
           refetchHotspots()
           refetchStats()
-        }} />
-      </div>
+        }}
+      />
 
       {/* 高级筛选模态框 */}
       <AdvancedFilterModal
