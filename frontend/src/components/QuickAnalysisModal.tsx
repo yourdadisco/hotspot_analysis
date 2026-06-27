@@ -12,7 +12,16 @@ interface Props {
 }
 
 const industries = ['科技/互联网', '金融/保险', '医疗/健康', '教育/培训', '制造业', '零售/电商', '媒体/娱乐', '其他']
-const providers = ['DeepSeek', 'OpenAI', 'OpenAI兼容']
+const PROVIDER_CONFIGS: Record<string, { base: string; models: string[] }> = {
+  'DeepSeek': { base: 'https://api.deepseek.com', models: ['deepseek-chat', 'deepseek-reasoner'] },
+  'OpenAI': { base: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
+  'Groq': { base: 'https://api.groq.com/openai/v1', models: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'llama-3.1-8b-instant'] },
+  '硅基流动': { base: 'https://api.siliconflow.cn/v1', models: ['deepseek-ai/DeepSeek-V3', 'Qwen/Qwen2.5-72B-Instruct', 'THUDM/glm-4-9b-chat'] },
+  '月之暗面': { base: 'https://api.moonshot.cn/v1', models: ['moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k'] },
+  '阿里通义': { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', models: ['qwen-plus', 'qwen-turbo', 'qwen-max'] },
+  '智谱': { base: 'https://open.bigmodel.cn/api/paas/v4', models: ['glm-4-plus', 'glm-4v-plus', 'glm-4-flash'] },
+}
+const providers = Object.keys(PROVIDER_CONFIGS)
 
 const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComplete }) => {
   const addToast = useToastStore(s => s.addToast)
@@ -69,10 +78,12 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
       setCompanyName(user.company_name || '')
       setIndustry(user.industry || '')
       setBusinessDesc(user.business_description || '')
-      setProvider(model.provider || 'DeepSeek')
+      const p = model.provider || 'DeepSeek'
+      setProvider(p)
       setApiKey(model.api_key || '')
-      setApiBase(model.api_base_url || 'https://api.deepseek.com')
-      setModelName(model.model_name || 'deepseek-chat')
+      setApiBase(PROVIDER_CONFIGS[p]?.base || model.api_base_url || 'https://api.deepseek.com')
+      const m = model.model_name || PROVIDER_CONFIGS[p]?.models[0] || ''
+      setModelName(m)
       setDateFrom('')
       setDateTo('')
       setError('')
@@ -215,32 +226,54 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">供应商</label>
-                  <select value={provider} onChange={e => setProvider(e.target.value)}
+                  <div className="grid grid-cols-2 gap-2">
+                    {providers.map(p => (
+                      <button key={p} onClick={() => {
+                        setProvider(p)
+                        setApiBase(PROVIDER_CONFIGS[p].base)
+                        setModelName(PROVIDER_CONFIGS[p].models[0])
+                      }}
+                        className={`px-3 py-2.5 text-sm rounded-lg border transition-all text-left ${
+                          provider === p
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                            : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                        }`}>
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">模型</label>
+                  <select value={modelName} onChange={e => setModelName(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    {providers.map(p => <option key={p} value={p}>{p}</option>)}
+                    {PROVIDER_CONFIGS[provider]?.models.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                    <option value="__custom__">自定义模型名...</option>
                   </select>
+                  {modelName === '__custom__' && (
+                    <input type="text" placeholder="输入模型名称" value={apiBase}
+                      onChange={e => setModelName(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg mt-2" />
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">API Key</label>
                   <div className="relative">
-                    <input type={showKey ? 'text' : 'password'} placeholder="sk-..." value={apiKey}
+                    <input type={showKey ? 'text' : 'password'} placeholder={provider === 'DeepSeek' ? 'sk-...' : provider === 'OpenAI' ? 'sk-proj-...' : '输入你的 API Key'} value={apiKey}
                       onChange={e => setApiKey(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 pr-10" />
-                    <button onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 pr-10 font-mono" />
+                    <button onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                       {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">API Base URL</label>
-                  <input type="text" value={apiBase} onChange={e => setApiBase(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">模型名称</label>
-                  <input type="text" value={modelName} onChange={e => setModelName(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
-                </div>
+                {provider && (
+                  <div className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+                    {PROVIDER_CONFIGS[provider]?.base && <p>API Base: <code className="text-gray-600">{PROVIDER_CONFIGS[provider].base}</code></p>}
+                  </div>
+                )}
                 <button onClick={saveModel} disabled={savingModel || !apiKey}
                   className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
                   {savingModel ? '保存中...' : '保存'}
