@@ -199,7 +199,7 @@ const Layout: React.FC = () => {
                       const max = Math.max(statsData.emergency_count ?? 0, statsData.high_count ?? 0, statsData.medium_count ?? 0, statsData.low_count ?? 0, 1)
                       return (
                         <div key={item.label} className="flex items-center gap-3 mb-2.5">
-                          <span className="text-sm text-gray-500 w-6 text-right">{item.label}</span>
+                          <span className="text-sm text-gray-500 w-8 text-right shrink-0 whitespace-nowrap">{item.label}</span>
                           <div className="flex-1 h-2.5 rounded-full" style={{ backgroundColor: item.bg }}>
                             <div className="h-full rounded-full transition-all" style={{ width: `${(item.value / max) * 100}%`, backgroundColor: item.color }} />
                           </div>
