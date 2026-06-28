@@ -163,7 +163,6 @@ export const hotspotsApi = {
     user_id?: string
     is_favorite?: boolean
     is_dismissed?: boolean
-    search?: string
   }) => api.get<PaginatedResponse<Hotspot>>('/hotspots', { params }),
 
   getHotspotDetail: (hotspotId: string, userId?: string) =>
@@ -193,11 +192,6 @@ export const collectionApi = {
   triggerManualRefresh: (date_from?: string, date_to?: string) =>
     api.post<{ task_id: string; status: string }>('/collection/manual-refresh', null, {
       params: { date_from, date_to }
-    }),
-
-  setLanguage: (lang: string) =>
-    api.post<{ success: boolean; lang: string; message: string }>('/collection/set-language', null, {
-      params: { lang }
     }),
 
   getLastUpdate: () =>

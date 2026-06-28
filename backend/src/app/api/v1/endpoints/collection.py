@@ -184,13 +184,6 @@ async def trigger_manual_refresh(
     return {"task_id": task_id, "status": "started"}
 
 
-@router.post("/collection/set-language")
-async def set_collection_language(lang: str = Query(..., description="cn 或 en")):
-    """切换采集信息源语言"""
-    collector_service.set_language(lang)
-    return {"success": True, "lang": lang, "message": f"信息源已切换至{'中文' if lang == 'cn' else '海外'}"}
-
-
 @router.get("/collection/last-update")
 async def get_last_update(
     db: AsyncSession = Depends(get_db)

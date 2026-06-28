@@ -115,7 +115,6 @@ const Dashboard: React.FC = () => {
         ...(advancedFilters.date_to && { date_to: advancedFilters.date_to }),
         ...(advancedFilters.source_names && { source_names: advancedFilters.source_names }),
         ...(advancedFilters.is_favorite !== 'all' && { is_favorite: advancedFilters.is_favorite === 'yes' }),
-        ...(searchQuery && { search: searchQuery }),
       })
       return response
     },
@@ -807,6 +806,91 @@ const Dashboard: React.FC = () => {
                 onKeyDown={e => { if (e.key === 'Enter') { const v = parseInt((e.target as HTMLInputElement).value, 10); if (v >= 1 && v <= totalPages) setPage(v) } }}
                 className="w-14 px-2 py-1.5 text-xs text-center border border-gray-300 rounded-md [appearance:textfield]" />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 来源分布 + 趋势 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-6 lg:col-span-2">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">热点来源分布</h3>
+          {statsData?.by_source && Object.keys(statsData.by_source).length > 0 ? (
+            <div className="flex items-center justify-center gap-8 h-64">
+              {/* SVG Donut Chart */}
+              <svg width="160" height="160" viewBox="0 0 160 160">
+                {(() => {
+                  const data = Object.entries(statsData.by_source!).map(([k, v]) => ({ label: k, value: v }))
+                  const total = data.reduce((s, d) => s + d.value, 0)
+                  const colors = ['#3B82F6', '#F59E0B', '#22C55E', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316']
+                  let cumPct = 0
+                  const r = 60, cx = 80, cy = 80, ir = 40
+                  const segments = data.map((d, i) => {
+                    const pct = d.value / total
+                    const startAngle = cumPct * 360 - 90
+                    const endAngle = (cumPct + pct) * 360 - 90
+                    cumPct += pct
+                    const startRad = startAngle * Math.PI / 180
+                    const endRad = endAngle * Math.PI / 180
+                    const x1 = cx + r * Math.cos(startRad)
+                    const y1 = cy + r * Math.sin(startRad)
+                    const x2 = cx + r * Math.cos(endRad)
+                    const y2 = cy + r * Math.sin(endRad)
+                    const largeArc = pct > 0.5 ? 1 : 0
+                    return <path key={d.label} d={`M ${cx} ${cy - ir}
+                      L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}
+                      L ${cx} ${cy - ir}`} fill={colors[i % colors.length]} opacity="0.85" />
+                  })
+                  // inner hole
+                  segments.push(<circle key="hole" cx={cx} cy={cy} r={ir} fill="white" />)
+                  return segments
+                })()}
+                <text x="80" y="76" textAnchor="middle" fontSize="22" fontWeight="bold" fill="#111827">
+                  {Object.values(statsData.by_source!).reduce<number>((a, b) => a + Number(b), 0)}
+                </text>
+                <text x="80" y="94" textAnchor="middle" fontSize="11" fill="#6B7280">总计</text>
+              </svg>
+              {/* Legend */}
+              <div className="space-y-2">
+                {Object.entries(statsData.by_source).map(([key, val], i) => {
+                  const colors = ['#3B82F6', '#F59E0B', '#22C55E', '#8B5CF6', '#EF4444', '#06B6D4', '#F97316']
+                  const srcValues = Object.values(statsData.by_source!).filter(v => typeof v === 'number') as number[]
+                  const total = srcValues.reduce((a, b) => a + b, 0)
+                  const labels: Record<string, string> = { NEWS: '新闻', TECH_BLOG: '技术博客', SOCIAL_MEDIA: '社交媒体', ACADEMIC: '学术', OTHER: '其他' }
+                  return (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: colors[i % colors.length] }} />
+                      <span className="text-xs text-gray-600">{labels[key] || key}</span>
+                      <span className="text-xs font-medium text-gray-900">{val}</span>
+                      <span className="text-[11px] text-gray-400">({Math.round((val / total) * 100)}%)</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-400 text-sm">暂无数据</div>
+          )}
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">重要性分布</h3>
+          <div className="space-y-4">
+            {importanceLevels.slice(1).filter(l => l.color).map((level) => (
+              <div key={level.id} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-3 h-3 rounded-full ${level.color}`}></div>
+                  <span className="text-gray-700">{level.label}</span>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${level.color}`}
+                      style={{ width: `${(level.count / Math.max(...importanceLevels.slice(1).filter(l => l.color).map(l => l.count), 1)) * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{level.count}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
