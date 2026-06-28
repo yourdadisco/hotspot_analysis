@@ -13,6 +13,7 @@ import ManualUpdateModal from '../components/ManualUpdateModal'
 import { renderSafeSummary } from '../utils/sanitize'
 import { useToastStore } from '../stores/toastStore'
 import { useProgressPolling } from '../hooks/useProgressPolling'
+import { t } from '../i18n'
 
 interface Stats {
   total_hotspots?: number
@@ -441,7 +442,7 @@ const Dashboard: React.FC = () => {
             className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 font-bold flex items-center space-x-2 shadow-lg shadow-indigo-500/30 animate-pulse"
           >
             <Zap size={20} />
-            <span className="text-base">一键更新解析热点</span>
+            <span className="text-base">{t('btn.quick')}</span>
           </button>
           <button
             onClick={handleRefresh}
@@ -449,7 +450,7 @@ const Dashboard: React.FC = () => {
             className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 flex items-center space-x-2 shadow-sm shadow-amber-500/20"
           >
             <RefreshCw size={16} className={isCollecting ? 'animate-spin' : ''} />
-            <span>{isCollecting ? '更新中...' : '手动更新'}</span>
+            <span>{isCollecting ? '更新中...' : t('btn.update')}</span>
           </button>
           <button
             onClick={handleOpenBatchDialog}
@@ -457,14 +458,14 @@ const Dashboard: React.FC = () => {
             className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-teal-500 text-white rounded-lg hover:from-cyan-600 hover:to-teal-600 disabled:opacity-50 flex items-center space-x-2 shadow-sm shadow-cyan-500/20"
           >
             <Target size={16} />
-            <span>{isBatchAnalyzing ? '分析中...' : '批量分析'}</span>
+            <span>{isBatchAnalyzing ? '分析中...' : t('btn.batch')}</span>
           </button>
           <button
             onClick={() => setShowAdvancedFilter(true)}
             className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 flex items-center space-x-2 shadow-sm shadow-blue-500/20"
           >
             <Filter size={16} />
-            <span>高级筛选</span>
+            <span>{t('btn.filter')}</span>
             {activeFilterCount > 0 && (
               <span className="bg-white/20 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
                 {activeFilterCount}
@@ -482,7 +483,7 @@ const Dashboard: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="搜索热点..."
+                placeholder={t('search.placeholder')}
                 className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -593,7 +594,7 @@ const Dashboard: React.FC = () => {
       {/* 热点列表 — 三列卡片 */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">最新热点</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{t('hotlist.title')}</h2>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-500">排序：</span>
             <select value={`${sortBy}:${sortOrder}`}

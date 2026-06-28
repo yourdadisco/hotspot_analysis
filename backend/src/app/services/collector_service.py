@@ -257,33 +257,43 @@ class RSSCollector(BaseCollector):
 
 
 class CollectorService:
-    """收集服务"""
+    CN_SOURCES = [
+        ("AI科技评论", SourceType.NEWS, "https://www.leiphone.com/feed"),
+        ("量子位", SourceType.NEWS, "https://www.qbitai.com/feed"),
+        ("新智元", SourceType.NEWS, "https://www.zhidx.com/rss"),
+        ("钛媒体", SourceType.NEWS, "https://www.tmtpost.com/feed"),
+        ("36氪", SourceType.NEWS, "https://36kr.com/feed"),
+        ("虎嗅", SourceType.NEWS, "https://www.huxiu.com/rss"),
+        ("OSCHINA", SourceType.TECH_BLOG, "https://www.oschina.net/news/rss"),
+    ]
+    EN_SOURCES = [
+        ("TechCrunch AI", SourceType.NEWS, "https://techcrunch.com/category/artificial-intelligence/feed/"),
+        ("MIT Tech Review", SourceType.NEWS, "https://www.technologyreview.com/feed/"),
+        ("Ars Technica", SourceType.NEWS, "https://feeds.arstechnica.com/arstechnica/features/"),
+        ("VentureBeat", SourceType.NEWS, "https://venturebeat.com/feed/"),
+        ("The Verge AI", SourceType.NEWS, "https://www.theverge.com/ai-artificial-intelligence/rss/index.xml"),
+    ]
 
     def __init__(self):
         self.collectors: List[BaseCollector] = []
-        self._init_collectors()
+        self._lang = "cn"
+        self._init_collectors("cn")
 
-    def _init_collectors(self):
-        """初始化收集器"""
-        # 不再使用模拟收集器，始终使用真实数据源
-        # 1. RSS订阅源 - 专注于AI前沿技术和权威信息源
-        # 用户要求：量子位、机器之心、AI科技评论、新智元（科技学习气息浓的平台）
-        # 由于机器之心RSS不可访问，使用钛媒体替代
-        rss_sources = [
-            ("AI科技评论", SourceType.NEWS, "https://www.leiphone.com/feed"),
-            ("量子位", SourceType.NEWS, "https://www.qbitai.com/feed"),
-            ("新智元", SourceType.NEWS, "https://www.zhidx.com/rss"),
-            ("钛媒体", SourceType.NEWS, "https://www.tmtpost.com/feed"),
-            # InfoQ RSS只返回"点击查看原文"，无实际内容，已移除
-            ("36氪", SourceType.NEWS, "https://36kr.com/feed"),
-            ("虎嗅", SourceType.NEWS, "https://www.huxiu.com/rss"),
-            ("OSCHINA", SourceType.TECH_BLOG, "https://www.oschina.net/news/rss"),
-        ]
-
-        for name, source_type, url in rss_sources:
+    def set_language(self, lang: str):
+        if lang == self._lang:
+            return
+        self._lang = lang
+        self.collectors = [c for c in self.collectors if not isinstance(c, RSSCollector)]
+        sources = self.EN_SOURCES if lang == "en" else self.CN_SOURCES
+        for name, source_type, url in sources:
             self.collectors.append(RSSCollector(name, source_type, url))
+        logger.info(f"信息源已切换至: {'英文' if lang == 'en' else '中文'} ({len(sources)} 个)")
 
-        logger.info(f"启用 {len(rss_sources)} 个RSS订阅源")
+    def _init_collectors(self, lang: str = "cn"):
+        sources = self.EN_SOURCES if lang == "en" else self.CN_SOURCES
+        for name, source_type, url in sources:
+            self.collectors.append(RSSCollector(name, source_type, url))
+        logger.info(f"启用 {len(sources)} 个RSS订阅源 ({'英文' if lang == 'en' else '中文'})")
 
         # 2. 搜索引擎收集器（无论模拟模式如何，根据配置启用）
         # 优先使用Bing搜索（根据用户偏好：搜索引擎一般是必应）

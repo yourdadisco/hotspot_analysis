@@ -190,6 +190,9 @@ export const collectionApi = {
   triggerAsync: () =>
     api.post<{ task_id: string; status: string }>('/collection/async'),
 
+  setLanguage: (lang: string) =>
+    api.post<{ success: boolean; lang: string }>('/collection/set-language', null, { params: { lang } }),
+
   triggerManualRefresh: (date_from?: string, date_to?: string) =>
     api.post<{ task_id: string; status: string }>('/collection/manual-refresh', null, {
       params: { date_from, date_to }
