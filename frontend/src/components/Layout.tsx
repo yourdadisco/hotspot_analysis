@@ -7,7 +7,6 @@ import UsageGuideModal from './UsageGuideModal'
 import TutorialPrompt from './TutorialPrompt'
 import NotificationPanel from './NotificationPanel'
 import { useWebSocket } from '../hooks/useWebSocket'
-import { t, getLang, setLang } from '../i18n'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
@@ -104,12 +103,6 @@ const Layout: React.FC = () => {
               </div>
             </div>
 
-            {/* 语言切换 */}
-            <button onClick={() => { setLang(getLang() === 'zh' ? 'en' : 'zh'); window.location.reload() }}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors" style={{ color: '#64748B' }}>
-              {getLang() === 'zh' ? 'EN' : '中文'}
-            </button>
-
             {/* 用户信息 */}
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -179,24 +172,24 @@ const Layout: React.FC = () => {
 
               {/* 统计信息 */}
               <div className="mt-6 pt-5 border-t border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{t('stats.today')}</h3>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">今日概览</h3>
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   <div className="bg-indigo-50 rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-indigo-600">{statsData?.today_count ?? '-'}</p>
-                    <p className="text-[11px] text-indigo-500 font-medium mt-0.5">{t('stats.new')}</p>
+                    <p className="text-[11px] text-indigo-500 font-medium mt-0.5">新热点</p>
                   </div>
                   <div className="bg-amber-50 rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-amber-600">{statsData?.pending_analysis ?? '-'}</p>
-                    <p className="text-[11px] text-amber-500 font-medium mt-0.5">{t('stats.pending')}</p>
+                    <p className="text-[11px] text-amber-500 font-medium mt-0.5">待分析</p>
                   </div>
                   <div className="bg-red-50 rounded-lg p-3 text-center">
                     <p className="text-2xl font-bold text-red-600">{statsData?.emergency_count ?? '-'}</p>
-                    <p className="text-[11px] text-red-500 font-medium mt-0.5">{t('stats.emergency')}</p>
+                    <p className="text-[11px] text-red-500 font-medium mt-0.5">紧急</p>
                   </div>
                 </div>
                 {statsData && (
                   <div>
-                    <h4 className="text-[11px] font-medium text-gray-500 mb-2.5">{t('stats.importance')}</h4>
+                    <h4 className="text-[11px] font-medium text-gray-500 mb-2.5">重要性分布</h4>
                     {[
                       { label: '紧急', value: statsData.emergency_count ?? 0, color: '#EF4444', bg: '#FEF2F2' },
                       { label: '高', value: statsData.high_count ?? 0, color: '#F97316', bg: '#FFF7ED' },
