@@ -7,6 +7,7 @@ import UsageGuideModal from './UsageGuideModal'
 import TutorialPrompt from './TutorialPrompt'
 import NotificationPanel from './NotificationPanel'
 import { useWebSocket } from '../hooks/useWebSocket'
+import { t, getLang, setLang } from '../i18n'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
@@ -16,7 +17,6 @@ const Layout: React.FC = () => {
   const [hasUnread, setHasUnread] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false)
-
   const userMenuRef = useRef<HTMLDivElement>(null)
   const userId = localStorage.getItem('user_id') || ''
 
@@ -104,6 +104,12 @@ const Layout: React.FC = () => {
               </div>
             </div>
 
+            {/* 语言切换 */}
+            <button onClick={() => { setLang(getLang() === 'zh' ? 'en' : 'zh'); window.location.reload() }}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors" style={{ color: '#64748B' }}>
+              {getLang() === 'zh' ? 'EN' : '中文'}
+            </button>
+
             {/* 用户信息 */}
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -172,46 +178,42 @@ const Layout: React.FC = () => {
               </ul>
 
               {/* 统计信息 */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">今日概览</h3>
-                <div className="space-y-2.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">新热点</span>
-                    <span className="font-semibold text-gray-900">{statsData?.today_count ?? '-'}</span>
+              <div className="mt-6 pt-5 border-t border-gray-200">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{t('stats.today')}</h3>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="bg-indigo-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-indigo-600">{statsData?.today_count ?? '-'}</p>
+                    <p className="text-[11px] text-indigo-500 font-medium mt-0.5">{t('stats.new')}</p>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">待分析</span>
-                    <span className="font-semibold text-amber-600">{statsData?.pending_analysis ?? '-'}</span>
+                  <div className="bg-amber-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-amber-600">{statsData?.pending_analysis ?? '-'}</p>
+                    <p className="text-[11px] text-amber-500 font-medium mt-0.5">{t('stats.pending')}</p>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">紧急</span>
-                    <span className="font-semibold text-red-600">{statsData?.emergency_count ?? '-'}</span>
+                  <div className="bg-red-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-red-600">{statsData?.emergency_count ?? '-'}</p>
+                    <p className="text-[11px] text-red-500 font-medium mt-0.5">{t('stats.emergency')}</p>
                   </div>
                 </div>
-                {/* 重要性分布 */}
                 {statsData && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h4 className="text-xs text-gray-500 mb-2">重要性分布</h4>
-                    <div className="space-y-1.5">
-                      {[
-                        { label: '紧急', value: statsData.emergency_count ?? 0, color: '#EF4444' },
-                        { label: '高', value: statsData.high_count ?? 0, color: '#F97316' },
-                        { label: '中', value: statsData.medium_count ?? 0, color: '#EAB308' },
-                        { label: '低', value: statsData.low_count ?? 0, color: '#22C55E' },
-                      ].map(item => {
-                        const max = Math.max(statsData.emergency_count ?? 0, statsData.high_count ?? 0, statsData.medium_count ?? 0, statsData.low_count ?? 0, 1)
-                        return (
-                          <div key={item.label} className="flex items-center gap-2">
-                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                            <span className="text-xs text-gray-500 flex-1">{item.label}</span>
-                            <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full" style={{ width: `${(item.value / max) * 100}%`, backgroundColor: item.color }} />
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 w-4 text-right">{item.value}</span>
+                  <div>
+                    <h4 className="text-[11px] font-medium text-gray-500 mb-2.5">{t('stats.importance')}</h4>
+                    {[
+                      { label: '紧急', value: statsData.emergency_count ?? 0, color: '#EF4444', bg: '#FEF2F2' },
+                      { label: '高', value: statsData.high_count ?? 0, color: '#F97316', bg: '#FFF7ED' },
+                      { label: '中', value: statsData.medium_count ?? 0, color: '#EAB308', bg: '#FEFCE8' },
+                      { label: '低', value: statsData.low_count ?? 0, color: '#22C55E', bg: '#F0FDF4' },
+                    ].map(item => {
+                      const max = Math.max(statsData.emergency_count ?? 0, statsData.high_count ?? 0, statsData.medium_count ?? 0, statsData.low_count ?? 0, 1)
+                      return (
+                        <div key={item.label} className="flex items-center gap-2.5 mb-1.5">
+                          <span className="text-xs text-gray-500 w-6 text-right">{item.label}</span>
+                          <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: item.bg }}>
+                            <div className="h-full rounded-full transition-all" style={{ width: `${(item.value / max) * 100}%`, backgroundColor: item.color }} />
                           </div>
-                        )
-                      })}
-                    </div>
+                          <span className="text-xs font-semibold text-gray-700 w-5 text-right">{item.value}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
