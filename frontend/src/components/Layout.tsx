@@ -173,10 +173,8 @@ const Layout: React.FC = () => {
 
               {/* 统计信息 */}
               <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  今日统计
-                </h3>
-                <div className="space-y-3">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">今日概览</h3>
+                <div className="space-y-2.5">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">新热点</span>
                     <span className="font-semibold text-gray-900">{statsData?.today_count ?? '-'}</span>
@@ -186,10 +184,36 @@ const Layout: React.FC = () => {
                     <span className="font-semibold text-amber-600">{statsData?.pending_analysis ?? '-'}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">紧急事项</span>
+                    <span className="text-sm text-gray-600">紧急</span>
                     <span className="font-semibold text-red-600">{statsData?.emergency_count ?? '-'}</span>
                   </div>
                 </div>
+                {/* 重要性分布 */}
+                {statsData && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <h4 className="text-xs text-gray-500 mb-2">重要性分布</h4>
+                    <div className="space-y-1.5">
+                      {[
+                        { label: '紧急', value: statsData.emergency_count ?? 0, color: '#EF4444' },
+                        { label: '高', value: statsData.high_count ?? 0, color: '#F97316' },
+                        { label: '中', value: statsData.medium_count ?? 0, color: '#EAB308' },
+                        { label: '低', value: statsData.low_count ?? 0, color: '#22C55E' },
+                      ].map(item => {
+                        const max = Math.max(statsData.emergency_count ?? 0, statsData.high_count ?? 0, statsData.medium_count ?? 0, statsData.low_count ?? 0, 1)
+                        return (
+                          <div key={item.label} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                            <span className="text-xs text-gray-500 flex-1">{item.label}</span>
+                            <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${(item.value / max) * 100}%`, backgroundColor: item.color }} />
+                            </div>
+                            <span className="text-xs font-medium text-gray-700 w-4 text-right">{item.value}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 使用教程 — 醒目标识 */}
