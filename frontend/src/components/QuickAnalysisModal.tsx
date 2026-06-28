@@ -13,9 +13,9 @@ interface Props {
 
 const industries = ['科技/互联网', '金融/保险', '医疗/健康', '教育/培训', '制造业', '零售/电商', '媒体/娱乐', '其他']
 const PROVIDER_CONFIGS: Record<string, { base: string; models: string[] }> = {
-  'OpenAI': { base: 'https://api.openai.com/v1', models: ['gpt-5', 'gpt-5-pro', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini'] },
+  'OpenAI': { base: 'https://api.openai.com/v1', models: ['gpt-5.5', 'gpt-5.5-pro', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.4-pro', 'o3', 'o4-mini'] },
   'DeepSeek': { base: 'https://api.deepseek.com', models: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'] },
-  'Groq': { base: 'https://api.groq.com/openai/v1', models: ['llama-4-70b-instruct', 'llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'qwen-3-32b'] },
+  'Groq': { base: 'https://api.groq.com/openai/v1', models: ['llama-4-70b-instruct', 'llama-3.3-70b-versatile', 'mixtral-8x7b-32768'] },
   'Together AI': { base: 'https://api.together.xyz/v1', models: ['meta-llama/Llama-4-Maverick-17B', 'meta-llama/Llama-4-Scout-17B', 'deepseek-ai/DeepSeek-R1', 'Qwen/Qwen3-32B'] },
   'Mistral': { base: 'https://api.mistral.ai/v1', models: ['mistral-large-latest', 'mistral-small-latest', 'codestral-latest'] },
   '硅基流动': { base: 'https://api.siliconflow.cn/v1', models: ['deepseek-ai/DeepSeek-V3', 'Qwen/Qwen2.5-72B-Instruct', 'Qwen/QwQ-32B', 'THUDM/glm-4-9b-chat'] },
