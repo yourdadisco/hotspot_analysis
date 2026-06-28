@@ -105,22 +105,8 @@ const Layout: React.FC = () => {
             </div>
 
             {/* 语言切换 */}
-            <button onClick={() => {
-              const newLang = getLang() === 'zh' ? 'en' : 'zh'
-              if (newLang === 'en' && !confirm('切换至 English 后将同时切换信息源为海外 AI 媒体（TechCrunch / MIT / Ars 等），是否继续？\n\nSwitching to English will also switch data sources to international AI media.')) return
-              setLang(newLang)
-              import('../services/api').then(m => m.collectionApi.setLanguage(newLang)).catch(() => {})
-              window.location.reload()
-            }}
-              className="relative flex items-center gap-2 px-4 py-1.5 text-sm font-medium rounded-lg border transition-all duration-200 hover:shadow-md"
-              style={{
-                backgroundColor: getLang() === 'en' ? '#6366F1' : '#FFFFFF',
-                color: getLang() === 'en' ? '#FFFFFF' : '#374151',
-                borderColor: getLang() === 'en' ? '#6366F1' : '#D1D5DB',
-              }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
+            <button onClick={() => { setLang(getLang() === 'zh' ? 'en' : 'zh'); window.location.reload() }}
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors" style={{ color: '#64748B' }}>
               {getLang() === 'zh' ? 'EN' : '中文'}
             </button>
 
@@ -193,41 +179,41 @@ const Layout: React.FC = () => {
 
               {/* 统计信息 */}
               <div className="mt-6 pt-5 border-t border-gray-200">
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-1">{t('stats.today')}</h3>
-                <div className="space-y-1.5 mb-4">
-                  {[
-                    { label: t('stats.new'), value: statsData?.today_count ?? '-', color: '#6366F1', bg: '#EEF2FF' },
-                    { label: t('stats.pending'), value: statsData?.pending_analysis ?? '-', color: '#F59E0B', bg: '#FEF3C7' },
-                    { label: t('stats.emergency'), value: statsData?.emergency_count ?? '-', color: '#EF4444', bg: '#FEF2F2' },
-                  ].map(item => (
-                    <div key={item.label} className="flex items-center justify-between px-3 py-2.5 rounded-lg" style={{ backgroundColor: item.bg }}>
-                      <span className="text-sm font-medium" style={{ color: item.color }}>{item.label}</span>
-                      <span className="text-lg font-bold" style={{ color: item.color }}>{item.value}</span>
-                    </div>
-                  ))}
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">{t('stats.today')}</h3>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="bg-indigo-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-indigo-600">{statsData?.today_count ?? '-'}</p>
+                    <p className="text-[11px] text-indigo-500 font-medium mt-0.5">{t('stats.new')}</p>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-amber-600">{statsData?.pending_analysis ?? '-'}</p>
+                    <p className="text-[11px] text-amber-500 font-medium mt-0.5">{t('stats.pending')}</p>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-3 text-center">
+                    <p className="text-2xl font-bold text-red-600">{statsData?.emergency_count ?? '-'}</p>
+                    <p className="text-[11px] text-red-500 font-medium mt-0.5">{t('stats.emergency')}</p>
+                  </div>
                 </div>
                 {statsData && (
-                  <div className="px-1">
-                    <h4 className="text-xs font-medium text-gray-400 mb-3">{t('stats.importance')}</h4>
-                    <div className="space-y-2">
-                      {[
-                        { label: '紧急', value: statsData.emergency_count ?? 0, color: '#EF4444' },
-                        { label: '高', value: statsData.high_count ?? 0, color: '#F97316' },
-                        { label: '中', value: statsData.medium_count ?? 0, color: '#EAB308' },
-                        { label: '低', value: statsData.low_count ?? 0, color: '#22C55E' },
-                      ].map(item => {
-                        const max = Math.max(statsData.emergency_count ?? 0, statsData.high_count ?? 0, statsData.medium_count ?? 0, statsData.low_count ?? 0, 1)
-                        return (
-                          <div key={item.label} className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500 w-6 text-right shrink-0">{item.label}</span>
-                            <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.min(100, (item.value / max) * 100)}%`, backgroundColor: item.color }} />
-                            </div>
-                            <span className="text-xs font-semibold text-gray-600 w-5 text-right shrink-0">{item.value}</span>
+                  <div>
+                    <h4 className="text-[11px] font-medium text-gray-500 mb-2.5">{t('stats.importance')}</h4>
+                    {[
+                      { label: '紧急', value: statsData.emergency_count ?? 0, color: '#EF4444', bg: '#FEF2F2' },
+                      { label: '高', value: statsData.high_count ?? 0, color: '#F97316', bg: '#FFF7ED' },
+                      { label: '中', value: statsData.medium_count ?? 0, color: '#EAB308', bg: '#FEFCE8' },
+                      { label: '低', value: statsData.low_count ?? 0, color: '#22C55E', bg: '#F0FDF4' },
+                    ].map(item => {
+                      const max = Math.max(statsData.emergency_count ?? 0, statsData.high_count ?? 0, statsData.medium_count ?? 0, statsData.low_count ?? 0, 1)
+                      return (
+                        <div key={item.label} className="flex items-center gap-2.5 mb-1.5">
+                          <span className="text-xs text-gray-500 w-6 text-right">{item.label}</span>
+                          <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: item.bg }}>
+                            <div className="h-full rounded-full transition-all" style={{ width: `${(item.value / max) * 100}%`, backgroundColor: item.color }} />
                           </div>
-                        )
-                      })}
-                    </div>
+                          <span className="text-xs font-semibold text-gray-700 w-5 text-right">{item.value}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
