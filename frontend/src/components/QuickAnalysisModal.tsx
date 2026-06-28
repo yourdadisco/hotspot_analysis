@@ -13,8 +13,8 @@ interface Props {
 
 const industries = ['科技/互联网', '金融/保险', '医疗/健康', '教育/培训', '制造业', '零售/电商', '媒体/娱乐', '其他']
 const PROVIDER_CONFIGS: Record<string, { base: string; models: string[] }> = {
-  'DeepSeek': { base: 'https://api.deepseek.com', models: ['deepseek-chat', 'deepseek-reasoner'] },
-  'OpenAI': { base: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'o3', 'o4-mini'] },
+  'DeepSeek': { base: 'https://api.deepseek.com', models: ['deepseek-v4-flash', 'deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'] },
+  'OpenAI': { base: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4.1', 'gpt-4.1-mini', 'o3', 'o4-mini', 'gpt-5', 'gpt-5-mini', 'gpt-5-pro'] },
   '硅基流动': { base: 'https://api.siliconflow.cn/v1', models: ['deepseek-ai/DeepSeek-V3', 'Qwen/Qwen2.5-72B-Instruct', 'Qwen/QwQ-32B', 'THUDM/glm-4-9b-chat'] },
   '通义千问': { base: 'https://dashscope.aliyuncs.com/compatible-mode/v1', models: ['qwen-plus', 'qwen-turbo', 'qwen-max', 'qwen-long'] },
   'Kimi': { base: 'https://api.moonshot.cn/v1', models: ['moonshot-v1-32k', 'moonshot-v1-128k', 'moonshot-v1-auto'] },

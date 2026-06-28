@@ -81,7 +81,7 @@ const Layout: React.FC = () => {
   const navItems = [
     { path: '/dashboard', icon: <Home size={20} />, label: '热点看板' },
     { path: '/favorites', icon: <Heart size={20} />, label: '我的收藏' },
-    { path: '/business', icon: <Briefcase size={20} />, label: '公司信息' },
+    { path: '/business', icon: <Briefcase size={20} />, label: '您的工作' },
     { path: '/model-config', icon: <Cpu size={20} />, label: '模型配置' },
     { path: '/api-usage', icon: <BarChart3 size={20} />, label: 'API 用量' },
     { path: '/settings', icon: <Settings size={20} />, label: '设置' },

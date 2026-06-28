@@ -49,7 +49,7 @@ const BusinessConfig: React.FC = () => {
     mutationFn: (data: { company_name: string; industry: string; business_description: string }) =>
       authApi.updateUserBusiness(userId, data),
     onSuccess: () => {
-      addToast('业务配置已保存！', 'success')
+      addToast('已保存！', 'success')
     },
     onError: (error: any) => {
       addToast(`保存失败: ${error.response?.data?.detail || '未知错误'}`, 'error')
@@ -94,8 +94,8 @@ const BusinessConfig: React.FC = () => {
     <div className="space-y-6">
       {/* 标题 */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">你的业务</h1>
-        <p className="text-gray-600 mt-1">告诉 AI 你的公司做什么，分析结果会更精准。比如行业、产品、关注的技术方向。</p>
+        <h1 className="text-2xl font-bold text-gray-900">您的工作</h1>
+        <p className="text-gray-600 mt-1">告诉 AI 您的工作做什么，分析结果会更精准。比如行业、产品、关注的技术方向。</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
