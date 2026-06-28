@@ -94,8 +94,8 @@ const BusinessConfig: React.FC = () => {
     <div className="space-y-6">
       {/* 标题 */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">业务配置</h1>
-        <p className="text-gray-600 mt-1">配置您的业务信息，让AI更精准地分析热点对您的影响</p>
+        <h1 className="text-2xl font-bold text-gray-900">你的业务</h1>
+        <p className="text-gray-600 mt-1">告诉 AI 你的公司做什么，分析结果会更精准。比如行业、产品、关注的技术方向。</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
