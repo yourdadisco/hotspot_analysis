@@ -46,6 +46,7 @@ class HotspotService:
         user_id: Optional[str] = None,
         is_dismissed: Optional[bool] = False,
         is_favorite: Optional[bool] = None,
+        search: Optional[str] = None,
     ):
         """
         获取热点列表（带缓存）
@@ -108,6 +109,18 @@ class HotspotService:
                 stmt = stmt.where(Hotspot.collected_at <= dt_to)
             except ValueError:
                 pass
+
+        # 关键词搜索（模糊匹配，不要求词序）
+        if search:
+            keywords = [kw.strip() for kw in search.split() if kw.strip()]
+            if keywords:
+                from sqlalchemy import or_
+                conditions = []
+                for kw in keywords:
+                    p = f"%{kw}%"
+                    conditions.append(Hotspot.title.ilike(p))
+                    conditions.append(Hotspot.summary.ilike(p))
+                stmt = stmt.where(or_(*conditions))
 
         # 排序
         if sort_by == "relevance_score" and user_id:

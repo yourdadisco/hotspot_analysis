@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Search, Filter, Clock, TrendingUp, AlertTriangle,
-  BarChart3, RefreshCw, Target, Trash2, Zap
+  Search, Filter, RefreshCw, Target, Trash2, Zap
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { hotspotsApi, collectionApi, analysisApi, userActionsApi, userSettingsApi, type PaginatedResponse, type Hotspot } from '../services/api'
@@ -115,6 +114,7 @@ const Dashboard: React.FC = () => {
         ...(advancedFilters.date_to && { date_to: advancedFilters.date_to }),
         ...(advancedFilters.source_names && { source_names: advancedFilters.source_names }),
         ...(advancedFilters.is_favorite !== 'all' && { is_favorite: advancedFilters.is_favorite === 'yes' }),
+        ...(searchQuery && { search: searchQuery }),
       })
       return response
     },
@@ -244,38 +244,6 @@ const Dashboard: React.FC = () => {
     pages.push(totalPages)
     return pages
   }
-
-  // 计算统计数据
-  const stats = [
-    {
-      label: '今日热点',
-      value: statsData?.today_count?.toString() || '0',
-      icon: TrendingUp,
-      change: '+0',
-      color: 'text-blue-600'
-    },
-    {
-      label: '紧急事项',
-      value: statsData?.emergency_count?.toString() || '0',
-      icon: AlertTriangle,
-      change: '+0',
-      color: 'text-red-600'
-    },
-    {
-      label: '待分析',
-      value: statsData?.pending_analysis?.toString() || '0',
-      icon: Clock,
-      change: '+0',
-      color: 'text-amber-600'
-    },
-    {
-      label: '总热点数',
-      value: statsData?.total_hotspots?.toString() || '0',
-      icon: BarChart3,
-      change: '+0',
-      color: 'text-green-600'
-    },
-  ]
 
   // 重要性级别筛选 + 已忽略
   const isShowingDismissed = selectedImportance === 'dismissed'
@@ -503,21 +471,6 @@ const Dashboard: React.FC = () => {
             )}
           </button>
         </div>
-      </div>
-
-      {/* 统计卡片 — 紧凑版 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl shadow-sm px-5 py-4 flex items-center justify-between min-h-0">
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-0.5">{stat.label}</p>
-              <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
-            </div>
-            <div className={`p-2.5 rounded-lg ${stat.color.replace('text', 'bg')} bg-opacity-10`}>
-              <stat.icon className={stat.color} size={20} />
-            </div>
-          </div>
-        ))}
       </div>
 
       {/* 筛选栏 — 紧凑版 */}

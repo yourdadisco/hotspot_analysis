@@ -163,6 +163,7 @@ export const hotspotsApi = {
     user_id?: string
     is_favorite?: boolean
     is_dismissed?: boolean
+    search?: string
   }) => api.get<PaginatedResponse<Hotspot>>('/hotspots', { params }),
 
   getHotspotDetail: (hotspotId: string, userId?: string) =>
