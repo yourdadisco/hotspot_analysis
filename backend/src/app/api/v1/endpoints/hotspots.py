@@ -29,6 +29,7 @@ async def get_hotspots(
     user_id: Optional[str] = Query(None, description="用户ID，用于查询分析状态"),
     is_dismissed: Optional[bool] = Query(False, description="是否包含已忽略的热点"),
     is_favorite: Optional[bool] = Query(None, description="按收藏状态筛选"),
+    search: Optional[str] = Query(None, description="关键词搜索（模糊匹配）"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -52,6 +53,7 @@ async def get_hotspots(
         user_id=user_id,
         is_dismissed=is_dismissed,
         is_favorite=is_favorite,
+        search=search,
     )
 
     return PaginatedResponse(

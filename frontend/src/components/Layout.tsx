@@ -7,6 +7,9 @@ import UsageGuideModal from './UsageGuideModal'
 import TutorialPrompt from './TutorialPrompt'
 import NotificationPanel from './NotificationPanel'
 import { useWebSocket } from '../hooks/useWebSocket'
+import { t, getLang, setLang } from '../i18n'
+import { collectionApi } from '../services/api'
+import { useToastStore } from '../stores/toastStore'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
@@ -16,9 +19,13 @@ const Layout: React.FC = () => {
   const [hasUnread, setHasUnread] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
   const [showTutorialPrompt, setShowTutorialPrompt] = useState(false)
+  const [showLangConfirm, setShowLangConfirm] = useState(false)
+  const [pendingLang, setPendingLang] = useState<'zh' | 'en'>('zh')
+  const addToast = useToastStore(s => s.addToast)
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const userId = localStorage.getItem('user_id') || ''
+  const currentLang = getLang()
 
   // 首次登录显示使用教程引导
   useEffect(() => {
@@ -103,6 +110,32 @@ const Layout: React.FC = () => {
                 <p className="text-xs text-gray-500">智能追踪AI行业动态</p>
               </div>
             </div>
+
+            {/* 语言切换 */}
+            <button onClick={() => { setPendingLang(currentLang === 'zh' ? 'en' : 'zh'); setShowLangConfirm(true) }}
+              className="px-2.5 py-1.5 text-xs font-medium rounded-lg hover:bg-gray-100 transition-colors" style={{ color: '#64748B' }}>
+              {currentLang === 'zh' ? 'EN' : '中文'}
+            </button>
+
+            {showLangConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setShowLangConfirm(false)}>
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                <div className="relative bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+                  <h3 className="text-base font-bold text-gray-900 mb-2">{t('lang.warning').split('?')[0]}?</h3>
+                  <p className="text-sm text-gray-600 mb-4">{t('lang.warning')}</p>
+                  <div className="flex justify-end gap-3">
+                    <button onClick={() => setShowLangConfirm(false)} className="btn-secondary text-sm">取消</button>
+                    <button onClick={async () => {
+                      setLang(pendingLang)
+                      try { await collectionApi.setLanguage(pendingLang) } catch {}
+                      addToast(t('lang.switch_to_en'), 'success')
+                      setShowLangConfirm(false)
+                      window.location.reload()
+                    }} className="btn-primary text-sm">{t('lang.switch_to_en')}</button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 用户信息 */}
             <div className="flex items-center space-x-4">
