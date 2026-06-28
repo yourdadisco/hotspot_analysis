@@ -176,15 +176,15 @@ const Layout: React.FC = () => {
                 <div className="grid grid-cols-3 gap-3 mb-6">
                   <div className="bg-indigo-50 rounded-xl py-5 px-2 text-center">
                     <p className="text-3xl font-bold text-indigo-600">{statsData?.today_count ?? '-'}</p>
-                    <p className="text-xs text-indigo-500 font-medium mt-1.5">新热点</p>
+                    <p className="text-xs text-indigo-500 font-medium mt-1.5 whitespace-nowrap">新热点</p>
                   </div>
                   <div className="bg-amber-50 rounded-xl py-5 px-2 text-center">
                     <p className="text-3xl font-bold text-amber-600">{statsData?.pending_analysis ?? '-'}</p>
-                    <p className="text-xs text-amber-500 font-medium mt-1.5">待分析</p>
+                    <p className="text-xs text-amber-500 font-medium mt-1.5 whitespace-nowrap">待分析</p>
                   </div>
                   <div className="bg-red-50 rounded-xl py-5 px-2 text-center">
                     <p className="text-3xl font-bold text-red-600">{statsData?.emergency_count ?? '-'}</p>
-                    <p className="text-xs text-red-500 font-medium mt-1.5">紧急</p>
+                    <p className="text-xs text-red-500 font-medium mt-1.5 whitespace-nowrap">紧急</p>
                   </div>
                 </div>
                 {statsData && (
