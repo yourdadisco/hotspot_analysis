@@ -171,25 +171,25 @@ const Layout: React.FC = () => {
               </ul>
 
               {/* 统计信息 */}
-              <div className="mt-6 pt-5 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">今日概览</h3>
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="bg-indigo-50 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-indigo-600">{statsData?.today_count ?? '-'}</p>
-                    <p className="text-xs text-indigo-500 font-medium mt-0.5">新热点</p>
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-5">今日概览</h3>
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="bg-indigo-50 rounded-xl py-5 px-2 text-center">
+                    <p className="text-3xl font-bold text-indigo-600">{statsData?.today_count ?? '-'}</p>
+                    <p className="text-xs text-indigo-500 font-medium mt-1.5">新热点</p>
                   </div>
-                  <div className="bg-amber-50 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-amber-600">{statsData?.pending_analysis ?? '-'}</p>
-                    <p className="text-xs text-amber-500 font-medium mt-0.5">待分析</p>
+                  <div className="bg-amber-50 rounded-xl py-5 px-2 text-center">
+                    <p className="text-3xl font-bold text-amber-600">{statsData?.pending_analysis ?? '-'}</p>
+                    <p className="text-xs text-amber-500 font-medium mt-1.5">待分析</p>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-3 text-center">
-                    <p className="text-2xl font-bold text-red-600">{statsData?.emergency_count ?? '-'}</p>
-                    <p className="text-xs text-red-500 font-medium mt-0.5">紧急</p>
+                  <div className="bg-red-50 rounded-xl py-5 px-2 text-center">
+                    <p className="text-3xl font-bold text-red-600">{statsData?.emergency_count ?? '-'}</p>
+                    <p className="text-xs text-red-500 font-medium mt-1.5">紧急</p>
                   </div>
                 </div>
                 {statsData && (
                   <div>
-                    <h4 className="text-sm font-medium text-gray-500 mb-2.5">重要性分布</h4>
+                    <h4 className="text-sm font-medium text-gray-500 mb-4">重要性分布</h4>
                     {[
                       { label: '紧急', value: statsData.emergency_count ?? 0, color: '#EF4444', bg: '#FEF2F2' },
                       { label: '高', value: statsData.high_count ?? 0, color: '#F97316', bg: '#FFF7ED' },
@@ -198,12 +198,12 @@ const Layout: React.FC = () => {
                     ].map(item => {
                       const max = Math.max(statsData.emergency_count ?? 0, statsData.high_count ?? 0, statsData.medium_count ?? 0, statsData.low_count ?? 0, 1)
                       return (
-                        <div key={item.label} className="flex items-center gap-2.5 mb-1.5">
-                          <span className="text-xs text-gray-500 w-6 text-right">{item.label}</span>
-                          <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: item.bg }}>
+                        <div key={item.label} className="flex items-center gap-3 mb-2.5">
+                          <span className="text-sm text-gray-500 w-6 text-right">{item.label}</span>
+                          <div className="flex-1 h-2.5 rounded-full" style={{ backgroundColor: item.bg }}>
                             <div className="h-full rounded-full transition-all" style={{ width: `${(item.value / max) * 100}%`, backgroundColor: item.color }} />
                           </div>
-                          <span className="text-xs font-semibold text-gray-700 w-5 text-right">{item.value}</span>
+                          <span className="text-sm font-semibold text-gray-700 w-5 text-right">{item.value}</span>
                         </div>
                       )
                     })}
