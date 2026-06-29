@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Cpu, Key, Globe, Box, Save, Play, HelpCircle, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react'
+import { Cpu, Key, Box, Save, Play, HelpCircle, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react'
 import { modelConfigApi } from '../services/api'
 import { useToastStore } from '../stores/toastStore'
 
@@ -9,16 +9,21 @@ const ModelConfig: React.FC = () => {
   const addToast = useToastStore((s) => s.addToast)
   const queryClient = useQueryClient()
 
-  const [provider, setProvider] = useState('deepseek')
+  const [provider, setProvider] = useState('DeepSeek')
   const [apiKey, setApiKey] = useState('')
   const [apiBaseUrl, setApiBaseUrl] = useState('https://api.deepseek.com')
   const [modelName, setModelName] = useState('deepseek-chat')
   const [showApiKey, setShowApiKey] = useState(false)
 
   const providers = [
-    { id: 'deepseek', label: 'DeepSeek', defaultBaseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat' },
-    { id: 'openai', label: 'OpenAI', defaultBaseUrl: 'https://api.openai.com/v1', defaultModel: 'gpt-4o' },
-    { id: 'openai_compatible', label: 'OpenAI Compatible', defaultBaseUrl: '', defaultModel: '' },
+    { id: 'DeepSeek', label: 'DeepSeek', defaultBaseUrl: 'https://api.deepseek.com', defaultModel: 'deepseek-chat' },
+    { id: 'OpenAI', label: 'OpenAI', defaultBaseUrl: 'https://api.openai.com/v1', defaultModel: 'gpt-4o' },
+    { id: 'Anthropic', label: 'Anthropic', defaultBaseUrl: 'https://api.anthropic.com/v1', defaultModel: 'claude-sonnet-4-20250514' },
+    { id: 'Kimi', label: 'Kimi', defaultBaseUrl: 'https://api.moonshot.cn/v1', defaultModel: 'moonshot-v1-32k' },
+    { id: 'MiniMax', label: 'MiniMax', defaultBaseUrl: 'https://api.minimax.chat/v1', defaultModel: 'MiniMax-Text-01' },
+    { id: 'Mimo', label: 'Mimo', defaultBaseUrl: 'https://api.mimo.com/v1', defaultModel: 'mimo-chat' },
+    { id: '豆包', label: '豆包', defaultBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3', defaultModel: 'doubao-pro-32k' },
+    { id: 'custom', label: '自定义', defaultBaseUrl: '', defaultModel: '' },
   ]
 
   // 获取模型配置
@@ -58,7 +63,7 @@ const ModelConfig: React.FC = () => {
   // 填充表单
   useEffect(() => {
     if (configData) {
-      setProvider(configData.provider || 'deepseek')
+      setProvider(configData.provider || 'DeepSeek')
       setApiKey(configData.api_key || '')
       setApiBaseUrl(configData.api_base_url || 'https://api.deepseek.com')
       setModelName(configData.model_name || 'deepseek-chat')
@@ -144,20 +149,23 @@ const ModelConfig: React.FC = () => {
             <div className="space-y-6">
               {/* 提供商 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   模型提供商
                 </label>
-                <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-                  <select
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                    value={provider}
-                    onChange={(e) => handleProviderChange(e.target.value)}
-                  >
-                    {providers.map((p) => (
-                      <option key={p.id} value={p.id}>{p.label}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {providers.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleProviderChange(p.id)}
+                      className={`px-3 py-2.5 text-sm rounded-lg border transition-all text-left ${
+                        provider === p.id
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -192,7 +200,7 @@ const ModelConfig: React.FC = () => {
                   API 基础 URL
                 </label>
                 <div className="relative">
-                  <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <Box className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                   <input
                     type="text"
                     placeholder="https://api.deepseek.com"
@@ -249,7 +257,7 @@ const ModelConfig: React.FC = () => {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">如何获取 API 密钥？</h3>
                 <ul className="space-y-3 text-gray-700">
-                  {provider === 'deepseek' && (
+                  {provider === 'DeepSeek' && (
                     <>
                       <li className="flex items-start space-x-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
@@ -265,7 +273,7 @@ const ModelConfig: React.FC = () => {
                       </li>
                     </>
                   )}
-                  {provider === 'openai' && (
+                  {provider === 'OpenAI' && (
                     <>
                       <li className="flex items-start space-x-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
@@ -281,7 +289,7 @@ const ModelConfig: React.FC = () => {
                       </li>
                     </>
                   )}
-                  {provider === 'openai_compatible' && (
+                  {provider === 'custom' && (
                     <>
                       <li className="flex items-start space-x-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
