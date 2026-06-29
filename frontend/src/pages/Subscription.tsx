@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, X, Check, ArrowLeft, Crown } from 'lucide-react'
+import { CheckCircle2, X, ArrowLeft, Crown } from 'lucide-react'
 import { subscriptionApi } from '../services/api'
 import { useSubscription } from '../hooks/useSubscription'
 import { useToastStore } from '../stores/toastStore'
