@@ -35,6 +35,10 @@ async def login(
         # 创建默认用户设置
         settings = UserSettings(user_id=user.id)
         db.add(settings)
+        # 创建默认订阅（免费版）
+        from app.models.subscription import UserSubscription
+        sub = UserSubscription(user_id=user.id, tier="free", status="active", hotspots_quota_daily=30)
+        db.add(sub)
         await db.commit()
         await db.refresh(settings)
     else:

@@ -304,6 +304,16 @@ export const apiUsageApi = {
   }) => api.get('/api-usage/api-usage/records', { params }),
 }
 
+// 订阅API
+export const subscriptionApi = {
+  getSubscription: (userId: string) =>
+    api.get<any>('/subscription', { params: { user_id: userId } }),
+  upgrade: (userId: string, tier: string) =>
+    api.post<any>('/subscription/upgrade', null, { params: { user_id: userId, tier } }),
+  downgrade: (userId: string) =>
+    api.post<any>('/subscription/downgrade', null, { params: { user_id: userId } }),
+}
+
 // 健康检查
 export const healthApi = {
   check: () => api.get('/health'),

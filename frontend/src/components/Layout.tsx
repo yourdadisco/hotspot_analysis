@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Brain, Home, Heart, Settings, Briefcase, Cpu, Bell, LogOut, User, BookOpen, BarChart3 } from 'lucide-react'
-import { hotspotsApi } from '../services/api'
+import { Brain, Home, Heart, Settings, Briefcase, Cpu, Bell, LogOut, User, BookOpen, BarChart3, Zap } from 'lucide-react'
+import { hotspotsApi, subscriptionApi } from '../services/api'
 import UsageGuideModal from './UsageGuideModal'
 import TutorialPrompt from './TutorialPrompt'
 import NotificationPanel from './NotificationPanel'
@@ -77,12 +77,21 @@ const Layout: React.FC = () => {
     navigate('/login')
   }
 
+  const { data: subData } = useQuery({
+    queryKey: ['subscription', userId],
+    queryFn: () => subscriptionApi.getSubscription(userId) as Promise<any>,
+    enabled: !!userId,
+    staleTime: 60000,
+  })
+  const subTier: any = subData || { tier: 'free', label: '免费版' }
+
   const navItems = [
     { path: '/dashboard', icon: <Home size={20} />, label: '热点看板' },
     { path: '/favorites', icon: <Heart size={20} />, label: '我的收藏' },
     { path: '/business', icon: <Briefcase size={20} />, label: '您的工作' },
     { path: '/model-config', icon: <Cpu size={20} />, label: '模型配置' },
     { path: '/api-usage', icon: <BarChart3 size={20} />, label: 'API 用量' },
+    { path: '/subscription', icon: <Zap size={20} />, label: '订阅管理' },
     { path: '/settings', icon: <Settings size={20} />, label: '设置' },
   ]
 
@@ -124,7 +133,13 @@ const Layout: React.FC = () => {
                   </div>
                   <div className="hidden md:block">
                     <p className="text-sm font-medium text-gray-900">{userEmail || '用户'}</p>
-                    <p className="text-xs text-gray-500">产品经理</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: subTier.tier === 'personal' ? '#EEF2FF' : subTier.tier === 'team' ? '#F5F3FF' : '#F3F4F6',
+                                 color: subTier.tier === 'personal' ? '#6366F1' : subTier.tier === 'team' ? '#7C3AED' : '#6B7280' }}>
+                        {subTier.label}
+                      </span>
+                    </div>
                   </div>
                 </button>
 

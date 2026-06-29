@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import health, auth, hotspots, user_settings, api_usage, analysis, collection, model_config, user_actions
+from app.api.v1.endpoints import health, auth, hotspots, user_settings, api_usage, analysis, collection, model_config, user_actions, subscription
 
 api_router = APIRouter()
 
@@ -14,3 +14,4 @@ api_router.include_router(analysis.router, tags=["analysis"])
 api_router.include_router(collection.router, tags=["collection"])
 api_router.include_router(model_config.router, tags=["model-config"])
 api_router.include_router(user_actions.router, tags=["user-actions"])
+api_router.include_router(subscription.router, tags=["subscription"])

@@ -9,6 +9,8 @@ import HotspotDetail from './pages/HotspotDetail'
 import Settings from './pages/Settings'
 import Favorites from './pages/Favorites'
 import ApiUsage from './pages/ApiUsage'
+import Pricing from './pages/Pricing'
+import Subscription from './pages/Subscription'
 import ToastContainer from './components/ToastContainer'
 
 // 私有路由组件
@@ -34,6 +36,7 @@ function App() {
         <ToastContainer />
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
@@ -43,6 +46,7 @@ function App() {
             <Route path="favorites" element={<Favorites />} />
             <Route path="settings" element={<Settings />} />
             <Route path="api-usage" element={<ApiUsage />} />
+            <Route path="subscription" element={<Subscription />} />
           </Route>
         </Routes>
       </Router>
