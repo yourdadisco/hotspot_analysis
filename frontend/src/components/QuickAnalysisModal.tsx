@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { X, Zap, Settings, Calendar, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react'
-import { collectionApi } from '../services/api'
+import { collectionApi, modelConfigApi } from '../services/api'
+import { useToastStore } from '../stores/toastStore'
 
 interface Props {
   userId: string
@@ -10,7 +11,10 @@ interface Props {
   onComplete: () => void
 }
 
+const industries = ['科技/互联网', '金融/保险', '医疗/健康', '教育/培训', '制造业', '零售/电商', '媒体/娱乐', '其他']
+
 const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComplete }) => {
+  const addToast = useToastStore(s => s.addToast)
   const [mode, setMode] = useState<'last' | 'range' | 'ndays'>('last')
   const [ndays, setNdays] = useState(7)
   const [dateFrom, setDateFrom] = useState('')
@@ -19,9 +23,14 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
 
-  // 获取用户信息（检查业务配置是否完成）
-  const { data: userData } = useQuery({
-    queryKey: ['qa-profile-simple'],
+  // 业务配置表单
+  const [companyName, setCompanyName] = useState('')
+  const [industry, setIndustry] = useState('')
+  const [businessDesc, setBusinessDesc] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const { data: userData, refetch: refetchUser } = useQuery({
+    queryKey: ['qa-profile', userId],
     queryFn: async () => {
       const { authApi } = await import('../services/api')
       return authApi.getUser(userId) as any
@@ -30,16 +39,13 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
   })
 
   const { data: modelData } = useQuery({
-    queryKey: ['qa-model-simple'],
-    queryFn: async () => {
-      const { modelConfigApi } = await import('../services/api')
-      return modelConfigApi.getConfig(userId) as Promise<any>
-    },
+    queryKey: ['qa-model', userId],
+    queryFn: () => modelConfigApi.getConfig(userId) as Promise<any>,
     enabled: isOpen,
   })
 
   const { data: lastUpdateData } = useQuery({
-    queryKey: ['qa-last-simple'],
+    queryKey: ['qa-last'],
     queryFn: () => collectionApi.getLastUpdate(),
     enabled: isOpen,
   })
@@ -58,9 +64,23 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
 
   useEffect(() => {
     if (isOpen) {
+      setCompanyName(user.company_name || '')
+      setIndustry(user.industry || '')
+      setBusinessDesc(user.business_description || '')
       setDateFrom(''); setDateTo(''); setError(''); setDone(false)
     }
-  }, [isOpen])
+  }, [isOpen, userData])
+
+  const saveBusiness = async () => {
+    setSaving(true)
+    try {
+      const { authApi } = await import('../services/api')
+      await authApi.updateUserBusiness(userId, { company_name: companyName, industry, business_description: businessDesc })
+      addToast('已保存', 'success')
+      refetchUser()
+    } catch { addToast('保存失败', 'error') }
+    finally { setSaving(false) }
+  }
 
   const handleStart = async () => {
     if (!allReady) return
@@ -80,7 +100,7 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4">
+      <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {done ? (
           <div className="text-center py-6">
             <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
@@ -99,39 +119,61 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-900">一键分析</h3>
-                  <p className="text-xs text-gray-500">采集 + AI 分析一气呵成</p>
+                  <p className="text-xs text-gray-500">工作信息 → 选择日期 → 开始分析</p>
                 </div>
               </div>
               <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg"><X size={18} className="text-gray-400" /></button>
             </div>
 
-            {/* 状态检查 */}
-            <div className="space-y-2.5 mb-5">
-              <div className={`flex items-center justify-between p-3 rounded-xl border ${hasBusiness ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                <div className="flex items-center gap-3">
-                  <Settings size={18} className={hasBusiness ? 'text-green-500' : 'text-gray-300'} />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">工作信息</p>
-                    <p className="text-xs text-gray-500">{hasBusiness ? user.company_name : '未填写 → 去设置'}</p>
-                  </div>
-                </div>
-                {hasBusiness ? <CheckCircle2 size={18} className="text-green-500" />
-                  : <a href="/business" className="text-xs text-blue-600 hover:underline font-medium">去填写</a>}
+            {/* 步骤1: 工作信息 */}
+            <div className="mb-5 p-4 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Settings size={16} className="text-gray-500" />
+                <span className="text-sm font-semibold text-gray-800">1. 工作信息</span>
+                {hasBusiness && <CheckCircle2 size={14} className="text-green-500 ml-auto" />}
               </div>
-              <div className={`flex items-center justify-between p-3 rounded-xl border ${hasApiKey ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                <div className="flex items-center gap-3">
-                  <Settings size={18} className={hasApiKey ? 'text-green-500' : 'text-gray-300'} />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">模型配置</p>
-                    <p className="text-xs text-gray-500">{hasApiKey ? `${model.provider || ''} ${model.model_name || ''}` : '未配置 → 去设置'}</p>
-                  </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">公司/团队名称</label>
+                  <input type="text" placeholder="例如：某某科技" value={companyName}
+                    onChange={e => setCompanyName(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" />
                 </div>
-                {hasApiKey ? <CheckCircle2 size={18} className="text-green-500" />
-                  : <a href="/model-config" className="text-xs text-blue-600 hover:underline font-medium">去配置</a>}
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">所属行业</label>
+                  <select value={industry} onChange={e => setIndustry(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                    <option value="">请选择</option>
+                    {industries.map(i => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">业务描述</label>
+                  <textarea placeholder="例如：我们做 AI 客服系统..." value={businessDesc}
+                    onChange={e => setBusinessDesc(e.target.value)} rows={2}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none" />
+                </div>
+                <button onClick={saveBusiness} disabled={saving || !companyName}
+                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+                  {saving ? '保存中...' : '保存'}
+                </button>
               </div>
             </div>
 
-            {/* 日期选择 */}
+            {/* 步骤2: 模型配置 - 仅状态展示+链接 */}
+            <div className={`mb-5 p-4 rounded-xl border ${hasApiKey ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Settings size={16} className={hasApiKey ? 'text-green-500' : 'text-gray-300'} />
+                  <span className="text-sm font-semibold text-gray-800">2. 模型配置</span>
+                </div>
+                {hasApiKey ? <CheckCircle2 size={14} className="text-green-500" />
+                  : <a href="/model-config" className="text-xs text-blue-600 hover:underline font-medium">去配置 →</a>}
+              </div>
+              {hasApiKey && <p className="text-xs text-gray-500 mt-1 ml-7">{model.provider} · {model.model_name}</p>}
+            </div>
+
+            {/* 步骤3: 日期选择 */}
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-3">
                 <Calendar size={15} className="text-gray-400" />
