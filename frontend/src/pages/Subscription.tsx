@@ -77,7 +77,7 @@ const Subscription: React.FC = () => {
           <button onClick={() => setShowPlans(true)}
             className="px-4 py-2 text-sm font-medium rounded-lg transition-all"
             style={{ backgroundColor: currentInfo.bg, color: currentInfo.color }}>
-            {isFree ? '升级套餐' : '变更套餐'}
+            {currentTier === 'free' ? '升级套餐' : '变更套餐'}
           </button>
         </div>
       </div>
@@ -119,7 +119,7 @@ const Subscription: React.FC = () => {
 
             <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <p className="text-xs text-gray-400">
-                {isFree ? '升级后立即生效' : '变更后新套餐立即生效，旧套餐剩余时间按比例折算'}
+                {currentTier === 'free' ? '升级后立即生效' : '变更后新套餐立即生效，旧套餐剩余时间按比例折算'}
               </p>
               <div className="flex gap-3">
                 <button onClick={() => setShowPlans(false)} className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">取消</button>
