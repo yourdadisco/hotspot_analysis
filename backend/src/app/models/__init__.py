@@ -4,6 +4,7 @@ from .api_usage import APIUsage
 from .model_config import UserModelConfig
 from .user_action import UserHotspotAction
 from .subscription import UserSubscription, SubscriptionTier, SubscriptionStatus
+from .payment import PaymentOrder, PaymentStatus, PaymentMethod
 
 __all__ = [
     "User",
@@ -18,4 +19,7 @@ __all__ = [
     "UserSubscription",
     "SubscriptionTier",
     "SubscriptionStatus",
+    "PaymentOrder",
+    "PaymentStatus",
+    "PaymentMethod",
 ]

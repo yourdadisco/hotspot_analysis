@@ -314,6 +314,16 @@ export const subscriptionApi = {
     api.post<any>('/subscription/downgrade', null, { params: { user_id: userId } }),
 }
 
+// 支付API
+export const paymentApi = {
+  createOrder: (userId: string, tier: string, period: string, method: string) =>
+    api.post<any>('/payment/create', null, { params: { user_id: userId, tier, period, method } }),
+  verifyPayment: (orderId: string) =>
+    api.post<any>('/payment/verify', null, { params: { order_id: orderId } }),
+  getOrders: (userId: string) =>
+    api.get<any>('/payment/orders', { params: { user_id: userId } }),
+}
+
 // 健康检查
 export const healthApi = {
   check: () => api.get('/health'),
