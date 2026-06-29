@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { X, Zap, Settings, Calendar, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react'
+import { X, Zap, Settings, Calendar, RefreshCw, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { collectionApi, modelConfigApi } from '../services/api'
 import { useToastStore } from '../stores/toastStore'
 
@@ -12,6 +12,15 @@ interface Props {
 }
 
 const industries = ['科技/互联网', '金融/保险', '医疗/健康', '教育/培训', '制造业', '零售/电商', '媒体/娱乐', '其他']
+const PROVIDERS: Record<string, string> = {
+  'OpenAI': 'https://api.openai.com/v1',
+  'Anthropic': 'https://api.anthropic.com/v1',
+  'DeepSeek': 'https://api.deepseek.com',
+  'Kimi': 'https://api.moonshot.cn/v1',
+  'MiniMax': 'https://api.minimax.chat/v1',
+  'Mimo': 'https://api.mimo.com/v1',
+  '豆包': 'https://ark.cn-beijing.volces.com/api/v3',
+}
 
 const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComplete }) => {
   const addToast = useToastStore(s => s.addToast)
@@ -29,6 +38,12 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
   const [businessDesc, setBusinessDesc] = useState('')
   const [saving, setSaving] = useState(false)
 
+  // 模型配置表单
+  const [provider, setProvider] = useState('DeepSeek')
+  const [apiKey, setApiKey] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [savingModel, setSavingModel] = useState(false)
+
   const { data: userData, refetch: refetchUser } = useQuery({
     queryKey: ['qa-profile', userId],
     queryFn: async () => {
@@ -38,7 +53,7 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
     enabled: isOpen,
   })
 
-  const { data: modelData } = useQuery({
+  const { data: modelData, refetch: refetchModel } = useQuery({
     queryKey: ['qa-model', userId],
     queryFn: () => modelConfigApi.getConfig(userId) as Promise<any>,
     enabled: isOpen,
@@ -58,18 +73,23 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
     : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   const defaultTo = new Date().toISOString().slice(0, 10)
 
-  const hasBusiness = !!(user.company_name && user.business_description)
-  const hasApiKey = !!(model.api_key)
+  const hasBusiness = !!(companyName && businessDesc)
+  const hasApiKey = !!apiKey
   const allReady = hasBusiness && hasApiKey
 
   useEffect(() => {
     if (isOpen) {
-      setCompanyName(user.company_name || '')
-      setIndustry(user.industry || '')
-      setBusinessDesc(user.business_description || '')
+      const u: any = userData || {}
+      const m: any = modelData || {}
+      setCompanyName(u.company_name || '')
+      setIndustry(u.industry || '')
+      setBusinessDesc(u.business_description || '')
+      const p = m.provider || 'DeepSeek'
+      setProvider(p)
+      setApiKey(m.api_key || '')
       setDateFrom(''); setDateTo(''); setError(''); setDone(false)
     }
-  }, [isOpen, userData])
+  }, [isOpen, userData, modelData])
 
   const saveBusiness = async () => {
     setSaving(true)
@@ -80,6 +100,16 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
       refetchUser()
     } catch { addToast('保存失败', 'error') }
     finally { setSaving(false) }
+  }
+
+  const saveModel = async () => {
+    setSavingModel(true)
+    try {
+      await modelConfigApi.updateConfig(userId, { provider, api_key: apiKey, api_base_url: PROVIDERS[provider] || '', model_name: provider === 'DeepSeek' ? 'deepseek-chat' : provider === 'OpenAI' ? 'gpt-4o' : provider === 'Anthropic' ? 'claude-sonnet-4-20250514' : '', is_active: 'Y' })
+      addToast('模型配置已保存', 'success')
+      refetchModel()
+    } catch { addToast('保存失败', 'error') }
+    finally { setSavingModel(false) }
   }
 
   const handleStart = async () => {
@@ -160,17 +190,42 @@ const QuickAnalysisModal: React.FC<Props> = ({ userId, isOpen, onClose, onComple
               </div>
             </div>
 
-            {/* 步骤2: 模型配置 - 仅状态展示+链接 */}
-            <div className={`mb-5 p-4 rounded-xl border ${hasApiKey ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Settings size={16} className={hasApiKey ? 'text-green-500' : 'text-gray-300'} />
-                  <span className="text-sm font-semibold text-gray-800">2. 模型配置</span>
-                </div>
-                {hasApiKey ? <CheckCircle2 size={14} className="text-green-500" />
-                  : <a href="/model-config" className="text-xs text-blue-600 hover:underline font-medium">去配置 →</a>}
+            {/* 步骤2: 模型配置 */}
+            <div className="mb-5 p-4 rounded-xl border border-gray-200">
+              <div className="flex items-center gap-2 mb-3">
+                <Settings size={16} className="text-gray-500" />
+                <span className="text-sm font-semibold text-gray-800">2. 模型配置</span>
+                {hasApiKey && <CheckCircle2 size={14} className="text-green-500 ml-auto" />}
               </div>
-              {hasApiKey && <p className="text-xs text-gray-500 mt-1 ml-7">{model.provider} · {model.model_name}</p>}
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">供应商</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.keys(PROVIDERS).map(p => (
+                      <button key={p} onClick={() => setProvider(p)}
+                        className={`px-3 py-2 text-sm rounded-lg border transition-all text-left ${
+                          provider === p ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                        }`}>{p}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">API Key</label>
+                  <div className="relative">
+                    <input type={showKey ? 'text' : 'password'} placeholder={provider === 'OpenAI' ? 'sk-proj-...' : 'sk-...'} value={apiKey}
+                      onChange={e => setApiKey(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg pr-10 font-mono" />
+                    <button onClick={() => setShowKey(!showKey)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+                      {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+                {provider && <p className="text-xs text-gray-400">API Base: {PROVIDERS[provider]}</p>}
+                <button onClick={saveModel} disabled={savingModel || !apiKey}
+                  className="px-4 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">
+                  {savingModel ? '保存中...' : '保存'}
+                </button>
+              </div>
             </div>
 
             {/* 步骤3: 日期选择 */}
