@@ -29,19 +29,13 @@ const Subscription: React.FC = () => {
   const [showPlans, setShowPlans] = useState(false)
   const [selectedTier, setSelectedTier] = useState<string>('')
 
-  const { subscription, isLoading, isFree } = useSubscription(userId)
+  const { subscription, isLoading } = useSubscription(userId)
   const currentTier = subscription.tier
 
   const upgradeMut = useMutation({
     mutationFn: (tier: string) => subscriptionApi.upgrade(userId, tier),
     onSuccess: () => { addToast('升级成功！', 'success'); queryClient.invalidateQueries({ queryKey: ['subscription'] }); setShowPlans(false) },
     onError: () => addToast('升级失败', 'error'),
-  })
-
-  const downgradeMut = useMutation({
-    mutationFn: () => subscriptionApi.downgrade(userId),
-    onSuccess: () => { addToast('已降级为免费版', 'success'); queryClient.invalidateQueries({ queryKey: ['subscription'] }) },
-    onError: () => addToast('降级失败', 'error'),
   })
 
   if (isLoading) return (
@@ -51,8 +45,6 @@ const Subscription: React.FC = () => {
   )
 
   const currentInfo = TIERS.find(t => t.tier === currentTier) || TIERS[0]
-  const tierOrder = ['free', 'personal', 'team']
-  const currentIdx = tierOrder.indexOf(currentTier)
 
   const handleUpgrade = () => {
     if (!selectedTier) return
@@ -103,7 +95,7 @@ const Subscription: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
               {TIERS.map(t => {
                 const isCurrent = t.tier === currentTier
-                const isSelectable = tierOrder.indexOf(t.tier) >= currentIdx
+                const isSelectable = t.tier !== currentTier
                 const isSelected = selectedTier === t.tier
                 return (
                   <div key={t.tier}
@@ -176,19 +168,6 @@ const Subscription: React.FC = () => {
         </div>
       </div>
 
-      {/* 降级 */}
-      {!isFree && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">降级为免费版</h3>
-            <p className="text-xs text-gray-500">降级后付费功能将不可用</p>
-          </div>
-          <button onClick={() => downgradeMut.mutate()} disabled={downgradeMut.isPending}
-            className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-            降级
-          </button>
-        </div>
-      )}
     </div>
   )
 }
