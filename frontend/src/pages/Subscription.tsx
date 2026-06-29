@@ -86,47 +86,73 @@ const Subscription: React.FC = () => {
       {showPlans && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowPlans(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold text-gray-900">选择套餐</h3>
-              <button onClick={() => setShowPlans(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={18} className="text-gray-400" /></button>
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-900">选择套餐</h3>
+              <button onClick={() => setShowPlans(false)} className="p-1 hover:bg-gray-100 rounded-lg"><X size={20} className="text-gray-400" /></button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            {/* 表头 */}
+            <div className="grid grid-cols-4 gap-3 mb-6">
+              <div className="col-span-1" />
               {TIERS.map(t => {
-                const isCurrent = t.tier === currentTier
-                const isSelectable = t.tier !== currentTier
                 const isSelected = selectedTier === t.tier
+                const isCurrent = t.tier === currentTier
+                const canSelect = t.tier !== currentTier
                 return (
-                  <div key={t.tier}
-                    onClick={() => { if (isSelectable && !isCurrent) setSelectedTier(t.tier) }}
-                    className={`rounded-xl border-2 p-4 transition-all cursor-pointer relative ${isSelected ? 'border-indigo-500 shadow-md' : isCurrent ? 'border-indigo-300 bg-indigo-50/30' : isSelectable ? 'border-gray-200 hover:border-gray-300' : 'border-gray-100 opacity-50'}`}>
-                    {t.popular && <span className="absolute -top-2.5 right-3 px-2 py-0.5 text-[10px] font-semibold text-white rounded-full" style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)' }}>推荐</span>}
-                    <p className="text-sm font-semibold text-gray-900 mb-0.5">{t.name}</p>
-                    <p className="text-lg font-bold text-gray-900 mb-3">{t.price}</p>
-                    <ul className="space-y-1.5">
-                      {t.features.map((f, i) => (
-                        <li key={i} className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Check size={12} className="text-green-500 shrink-0" />{f}
-                        </li>
-                      ))}
-                    </ul>
-                    {isCurrent && <p className="text-xs text-indigo-600 font-medium mt-3 text-center">当前套餐</p>}
+                  <div key={t.tier} onClick={() => canSelect && setSelectedTier(t.tier)}
+                    className={`rounded-xl border-2 p-4 text-center cursor-pointer transition-all duration-200 relative ${
+                      isSelected ? 'border-indigo-500 shadow-lg shadow-indigo-500/20 scale-105' :
+                      isCurrent ? 'border-indigo-300' :
+                      canSelect ? 'border-gray-200 hover:border-indigo-300 hover:shadow-md' : 'opacity-60'
+                    }`}>
+                    {t.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 text-xs font-semibold text-white rounded-full whitespace-nowrap" style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)' }}>🔥 最受欢迎</span>}
+                    <p className="text-sm font-bold text-gray-900 mb-0.5">{t.name}</p>
+                    <p className="text-xl font-bold text-gray-900">{t.price}</p>
+                    {isCurrent && <span className="inline-block mt-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">当前</span>}
+                    {isSelected && !isCurrent && <span className="inline-block mt-1.5 text-xs font-medium text-white px-2 py-0.5 rounded-full" style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)' }}>已选 ✓</span>}
                   </div>
                 )
               })}
             </div>
 
-            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-              <p className="text-xs text-gray-400">
-                {currentTier === 'free' ? '升级后立即生效' : '变更后新套餐立即生效，旧套餐剩余时间按比例折算'}
+            {/* 功能对比行 */}
+            <div className="space-y-1 mb-6">
+              {[
+                { label: '每日热点', free: '30 条', personal: '无限', team: '无限' },
+                { label: 'AI 全文分析', free: false, personal: true, team: true },
+                { label: '历史数据', free: '3 天', personal: '1 年', team: '1 年' },
+                { label: '自动更新', free: false, personal: true, team: true },
+                { label: '实时通知', free: false, personal: true, team: true },
+                { label: '关键词告警', free: false, personal: true, team: true },
+                { label: '每日晨报', free: false, personal: true, team: true },
+                { label: '团队协作', free: false, personal: false, team: true },
+                { label: '专属信息源', free: false, personal: false, team: true },
+                { label: '技术支持', free: '社区', personal: '邮件', team: '优先' },
+              ].map((row, idx) => (
+                <div key={row.label} className={`grid grid-cols-4 gap-3 py-3 px-3 rounded-lg items-center ${idx % 2 === 0 ? 'bg-gray-50/50' : ''}`}>
+                  <p className="text-sm font-medium text-gray-700">{row.label}</p>
+                  <p className="text-sm text-gray-500 text-center">{row.free === false ? '—' : row.free === true ? '✓' : row.free}</p>
+                  <p className={`text-sm font-medium text-center ${row.personal === false ? 'text-gray-300' : row.personal === true ? 'text-green-600' : 'text-indigo-600'}`}>
+                    {row.personal === false ? '—' : row.personal === true ? '✓' : row.personal}
+                  </p>
+                  <p className={`text-sm font-medium text-center ${row.team === false ? 'text-gray-300' : row.team === true ? 'text-green-600' : 'text-purple-600'}`}>
+                    {row.team === false ? '—' : row.team === true ? '✓' : row.team}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between pt-5 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                {currentTier === 'free' ? '升级后立即生效，随时取消' : '升级后新套餐立即生效'}
               </p>
               <div className="flex gap-3">
-                <button onClick={() => setShowPlans(false)} className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">取消</button>
+                <button onClick={() => setShowPlans(false)} className="px-5 py-2.5 text-sm font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">取消</button>
                 {selectedTier && (
                   <button onClick={handleUpgrade} disabled={upgradeMut.isPending}
-                    className="px-6 py-2 text-sm font-semibold rounded-lg text-white transition-all"
-                    style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)' }}>
+                    className="px-6 py-2.5 text-sm font-semibold rounded-lg text-white transition-all shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, #6366F1, #4F46E5)', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
                     {upgradeMut.isPending ? '处理中...' : `升级到 ${TIERS.find(t => t.tier === selectedTier)?.name}`}
                   </button>
                 )}
